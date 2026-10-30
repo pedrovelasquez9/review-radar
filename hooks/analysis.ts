@@ -76,6 +76,11 @@ async function runAnalysis(
   messages: Messages,
   isForced: boolean,
 ): Promise<void> {
+  // An analysis the person asked for clears the pane to the loader at once.
+  // Automatic ones wait until the diff turns out to have changed, so an
+  // unchanged diff never flashes the loader.
+  if (isForced) await showAnalyzing(engine)
+
   if (!(await isInsideGitRepository(engine))) {
     await engine.updateReport((report): Report => ({ ...report, status: 'no-repo' }))
     return
@@ -104,12 +109,7 @@ async function runAnalysis(
   }
 
   // From here on the pane shows its loader, step by step.
-  await engine.updateReport((report): Report => ({
-    ...report,
-    status: 'analyzing',
-    baseBranch,
-    progress: { step: 'reading-changes' },
-  }))
+  await showAnalyzing(engine, baseBranch)
   engine.showStatus(messages.statusLineAnalyzing)
 
   const { diffWithoutLockfiles, lockfiles } = separateLockfiles(fullDiff)
@@ -180,6 +180,17 @@ async function loadSessionIntent(engine: Engine): Promise<SessionIntent | undefi
     editedFiles: toRepositoryPaths(recorded.editedFiles, repositoryRoot),
   }
   return hasIntent(intent) ? intent : undefined
+}
+
+// Switches the pane to its loader, at the first step. The base branch is kept
+// as it was when it is not known yet.
+async function showAnalyzing(engine: Engine, baseBranch?: string): Promise<void> {
+  await engine.updateReport((report): Report => ({
+    ...report,
+    status: 'analyzing',
+    baseBranch: baseBranch ?? report.baseBranch,
+    progress: { step: 'reading-changes' },
+  }))
 }
 
 // Moves the pane's loader to the next step.

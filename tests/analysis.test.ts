@@ -127,3 +127,27 @@ test('a report left analyzing by an interrupted run goes back to what it showed'
   expect(recoverInterruptedReport({ ...interrupted, analyzedAt: 5 }).progress).toBe(undefined)
   expect(recoverInterruptedReport({ ...EMPTY_REPORT, status: 'error' }).status).toBe('error')
 })
+
+test('an analysis the person asked for shows the loader before anything else runs', async () => {
+  const engine = createFakeEngine({ diff: PRICE_DIFF, reviewAnswer: PRICE_REVIEW_ANSWER })
+  const firstGitCommand: { statusThen?: string } = {}
+  const runCommand = engine.runCommand
+  engine.runCommand = async (argv, timeoutMs) => {
+    firstGitCommand.statusThen ??= engine.currentReport().status
+    return runCommand(argv, timeoutMs)
+  }
+
+  await analyzeBranch(engine, DEFAULT_SETTINGS, true)
+
+  expect(firstGitCommand.statusThen).toBe('analyzing')
+})
+
+test('an automatic analysis of an unchanged diff never shows the loader', async () => {
+  const engine = createFakeEngine({ diff: PRICE_DIFF, reviewAnswer: PRICE_REVIEW_ANSWER })
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+  engine.progressSteps.length = 0
+
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+
+  expect(engine.progressSteps).toEqual([])
+})

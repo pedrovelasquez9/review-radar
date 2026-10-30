@@ -2,6 +2,14 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-10-31
+
+### Changed
+
+- **The pane clears to the loader while analyzing.** Previous results are no longer kept under the loader: the pane holds only the loader until the new results are ready, so it is what you see wherever the pane was scrolled.
+- **Re-analyze and `/review-radar` show the loader at once**, before the diff is even read. Automatic analyses still switch to it only once the diff turns out to have changed, so an unchanged diff never flashes it.
+- Before the base branch is known (the very first analysis), the loader reads "Analyzing changes…" instead of naming an empty branch.
+
 ## [0.4.0] - 2026-10-31
 
 ### Added
@@ -46,6 +54,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.5.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.5.0
 [0.4.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.4.0
 [0.3.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.3.0
 [0.2.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.2.0

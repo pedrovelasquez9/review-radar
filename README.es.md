@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-**Mod de Claude Code · v0.4.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR».
+**Mod de Claude Code · v0.5.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR».
 
 Los cambios de cada versión están en el [changelog](CHANGELOG.md) (en inglés).
 
@@ -129,7 +129,7 @@ Puedes configurarlas de cualquiera de estas formas:
 
 ## Uso
 
-- Abre una sesión en un repositorio y trabaja como siempre. El panel **Revisión** (*Review* en inglés) se abre junto al chat y se rellena al final de cada turno que cambió archivos (salvo con `autoAnalyze` desactivado). Mientras se analiza, un indicador destacado arriba muestra en qué fase está (leyendo los cambios, clasificando archivos por riesgo, revisión a fondo con el modelo elegido); los resultados del análisis anterior siguen debajo, marcados como tales, hasta que llegan los nuevos. Un aviso te indica cuándo hay algo que revisar.
+- Abre una sesión en un repositorio y trabaja como siempre. El panel **Revisión** (*Review* en inglés) se abre junto al chat y se rellena al final de cada turno que cambió archivos (salvo con `autoAnalyze` desactivado). Mientras se analiza, el panel se vacía y solo muestra un indicador destacado con la fase en curso (leyendo los cambios, clasificando archivos por riesgo, revisión a fondo con el modelo elegido); los nuevos resultados lo sustituyen cuando están listos. *Re-analizar* y `/review-radar` pasan al indicador al instante. Un aviso te indica cuándo hay algo que revisar.
 - `/review-radar` abre el panel, fuerza un análisis completo y además escribe el informe, diffs incluidos, en la conversación. En una rama mediana tarda unos 20–30 s.
 - En el panel: lee el resumen, recorre *Requiere tu revisión*, marca cada hallazgo con **✓ Revisado** o pulsa **Pedir cambios**, y despliega *Revisar en la PR* si quieres la lista completa.
 

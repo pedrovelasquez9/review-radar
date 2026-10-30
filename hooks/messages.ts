@@ -29,7 +29,6 @@ export type Messages = {
   progressTriage: (fileCount: number) => string
   progressDeepReview: (fileCount: number, model: string) => string
   loaderHint: string
-  previousResultsNote: string
 
   needsReviewHeading: (count: number) => string
   nothingCritical: string
@@ -67,12 +66,11 @@ const ENGLISH: Messages = {
   analysisFailed: errorMessage => `Analysis failed: ${errorMessage}`,
   baseBranchLabel: baseBranch => `Base: ${baseBranch}`,
 
-  loaderTitle: baseBranch => `⏳ Analyzing changes against ${baseBranch}…`,
+  loaderTitle: baseBranch => (baseBranch ? `⏳ Analyzing changes against ${baseBranch}…` : '⏳ Analyzing changes…'),
   progressReadingChanges: 'Reading the changes',
   progressTriage: fileCount => `Sorting ${fileCount} changed file(s) by risk`,
   progressDeepReview: (fileCount, model) => `Deep review of ${fileCount} file(s) with ${model}`,
   loaderHint: 'This usually takes 20–40 seconds. You can keep working meanwhile.',
-  previousResultsNote: 'Below: the previous analysis. It updates when this one finishes.',
 
   needsReviewHeading: count => `Needs your review (${count})`,
   nothingCritical: 'Nothing critical found.',
@@ -121,12 +119,11 @@ const SPANISH: Messages = {
   analysisFailed: errorMessage => `Error al analizar: ${errorMessage}`,
   baseBranchLabel: baseBranch => `Base: ${baseBranch}`,
 
-  loaderTitle: baseBranch => `⏳ Analizando cambios contra ${baseBranch}…`,
+  loaderTitle: baseBranch => (baseBranch ? `⏳ Analizando cambios contra ${baseBranch}…` : '⏳ Analizando cambios…'),
   progressReadingChanges: 'Leyendo los cambios',
   progressTriage: fileCount => `Clasificando ${fileCount} archivo(s) cambiado(s) por riesgo`,
   progressDeepReview: (fileCount, model) => `Revisión a fondo de ${fileCount} archivo(s) con ${model}`,
   loaderHint: 'Suele tardar entre 20 y 40 segundos. Puedes seguir trabajando mientras tanto.',
-  previousResultsNote: 'Debajo: el análisis anterior. Se actualiza cuando termine este.',
 
   needsReviewHeading: count => `Requiere tu revisión (${count})`,
   nothingCritical: 'Nada crítico detectado.',

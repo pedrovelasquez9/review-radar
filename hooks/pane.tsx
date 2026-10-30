@@ -41,17 +41,15 @@ export function drawReviewPane(input: PaneInput) {
   const prFindings = report.findings.filter(finding => finding.severity === 'pr')
   const hasNothingCritical = criticalFindings.length === 0 && report.status === 'ready'
 
-  const isAnalyzing = report.status === 'analyzing'
-  const hasPreviousResults = report.analyzedAt > 0
-  // On the very first analysis there is nothing to show under the loader yet.
-  if (isAnalyzing && !hasPreviousResults) {
+  // While an analysis runs the pane holds only the loader: earlier results are
+  // cleared, so the loader is what you see wherever the pane was scrolled.
+  if (report.status === 'analyzing') {
     return <Box flexDirection="column">{drawLoader(input)}</Box>
   }
 
   return (
     <Box flexDirection="column" gap={1}>
-      {isAnalyzing ? drawLoader(input) : <Text dimColor>{paneHeadline(input)}</Text>}
-      {isAnalyzing && <Text dimColor>{messages.previousResultsNote}</Text>}
+      <Text dimColor>{paneHeadline(input)}</Text>
       {report.summary !== '' && <Text>{report.summary}</Text>}
 
       <Box flexDirection="column" gap={1}>

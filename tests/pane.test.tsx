@@ -118,13 +118,14 @@ test('the first analysis shows only the loader, with its current step', async ($
   await ui.unmount()
 })
 
-test('a new analysis keeps the previous results under the loader, marked as such', async ($, on) => {
+test('a new analysis clears the previous results: only the loader is left', async ($, on) => {
   on('state.get', storedState({ ...STORED_REPORT, status: 'analyzing', progress: { step: 'reading-changes' } }))
 
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
   expect(await ui.find({ type: 'Text', text: /Reading the changes/ })).toBeTruthy()
-  expect(await ui.find({ type: 'Text', text: /previous analysis/ })).toBeTruthy()
-  expect(await ui.find({ type: 'Text', text: /New discount/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /New discount/ })).toBeFalsy()
+  expect(await ui.find({ type: 'Text', text: /Changes the price calculation/ })).toBeFalsy()
+  expect(await ui.find({ key: 'reanalyze' })).toBeFalsy()
   await ui.unmount()
 })

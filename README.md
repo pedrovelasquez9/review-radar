@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod · v0.4.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR".
+**Claude Code mod · v0.5.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR".
 
 See what changed in each version in the [changelog](CHANGELOG.md).
 
@@ -129,7 +129,7 @@ Set them in any of these ways:
 
 ## Usage
 
-- Open a session in a repository and work as usual. The **Review** pane opens beside the chat and fills in at the end of each turn that changed files (unless `autoAnalyze` is off). While an analysis runs, a highlighted loader at the top says which step it is on (reading the changes, sorting files by risk, deep review with the chosen model); results from the previous analysis stay below it, marked as such, until the new ones arrive. A toast tells you when something needs your review.
+- Open a session in a repository and work as usual. The **Review** pane opens beside the chat and fills in at the end of each turn that changed files (unless `autoAnalyze` is off). While an analysis runs, the pane is cleared to a highlighted loader that says which step it is on (reading the changes, sorting files by risk, deep review with the chosen model), and the new results replace it when they are ready. *Re-analyze* and `/review-radar` switch to the loader at once. A toast tells you when something needs your review.
 - `/review-radar` opens the pane, forces a full analysis and also prints the report, diffs included, in the transcript. Analysis takes about 20–30 s on a mid-sized branch.
 - In the pane: read the summary, go through *Needs your review*, mark each finding **✓ Reviewed** or press **Request changes**, and unfold *Review in the PR* if you want the full list.
 
