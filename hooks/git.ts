@@ -12,6 +12,12 @@ export async function isInsideGitRepository(engine: Engine): Promise<boolean> {
   return (await runGit(engine, ['rev-parse', '--is-inside-work-tree'])) === 'true'
 }
 
+// The repository's top folder, as git prints it (forward slashes), or undefined
+// outside a repository.
+export async function findRepositoryRoot(engine: Engine): Promise<string | undefined> {
+  return runGit(engine, ['rev-parse', '--show-toplevel'])
+}
+
 // The branch the work started from: the remote's default branch when it names
 // one, else the first common name that exists, else HEAD itself.
 export async function findBaseBranch(engine: Engine): Promise<string> {

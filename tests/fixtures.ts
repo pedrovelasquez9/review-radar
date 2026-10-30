@@ -5,6 +5,10 @@ import type { ModelCompleteRequest, ModelCompleteResult } from 'claude-code'
 import type { Report } from '../types'
 import { EMPTY_REPORT } from '../hooks/analysis'
 import type { Engine } from '../hooks/engine'
+import type { SessionIntent } from '../hooks/intent'
+
+// Where the fake repository lives, as git prints it.
+export const REPOSITORY_ROOT = 'C:/work/shop'
 
 // A fake Stripe-style key, assembled from parts so that secret scanners (and
 // GitHub's push protection) do not take this repository for one holding a real key.
@@ -43,6 +47,8 @@ type FakeEngineOptions = {
   reviewAnswer: string
   // Models whose calls are refused, as an organization blocking a model would.
   blockedModels?: string[]
+  // What the session recorded; edited files as absolute paths. None by default.
+  sessionIntent?: SessionIntent
 }
 
 export type FakeEngine = Engine & {
@@ -60,6 +66,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
   const answerGit = (gitArgs: string[]): string | undefined => {
     const command = gitArgs.join(' ')
     if (command === 'rev-parse --is-inside-work-tree') return 'true'
+    if (command === 'rev-parse --show-toplevel') return REPOSITORY_ROOT
     if (command === 'rev-parse --abbrev-ref origin/HEAD') return 'origin/main'
     if (command.startsWith('rev-parse --verify')) return 'abc123'
     if (command.startsWith('merge-base')) return 'abc123'
@@ -89,6 +96,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     updateReport: async change => {
       report = change(report)
     },
+    readSessionIntent: async () => options.sessionIntent ?? { requests: [], editedFiles: [] },
     showStatus: () => {},
     showToast: () => {},
 

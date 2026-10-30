@@ -5,7 +5,9 @@ import type { Finding, Report } from '../types'
 import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles, splitDiffByFile } from './diff'
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
-import { findBaseBranch, isInsideGitRepository, readBranchDiff } from './git'
+import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff } from './git'
+import { hasIntent, toRepositoryPaths } from './intent'
+import type { SessionIntent } from './intent'
 import { messagesFor } from './messages'
 import type { Messages } from './messages'
 import { askReviewModel, askTriageModel } from './models'
@@ -102,7 +104,20 @@ async function runAnalysis(
   const secretFindings = findLiteralSecrets(fullDiff, messages).filter(
     finding => !unchangedFiles.includes(finding.file),
   )
-  const { filesToReview, routineFindings } = await triageChangedFiles(engine, changedFiles, secretFindings, messages)
+  const sessionIntent = await loadSessionIntent(engine)
+
+  // Files holding a secret, and files Claude edited in this session (to check
+  // them against the requests), always get the deep review.
+  const filesToAlwaysReview = new Set([
+    ...secretFindings.map(({ file }) => file),
+    ...(sessionIntent?.editedFiles ?? []),
+  ])
+  const { filesToReview, routineFindings } = await triageChangedFiles(
+    engine,
+    changedFiles,
+    filesToAlwaysReview,
+    messages,
+  )
 
   const deepReview = await reviewInDepth(engine, settings, messages, {
     filesToReview,
@@ -110,6 +125,7 @@ async function runAnalysis(
     unchangedFiles,
     reusedFindings,
     lockfiles,
+    sessionIntent,
     previousSummary: previousReport.summary,
   })
 
@@ -130,6 +146,20 @@ async function runAnalysis(
 
   const criticalCount = findings.filter(finding => finding.severity === 'critical').length
   if (criticalCount > 0) engine.showToast(messages.needsReviewToast(criticalCount))
+}
+
+// The session's requests and the files Claude edited, with paths as the diff
+// names them; undefined when there is nothing to judge "unrequested" against.
+async function loadSessionIntent(engine: Engine): Promise<SessionIntent | undefined> {
+  const recorded = await engine.readSessionIntent()
+  const repositoryRoot = await findRepositoryRoot(engine)
+  if (repositoryRoot === undefined) return undefined
+
+  const intent: SessionIntent = {
+    requests: recorded.requests,
+    editedFiles: toRepositoryPaths(recorded.editedFiles, repositoryRoot),
+  }
+  return hasIntent(intent) ? intent : undefined
 }
 
 async function hashEachFile(files: FileDiff[]): Promise<Record<string, string>> {
@@ -158,11 +188,11 @@ function splitByEarlierAnalysis(
 }
 
 // Which changed files get the deep review. Small diffs skip the triage: every
-// file is reviewed. Data/config files and files holding a secret are always reviewed.
+// file is reviewed. Data/config files and `filesToAlwaysReview` are never cleared.
 async function triageChangedFiles(
   engine: Engine,
   changedFiles: FileDiff[],
-  secretFindings: Finding[],
+  filesToAlwaysReview: ReadonlySet<string>,
   messages: Messages,
 ): Promise<{ filesToReview: FileDiff[]; routineFindings: Finding[] }> {
   const changedChars = changedFiles.reduce((total, { diffText }) => total + diffText.length, 0)
@@ -179,11 +209,11 @@ async function triageChangedFiles(
     titlesByFile = triage.titlesByFile
 
     for (const { file } of changedFiles) {
-      const isClearedByTriage = !triage.filesToInspect.has(file) && !mustAlwaysInspect(file)
+      const mustReview = mustAlwaysInspect(file) || filesToAlwaysReview.has(file)
+      const isClearedByTriage = !triage.filesToInspect.has(file) && !mustReview
       if (isClearedByTriage) filesToInspect.delete(file)
     }
   }
-  for (const { file } of secretFindings) filesToInspect.add(file)
 
   const filesToReview = changedFiles.filter(({ file }) => filesToInspect.has(file))
   const routineFindings = changedFiles
@@ -205,6 +235,7 @@ type DeepReviewInput = {
   unchangedFiles: string[]
   reusedFindings: Finding[]
   lockfiles: string[]
+  sessionIntent: SessionIntent | undefined
   previousSummary: string
 }
 
@@ -228,6 +259,7 @@ async function reviewInDepth(
     routineFiles: input.routineFindings.map(({ file }) => file),
     unchangedFiles: input.unchangedFiles,
     earlierCriticalFindings: input.reusedFindings.filter(finding => finding.severity === 'critical'),
+    sessionIntent: input.sessionIntent,
     maxDiffChars: MAX_REVIEW_DIFF_CHARS,
   })
 

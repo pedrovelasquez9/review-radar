@@ -11,6 +11,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { EMPTY_REPORT, analyzeBranch, queueAnalysis } from './analysis'
 import type { Engine } from './engine'
+import { readIntentFromTranscript } from './intent'
 import { messagesFor } from './messages'
 import { drawReviewPane } from './pane'
 import type { PaneActions } from './pane'
@@ -29,7 +30,6 @@ const reportState = atom({ plugin: 'review-radar', key: 'report' } as const, EMP
 const isPrListOpenState = atom({ plugin: 'review-radar', key: 'isPrListOpen' } as const, false)
 // Review keys of the findings the person marked as reviewed.
 const reviewedKeysState = atom({ plugin: 'review-radar', key: 'reviewedKeys' } as const, [])
-
 // Tools that may change files. A turn that used none of them is not analyzed.
 const FILE_CHANGING_TOOLS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'])
 
@@ -105,6 +105,7 @@ function createEngine($: EngineInterface): Engine {
     updateReport: async change => {
       await update($, reportState, change)
     },
+    readSessionIntent: async () => readIntentFromTranscript(await $.session.messages()),
     showStatus: text => $.ui.status(text),
     showToast: text => $.ui.toast(text),
   }

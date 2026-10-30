@@ -2,7 +2,9 @@
 
 [English](README.md) · **Español**
 
-**Mod de Claude Code · v0.1.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura y todo lo que parezca un error. El resto queda listado como «revisar en la PR».
+**Mod de Claude Code · v0.2.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR».
+
+Los cambios de cada versión están en el [changelog](CHANGELOG.md) (en inglés).
 
 El objetivo: confirmar o pedir cambios sobre lo importante sin abrir los archivos uno a uno, y dejar lo rutinario para la pull request.
 
@@ -28,13 +30,23 @@ El objetivo: confirmar o pedir cambios sobre lo importante sin abrir los archivo
 | `security` | Autenticación y autorización, límites de confianza, criptografía, CORS, superficies de inyección |
 | `infra` | Despliegue, CI, contenedores, configuración de ejecución, feature flags de producción |
 | `suspicious` | Errores probables en cualquier archivo: valores incoherentes con su entorno o con otros archivos, restos de copiar y pegar, cosas eliminadas que aún se usan, condiciones invertidas |
+| `unrequested` | Cambios que Claude hizo en esta sesión y que ninguno de tus prompts pidió: un archivo ajeno a la tarea, un comportamiento cambiado más allá de lo pedido, una dependencia nueva, un refactor que nadie pidió. El hallazgo indica qué petición sobrepasa |
+
+### Cambios que nadie pidió
+
+Los asistentes de IA a veces hacen más de lo pedido: subir una versión porque lo dice una regla del proyecto, un refactor «ya que estaba», una dependencia añadida por el camino. review-radar compara lo que pediste en la sesión con lo que Claude editó de verdad:
+
+- Lee tus prompts y los archivos que Claude editó (Edit, Write, NotebookEdit) de la propia conversación de la sesión, así que sigue funcionando tras recargar el mod o en una sesión reanudada.
+- Solo se juzgan los archivos que Claude editó en esta sesión: el trabajo anterior de la rama nunca se marca como no pedido.
+- No se marca lo que tu petición necesita para funcionar (imports, tipos, llamadas, tests y documentación del código pedido), y los prompts posteriores pueden ampliar los anteriores.
+- No añade ninguna llamada al modelo: tus peticiones viajan en el mismo prompt de la revisión a fondo.
 
 ## Cómo funciona
 
 1. **Diff.** `git diff` del árbol de trabajo contra el merge base, más los archivos sin trackear. Los lockfiles no se pasan a los modelos; solo sus nombres.
 2. **Suelo de secretos.** Un escaneo determinista de las líneas añadidas busca credenciales literales (API keys, tokens, claves privadas, JWT). Si encuentra una, es crítica diga lo que diga el modelo.
-3. **Triaje (solo diffs grandes).** Cuando los archivos cambiados suman 30.000 caracteres o más, **Haiku** con esfuerzo bajo separa los archivos en *inspeccionar* o *rutinario* mirando solo sus líneas cambiadas. Los archivos de datos y configuración (por ruta y extensión) y los que tienen un secreto pasan siempre a la revisión a fondo. Un archivo que el triaje se salta o cuya respuesta no se puede leer se inspecciona.
-4. **Revisión a fondo.** El modelo de revisión (**Opus** por defecto, con esfuerzo alto) lee el diff completo de los archivos a inspeccionar y devuelve un resumen y los hallazgos. Sus instrucciones quedan en la caché de prompts. Si ese modelo no puede responder (sin acceso, bloqueado por tu organización, un error de la API), revisa **Sonnet** y el resumen lo indica.
+3. **Triaje (solo diffs grandes).** Cuando los archivos cambiados suman 30.000 caracteres o más, **Haiku** con esfuerzo bajo separa los archivos en *inspeccionar* o *rutinario* mirando solo sus líneas cambiadas. Los archivos de datos y configuración (por ruta y extensión), los que tienen un secreto y los que Claude editó en esta sesión pasan siempre a la revisión a fondo. Un archivo que el triaje se salta o cuya respuesta no se puede leer se inspecciona.
+4. **Revisión a fondo.** El modelo de revisión (**Opus** por defecto, con esfuerzo alto) lee el diff completo de los archivos a inspeccionar, junto con tus peticiones en esta sesión y los archivos que editó Claude, y devuelve un resumen y los hallazgos. Sus instrucciones quedan en la caché de prompts. Si ese modelo no puede responder (sin acceso, bloqueado por tu organización, un error de la API), revisa **Sonnet** y el resumen lo indica.
 5. **Incremental.** Se guarda un hash del diff de cada archivo. En el siguiente turno solo se vuelven a enviar los archivos cuyo diff cambió; los demás conservan sus hallazgos (y el modelo los conoce). Un turno sin herramientas que modifiquen archivos ni siquiera ejecuta git. `/review-radar` y *Re-analizar* fuerzan una revisión completa.
 
 ## Requisitos
@@ -137,6 +149,8 @@ Después, `/reload-plugins`. Usa `/plugin` para desactivarlo o desinstalarlo.
 - La reutilización incremental conserva los hallazgos de los archivos sin cambios de un análisis anterior, así que el contexto entre archivos para esos viene de aquel análisis.
 - Un turno cuyos cambios vienen solo de herramientas que no son Edit/Write/NotebookEdit/Bash/PowerShell (por ejemplo, una herramienta MCP), o de que edites archivos a mano, no se analiza solo: ejecuta `/review-radar`.
 - En modo headless (`claude -p`, el SDK) solo se analiza al llamar a `/review-radar`.
+- Los cambios no pedidos solo se juzgan en archivos que Claude editó con Edit, Write o NotebookEdit en la conversación principal. Los cambiados con Bash o por un subagente se revisan como cualquier otro cambio, pero no se comparan con tus peticiones.
+- Un análisis solo se repite cuando cambia el diff, así que un prompt nuevo que amplía la tarea actualiza los hallazgos de cambios no pedidos en el siguiente cambio o con *Re-analizar*.
 
 ## Estructura
 
@@ -144,13 +158,14 @@ Claude Code solo deja que un mod use la interfaz del motor (`$`) y declare estad
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `hooks/register.tsx` | Punto de entrada: conecta los eventos del motor (inicio de sesión, el comando, llamadas a herramientas, fin de turno, dibujo del panel) con el análisis y el panel, y guarda el estado de la sesión |
+| `hooks/register.tsx` | Punto de entrada: conecta los eventos del motor (inicio de sesión, el comando, llamadas a herramientas, fin de turno, dibujo del panel) con el análisis y el panel, guarda el estado de la sesión y lee la conversación para `intent.ts` |
 | `hooks/engine.ts` | La interfaz `Engine`: lo que el análisis necesita de Claude Code, como funciones simples |
 | `hooks/analysis.ts` | El flujo: leer el diff, reutilizar archivos sin cambios, triaje, revisión a fondo, añadir los fragmentos del diff y guardar el informe |
 | `hooks/git.ts` | La rama base y el diff de la rama, archivos sin trackear incluidos |
 | `hooks/diff.ts` | Lectura de un diff unificado: separación por archivo, lockfiles, hunks, fragmentos y hashes |
 | `hooks/triage.ts` | Fase 1: prompt del triaje, su respuesta y los archivos que siempre se revisan a fondo |
 | `hooks/review.ts` | Fase 2: prompt de la revisión y su respuesta |
+| `hooks/intent.ts` | Tus peticiones y los archivos que editó Claude, leídos de la conversación de la sesión, para la categoría `unrequested` |
 | `hooks/secrets.ts` | Escaneo determinista de secretos y su fusión con los hallazgos del modelo |
 | `hooks/models.ts` | Llamadas a los modelos de triaje y revisión, con el respaldo del de revisión |
 | `hooks/pane.tsx` | El panel, como vista del informe y de las acciones de sus botones |

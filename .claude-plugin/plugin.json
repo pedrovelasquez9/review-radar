@@ -1,11 +1,11 @@
 {
   "name": "review-radar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Programación en español",
     "url": "https://github.com/pedrovelasquez9"
   },
-  "description": "Review pane for the human in the loop: summarizes your branch changes and shows, with their diff, only those that need a person (business logic, architecture, data, secrets, third parties, security, infra, likely mistakes); the rest goes to the PR.",
+  "description": "Review pane for the human in the loop: summarizes your branch changes and shows, with their diff, only those that need a person (business logic, architecture, data, secrets, third parties, security, infra, likely mistakes) and the changes nobody asked for; the rest goes to the PR.",
   "keywords": [
     "code-review",
     "human-in-the-loop",
@@ -18,6 +18,7 @@
     "architecture",
     "secrets",
     "migrations",
+    "unrequested-changes",
     "ai-review"
   ],
   "types": "./types/index.d.ts",

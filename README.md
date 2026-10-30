@@ -2,7 +2,9 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod · v0.1.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, and anything that looks like a mistake. Everything else is listed as "review in the PR".
+**Claude Code mod · v0.2.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR".
+
+See what changed in each version in the [changelog](CHANGELOG.md).
 
 The goal: confirm or request changes on what matters without opening files one by one, and leave the routine for the pull request.
 
@@ -28,13 +30,23 @@ The goal: confirm or request changes on what matters without opening files one b
 | `security` | Authentication and authorization, trust boundaries, crypto, CORS, injection surfaces |
 | `infra` | Deploy, CI, containers, runtime config, production feature flags |
 | `suspicious` | Likely mistakes in any file: values inconsistent with their neighbours or other files, copy-paste leftovers, removed things still referenced, flipped conditions |
+| `unrequested` | Changes Claude made in this session that none of your prompts asked for: an unrelated file touched, behaviour changed beyond the task, a new dependency, a refactor nobody requested. The finding says which request it goes beyond |
+
+### Changes nobody asked for
+
+AI assistants sometimes do more than asked: a version bump a project rule asked for, a "while I was here" refactor, a dependency added on the way. review-radar compares what you asked for in the session with what Claude actually edited:
+
+- It reads your prompts and the files Claude edited (Edit, Write, NotebookEdit) from the session's own conversation, so it keeps working after a reload or in a resumed session.
+- Only files Claude edited in this session are judged: earlier work on the branch is never called unrequested.
+- What your request needs to work (imports, types, call sites, tests and docs of the requested code) is not flagged, and later prompts can widen earlier ones.
+- It costs no extra model call: your requests travel in the same deep-review prompt.
 
 ## How it works
 
 1. **Diff.** `git diff` of the working tree against the merge base, plus untracked files. Lockfiles are left out of what the models read; only their names are passed on.
 2. **Secret floor.** A deterministic scan of added lines for literal credentials (API keys, tokens, private keys, JWTs). A hit is always critical, whatever the model says.
-3. **Triage (large diffs only).** When the changed files add up to 30,000 characters or more, **Haiku** at low effort sorts files into *inspect* or *routine* from their changed lines alone. Data and config files (by path and extension), and files with a secret, always go on to the deep review. A file the triage skips or answers unreadably is inspected.
-4. **Deep review.** The review model (**Opus** by default, at high effort) reads the full diff of the files to inspect and returns a summary plus findings. Its instructions are prompt-cached. If that model cannot answer (no access, blocked by your organization, an API error), **Sonnet** reviews instead and the summary says so.
+3. **Triage (large diffs only).** When the changed files add up to 30,000 characters or more, **Haiku** at low effort sorts files into *inspect* or *routine* from their changed lines alone. Data and config files (by path and extension), files with a secret, and files Claude edited in this session always go on to the deep review. A file the triage skips or answers unreadably is inspected.
+4. **Deep review.** The review model (**Opus** by default, at high effort) reads the full diff of the files to inspect, together with your requests in this session and the files Claude edited, and returns a summary plus findings. Its instructions are prompt-cached. If that model cannot answer (no access, blocked by your organization, an API error), **Sonnet** reviews instead and the summary says so.
 5. **Incremental.** Each file's diff is hashed. On the next turn only files whose diff changed are sent again; unchanged files keep their findings (and the model is told about them). A turn that ran no file-changing tool does not run git at all. `/review-radar` and *Re-analyze* force a full review.
 
 ## Requirements
@@ -137,6 +149,8 @@ Then `/reload-plugins`. Use `/plugin` to disable or uninstall it.
 - Incremental reuse keeps findings of unchanged files from an earlier run, so cross-file context for those files comes from that run.
 - A turn whose only changes came from tools outside Edit/Write/NotebookEdit/Bash/PowerShell (for example an MCP tool), or from you editing files by hand, is not analyzed automatically: run `/review-radar`.
 - Headless runs (`claude -p`, the SDK) analyze only when `/review-radar` is called.
+- Unrequested changes are judged only in files Claude edited with Edit, Write or NotebookEdit in the main conversation. Files changed through Bash or by a subagent are reviewed like any other change, but not checked against your requests.
+- An analysis runs again only when the diff changes, so a new prompt that widens the task updates the unrequested findings at the next change or with *Re-analyze*.
 
 ## Project layout
 
@@ -144,13 +158,14 @@ Claude Code lets a mod use its engine interface (`$`) and declare session state 
 
 | File | Responsibility |
 | --- | --- |
-| `hooks/register.tsx` | Entry point: connects the engine's events (session start, the command, tool calls, turn end, pane drawing) to the analysis and the pane, and holds the session state |
+| `hooks/register.tsx` | Entry point: connects the engine's events (session start, the command, tool calls, turn end, pane drawing) to the analysis and the pane, holds the session state, and reads the conversation for `intent.ts` |
 | `hooks/engine.ts` | The `Engine` interface: what the analysis needs from Claude Code, as plain functions |
 | `hooks/analysis.ts` | The pipeline: read the diff, reuse unchanged files, triage, deep review, attach diff excerpts, store the report |
 | `hooks/git.ts` | The base branch and the branch diff, untracked files included |
 | `hooks/diff.ts` | Reading a unified diff: per-file split, lockfiles, hunks, excerpts, hashing |
 | `hooks/triage.ts` | Stage 1: triage prompt, its answer, and the files always reviewed in depth |
 | `hooks/review.ts` | Stage 2: review prompt and its answer |
+| `hooks/intent.ts` | Your requests and the files Claude edited, read from the session's conversation, for the `unrequested` category |
 | `hooks/secrets.ts` | Deterministic secret scan and its merge with the model's findings |
 | `hooks/models.ts` | Calls to the triage and review models, with the review model's fallback |
 | `hooks/pane.tsx` | The pane, as a view of the report and the actions its buttons run |

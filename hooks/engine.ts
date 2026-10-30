@@ -8,6 +8,7 @@
 import type { ModelCompleteRequest, ModelCompleteResult } from 'claude-code'
 
 import type { Report } from '../types'
+import type { SessionIntent } from './intent'
 
 export type CommandResult = { exitCode: number; stdout: string }
 
@@ -19,6 +20,9 @@ export type Engine = {
   completeWithModel: (request: ModelCompleteRequest) => Promise<ModelCompleteResult>
   readReport: () => Promise<Report>
   updateReport: (change: (report: Report) => Report) => Promise<void>
+  // The person's prompts and the files Claude edited, read from this session's
+  // conversation (file paths absolute, as the tools got them).
+  readSessionIntent: () => Promise<SessionIntent>
   // The line in Claude Code's status bar; undefined clears it.
   showStatus: (text: string | undefined) => void
   showToast: (text: string) => void
