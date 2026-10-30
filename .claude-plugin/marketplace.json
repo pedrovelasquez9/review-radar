@@ -1,0 +1,18 @@
+{
+  "name": "review-radar",
+  "owner": {
+    "name": "Programación en español",
+    "url": "https://github.com/pedrovelasquez9"
+  },
+  "plugins": [
+    {
+      "name": "review-radar",
+      "source": "./",
+      "description": "Review pane that shows, with their diff, only the branch changes that need a human; the rest goes to the PR.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": ["code-review", "human-in-the-loop", "diff", "pull-request"]
+    }
+  ],
+  "description": "review-radar: human-in-the-loop review of what Claude changed, in a pane beside the chat"
+}
