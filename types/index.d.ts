@@ -19,6 +19,12 @@ export type Finding = {
 
 export type ReportStatus = 'idle' | 'analyzing' | 'ready' | 'error' | 'no-repo'
 
+// The step an analysis is on, shown by the pane's loader.
+export type AnalysisProgress =
+  | { step: 'reading-changes' }
+  | { step: 'triage'; fileCount: number }
+  | { step: 'deep-review'; fileCount: number; model: string }
+
 export type Report = {
   status: ReportStatus
   summary: string
@@ -31,7 +37,10 @@ export type Report = {
   fileDiffHashes: Record<string, string>
   // The language the summary and findings were written in.
   language: 'en' | 'es'
+  // When the last finished analysis ran; 0 before the first one.
   analyzedAt: number
+  // Present while status is 'analyzing'.
+  progress?: AnalysisProgress
   errorMessage?: string
 }
 

@@ -9,7 +9,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import { EMPTY_REPORT, analyzeBranch, queueAnalysis } from './analysis'
+import { EMPTY_REPORT, analyzeBranch, queueAnalysis, recoverInterruptedReport } from './analysis'
 import type { Engine } from './engine'
 import { readIntentFromTranscript } from './intent'
 import { messagesFor } from './messages'
@@ -30,6 +30,7 @@ const reportState = atom({ plugin: 'review-radar', key: 'report' } as const, EMP
 const isPrListOpenState = atom({ plugin: 'review-radar', key: 'isPrListOpen' } as const, false)
 // Review keys of the findings the person marked as reviewed.
 const reviewedKeysState = atom({ plugin: 'review-radar', key: 'reviewedKeys' } as const, [])
+
 // Tools that may change files. A turn that used none of them is not analyzed.
 const FILE_CHANGING_TOOLS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'])
 
@@ -46,6 +47,8 @@ export const register: Register = (on, options) => {
     })
     const started = await next(event)
 
+    // This also runs after a reload of the mod, which stops any analysis in flight.
+    await update($, reportState, recoverInterruptedReport)
     void $.ui.open({ id: PANE_ID, title: messages.paneTitle })
     // Headless runs (-p, the SDK) and manual mode analyze only when asked.
     if (event.isInteractive && settings.isAutoAnalysisOn) void queueAnalysis(createEngine($), settings)

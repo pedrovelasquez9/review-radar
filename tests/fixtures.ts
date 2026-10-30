@@ -53,6 +53,8 @@ type FakeEngineOptions = {
 
 export type FakeEngine = Engine & {
   modelRequests: ModelCompleteRequest[]
+  // Each loader step the report went through, in order.
+  progressSteps: string[]
   currentReport: () => Report
   setDiff: (diff: string) => void
 }
@@ -61,6 +63,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
   let diff = options.diff
   let report: Report = EMPTY_REPORT
   const modelRequests: ModelCompleteRequest[] = []
+  const progressSteps: string[] = []
 
   // stdout for the git commands the analysis runs; undefined is a failed command.
   const answerGit = (gitArgs: string[]): string | undefined => {
@@ -94,13 +97,17 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     },
     readReport: async () => report,
     updateReport: async change => {
+      const previousStep = report.progress?.step
       report = change(report)
+      const step = report.progress?.step
+      if (step !== undefined && step !== previousStep) progressSteps.push(step)
     },
     readSessionIntent: async () => options.sessionIntent ?? { requests: [], editedFiles: [] },
     showStatus: () => {},
     showToast: () => {},
 
     modelRequests,
+    progressSteps,
     currentReport: () => report,
     setDiff: nextDiff => {
       diff = nextDiff

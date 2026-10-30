@@ -1,7 +1,7 @@
 // The analysis pipeline: read the branch diff, triage it when large, review
 // the files that need it in depth, and store the report the pane draws.
 
-import type { Finding, Report } from '../types'
+import type { AnalysisProgress, Finding, Report } from '../types'
 import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles, splitDiffByFile } from './diff'
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
@@ -34,6 +34,15 @@ export const EMPTY_REPORT: Report = {
   analyzedAt: 0,
 }
 
+// A report left 'analyzing' by an analysis that never finished (the mod was
+// reloaded or the session restarted mid-run) goes back to what it showed
+// before, so the pane does not keep a loader nothing is behind.
+export function recoverInterruptedReport(report: Report): Report {
+  if (report.status !== 'analyzing') return report
+  const hasPreviousResults = report.analyzedAt > 0
+  return { ...report, status: hasPreviousResults ? 'ready' : 'idle', progress: undefined }
+}
+
 // One analysis at a time: each queued call runs after the previous one ends.
 // A queued run on a diff that did not change stops early, at the hash check.
 let analysisQueue: Promise<void> = Promise.resolve()
@@ -50,7 +59,12 @@ export async function analyzeBranch(engine: Engine, settings: Settings, isForced
   try {
     await runAnalysis(engine, settings, messages, isForced)
   } catch (error) {
-    await engine.updateReport((report): Report => ({ ...report, status: 'error', errorMessage: String(error) }))
+    await engine.updateReport((report): Report => ({
+      ...report,
+      status: 'error',
+      progress: undefined,
+      errorMessage: String(error),
+    }))
   } finally {
     engine.showStatus(undefined)
   }
@@ -89,7 +103,13 @@ async function runAnalysis(
     return
   }
 
-  await engine.updateReport((report): Report => ({ ...report, status: 'analyzing', baseBranch }))
+  // From here on the pane shows its loader, step by step.
+  await engine.updateReport((report): Report => ({
+    ...report,
+    status: 'analyzing',
+    baseBranch,
+    progress: { step: 'reading-changes' },
+  }))
   engine.showStatus(messages.statusLineAnalyzing)
 
   const { diffWithoutLockfiles, lockfiles } = separateLockfiles(fullDiff)
@@ -162,6 +182,11 @@ async function loadSessionIntent(engine: Engine): Promise<SessionIntent | undefi
   return hasIntent(intent) ? intent : undefined
 }
 
+// Moves the pane's loader to the next step.
+async function showProgress(engine: Engine, progress: AnalysisProgress): Promise<void> {
+  await engine.updateReport((report): Report => ({ ...report, progress }))
+}
+
 async function hashEachFile(files: FileDiff[]): Promise<Record<string, string>> {
   const hashes: Record<string, string> = {}
   for (const { file, diffText } of files) hashes[file] = await hashText(diffText)
@@ -200,6 +225,7 @@ async function triageChangedFiles(
   let titlesByFile = new Map<string, string>()
 
   if (changedChars >= MIN_CHARS_FOR_TRIAGE) {
+    await showProgress(engine, { step: 'triage', fileCount: changedFiles.length })
     const triageAnswer = await askTriageModel(
       engine,
       triageSystemPrompt(messages.languageNameForModel),
@@ -253,6 +279,11 @@ async function reviewInDepth(
   }
 
   engine.showStatus(messages.statusLineDeepReview(input.filesToReview.length))
+  await showProgress(engine, {
+    step: 'deep-review',
+    fileCount: input.filesToReview.length,
+    model: settings.reviewModel,
+  })
   const { prompt, isTruncated } = buildReviewPrompt({
     diff: input.filesToReview.map(({ diffText }) => diffText).join(''),
     lockfiles: input.lockfiles,

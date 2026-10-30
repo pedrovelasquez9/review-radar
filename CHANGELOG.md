@@ -2,6 +2,18 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-31
+
+### Added
+
+- **Loader while analyzing.** A highlighted card at the top of the pane shows that an analysis is running and which step it is on: reading the changes, sorting files by risk (large diffs), or the deep review, with the file count and the model. A hint says it usually takes 20–40 seconds.
+  - On the first analysis the pane shows only the loader. On later ones the previous results stay below it with a note that they are from the previous analysis, so the pane never looks idle while it works.
+  - The loader changes only when the step changes: no timer redraws the pane.
+
+### Fixed
+
+- A pane left showing an analysis in progress after the mod was reloaded or the session restarted mid-analysis now goes back to its last results (or to waiting) when the mod starts.
+
 ## [0.3.0] - 2026-10-31
 
 ### Changed
@@ -34,6 +46,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.4.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.4.0
 [0.3.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.3.0
 [0.2.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.2.0
 [0.1.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.1.0

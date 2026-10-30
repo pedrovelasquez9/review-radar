@@ -41,9 +41,17 @@ export function drawReviewPane(input: PaneInput) {
   const prFindings = report.findings.filter(finding => finding.severity === 'pr')
   const hasNothingCritical = criticalFindings.length === 0 && report.status === 'ready'
 
+  const isAnalyzing = report.status === 'analyzing'
+  const hasPreviousResults = report.analyzedAt > 0
+  // On the very first analysis there is nothing to show under the loader yet.
+  if (isAnalyzing && !hasPreviousResults) {
+    return <Box flexDirection="column">{drawLoader(input)}</Box>
+  }
+
   return (
     <Box flexDirection="column" gap={1}>
-      <Text dimColor>{paneHeadline(input)}</Text>
+      {isAnalyzing ? drawLoader(input) : <Text dimColor>{paneHeadline(input)}</Text>}
+      {isAnalyzing && <Text dimColor>{messages.previousResultsNote}</Text>}
       {report.summary !== '' && <Text>{report.summary}</Text>}
 
       <Box flexDirection="column" gap={1}>
@@ -78,11 +86,39 @@ function paneHeadline({ report, messages, isAutoAnalysisOn }: PaneInput): string
     case 'idle':
       return isAutoAnalysisOn ? messages.waitingForFirstTurn : messages.autoAnalysisOff
     case 'analyzing':
-      return messages.analyzingAgainst(report.baseBranch)
+      return messages.loaderTitle(report.baseBranch)
     case 'error':
       return messages.analysisFailed(report.errorMessage ?? '')
     case 'ready':
       return messages.baseBranchLabel(report.baseBranch)
+  }
+}
+
+// A highlighted card while an analysis runs: what it is doing now and how long
+// it usually takes. It changes only when the step changes: no timer redraws it.
+function drawLoader({ ui, messages, report }: PaneInput) {
+  const { Box, Text } = ui
+
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={1}>
+      <Text bold color="yellow">
+        {messages.loaderTitle(report.baseBranch)}
+      </Text>
+      <Text>{progressDescription(report, messages)}</Text>
+      <Text dimColor>{messages.loaderHint}</Text>
+    </Box>
+  )
+}
+
+function progressDescription(report: Report, messages: Messages): string {
+  const progress = report.progress ?? { step: 'reading-changes' }
+  switch (progress.step) {
+    case 'reading-changes':
+      return messages.progressReadingChanges
+    case 'triage':
+      return messages.progressTriage(progress.fileCount)
+    case 'deep-review':
+      return messages.progressDeepReview(progress.fileCount, progress.model)
   }
 }
 

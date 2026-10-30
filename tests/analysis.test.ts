@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { analyzeBranch } from '../hooks/analysis'
+import { EMPTY_REPORT, analyzeBranch, recoverInterruptedReport } from '../hooks/analysis'
 import { DEFAULT_SETTINGS } from '../hooks/settings'
 import { createFakeEngine, fileDiff } from './fixtures'
 
@@ -108,4 +108,22 @@ test('an empty diff reports no changes without calling a model', async () => {
 
   expect(engine.currentReport().summary).toBe('Sin cambios respecto a la base.')
   expect(engine.modelRequests.length).toBe(0)
+})
+
+test('an analysis announces each step it goes through, then clears it', async () => {
+  const engine = createFakeEngine({ diff: PRICE_DIFF, reviewAnswer: PRICE_REVIEW_ANSWER })
+
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+
+  expect(engine.progressSteps).toEqual(['reading-changes', 'deep-review'])
+  expect(engine.currentReport().progress).toBe(undefined)
+})
+
+test('a report left analyzing by an interrupted run goes back to what it showed', async () => {
+  const interrupted = { ...EMPTY_REPORT, status: 'analyzing' as const, progress: { step: 'reading-changes' as const } }
+
+  expect(recoverInterruptedReport(interrupted).status).toBe('idle')
+  expect(recoverInterruptedReport({ ...interrupted, analyzedAt: 5 }).status).toBe('ready')
+  expect(recoverInterruptedReport({ ...interrupted, analyzedAt: 5 }).progress).toBe(undefined)
+  expect(recoverInterruptedReport({ ...EMPTY_REPORT, status: 'error' }).status).toBe('error')
 })

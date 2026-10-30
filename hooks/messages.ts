@@ -20,9 +20,16 @@ export type Messages = {
   notAGitRepository: string
   waitingForFirstTurn: string
   autoAnalysisOff: string
-  analyzingAgainst: (baseBranch: string) => string
   analysisFailed: (errorMessage: string) => string
   baseBranchLabel: (baseBranch: string) => string
+
+  // The loader shown while an analysis runs.
+  loaderTitle: (baseBranch: string) => string
+  progressReadingChanges: string
+  progressTriage: (fileCount: number) => string
+  progressDeepReview: (fileCount: number, model: string) => string
+  loaderHint: string
+  previousResultsNote: string
 
   needsReviewHeading: (count: number) => string
   nothingCritical: string
@@ -57,9 +64,15 @@ const ENGLISH: Messages = {
   notAGitRepository: 'Not a git repository.',
   waitingForFirstTurn: 'Waiting for the first turn…',
   autoAnalysisOff: 'Automatic analysis is off: press Re-analyze or run /review-radar.',
-  analyzingAgainst: baseBranch => `Analyzing changes against ${baseBranch}…`,
   analysisFailed: errorMessage => `Analysis failed: ${errorMessage}`,
   baseBranchLabel: baseBranch => `Base: ${baseBranch}`,
+
+  loaderTitle: baseBranch => `⏳ Analyzing changes against ${baseBranch}…`,
+  progressReadingChanges: 'Reading the changes',
+  progressTriage: fileCount => `Sorting ${fileCount} changed file(s) by risk`,
+  progressDeepReview: (fileCount, model) => `Deep review of ${fileCount} file(s) with ${model}`,
+  loaderHint: 'This usually takes 20–40 seconds. You can keep working meanwhile.',
+  previousResultsNote: 'Below: the previous analysis. It updates when this one finishes.',
 
   needsReviewHeading: count => `Needs your review (${count})`,
   nothingCritical: 'Nothing critical found.',
@@ -105,9 +118,15 @@ const SPANISH: Messages = {
   notAGitRepository: 'No es un repositorio git.',
   waitingForFirstTurn: 'Esperando al primer turno…',
   autoAnalysisOff: 'El análisis automático está desactivado: pulsa Re-analizar o ejecuta /review-radar.',
-  analyzingAgainst: baseBranch => `Analizando cambios contra ${baseBranch}…`,
   analysisFailed: errorMessage => `Error al analizar: ${errorMessage}`,
   baseBranchLabel: baseBranch => `Base: ${baseBranch}`,
+
+  loaderTitle: baseBranch => `⏳ Analizando cambios contra ${baseBranch}…`,
+  progressReadingChanges: 'Leyendo los cambios',
+  progressTriage: fileCount => `Clasificando ${fileCount} archivo(s) cambiado(s) por riesgo`,
+  progressDeepReview: (fileCount, model) => `Revisión a fondo de ${fileCount} archivo(s) con ${model}`,
+  loaderHint: 'Suele tardar entre 20 y 40 segundos. Puedes seguir trabajando mientras tanto.',
+  previousResultsNote: 'Debajo: el análisis anterior. Se actualiza cuando termine este.',
 
   needsReviewHeading: count => `Requiere tu revisión (${count})`,
   nothingCritical: 'Nada crítico detectado.',

@@ -98,3 +98,33 @@ test('Request changes writes the whole finding into the prompt', async ($, on) =
   expect(filled[0]?.includes('+const discount = 0.15')).toBe(true)
   await ui.unmount()
 })
+
+test('the first analysis shows only the loader, with its current step', async ($, on) => {
+  const firstAnalysis: Report = {
+    ...STORED_REPORT,
+    status: 'analyzing',
+    summary: '',
+    findings: [],
+    analyzedAt: 0,
+    progress: { step: 'deep-review', fileCount: 3, model: 'opus' },
+  }
+  on('state.get', storedState(firstAnalysis))
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  expect(await ui.find({ type: 'Text', text: /Analyzing changes against origin\/main/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /Deep review of 3 file\(s\) with opus/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /Needs your review/ })).toBeFalsy()
+  await ui.unmount()
+})
+
+test('a new analysis keeps the previous results under the loader, marked as such', async ($, on) => {
+  on('state.get', storedState({ ...STORED_REPORT, status: 'analyzing', progress: { step: 'reading-changes' } }))
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  expect(await ui.find({ type: 'Text', text: /Reading the changes/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /previous analysis/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /New discount/ })).toBeTruthy()
+  await ui.unmount()
+})
