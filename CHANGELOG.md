@@ -2,6 +2,12 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-31
+
+### Changed
+
+- **Request changes writes a complete fix request.** Instead of a short `In file:line (title): ` line to finish by hand, the button now inserts into the prompt everything the session needs to fix the finding: its category and title, `file:line`, the problem it causes, the code under review as a diff, and the instruction to correct it (or revert it if it should not be there) while leaving the rest as it is. It is written in the configured language, at the cursor, so any draft is kept; add your own notes and send it.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added
@@ -28,5 +34,6 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.3.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.3.0
 [0.2.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.2.0
 [0.1.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.1.0

@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod · v0.2.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR".
+**Claude Code mod · v0.3.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR".
 
 See what changed in each version in the [changelog](CHANGELOG.md).
 
@@ -15,7 +15,7 @@ The goal: confirm or request changes on what matters without opening files one b
 - **Shows the change inline.** Each critical finding comes with its category, `file:line`, one sentence on what to check, and the diff hunk that holds it (a window around the line for long hunks).
 - **Closes the loop.** Every finding has two buttons:
   - **✓ Reviewed** collapses it. The mark is tied to the code you saw: it holds across re-analyses while that hunk is unchanged.
-  - **Request changes** inserts `In file:line (title): ` into your prompt, so you only type what you want changed.
+  - **Request changes** writes a complete fix request into your prompt: the finding and its category, `file:line`, the problem it causes, the code under review as a diff, and the instruction to correct it (or revert it if it should not be there) and leave the rest as it is. Add anything of your own and send it: the session fixes it with no more context needed.
 - **Leaves the rest for the PR.** Routine changes (tests, docs, styling, renames, refactors with no behaviour change) are folded under *Review in the PR*.
 
 ### Critical categories
@@ -170,6 +170,7 @@ Claude Code lets a mod use its engine interface (`$`) and declare session state 
 | `hooks/models.ts` | Calls to the triage and review models, with the review model's fallback |
 | `hooks/pane.tsx` | The pane, as a view of the report and the actions its buttons run |
 | `hooks/text-report.ts` | The report as text, for `/review-radar` |
+| `hooks/change-request.ts` | The fix request *Request changes* writes into the prompt |
 | `hooks/messages.ts` | Every text the person sees, in English and Spanish |
 | `hooks/settings.ts` | The plugin options and their defaults |
 | `hooks/json.ts` | Extracting the JSON object from a model's answer |

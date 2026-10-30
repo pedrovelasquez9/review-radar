@@ -2,6 +2,16 @@
 
 export type Language = 'en' | 'es'
 
+// What a change request puts in the prompt, already formatted (see change-request.ts).
+export type ChangeRequestParts = {
+  category: string
+  title: string
+  location: string
+  problem: string
+  // The diff excerpt inside a code fence, or undefined when there is none.
+  fencedExcerpt: string | undefined
+}
+
 export type Messages = {
   // Name of the language, as the models are asked to write in it.
   languageNameForModel: string
@@ -19,7 +29,8 @@ export type Messages = {
   reviewInPrHeading: (count: number) => string
   markReviewedButton: string
   requestChangesButton: string
-  requestChangesPrompt: (location: string, title: string) => string
+  // The prompt "Request changes" writes, so the session fixes the finding.
+  changeRequest: (parts: ChangeRequestParts) => string
   reanalyzeButton: string
 
   noChangesSummary: string
@@ -55,7 +66,18 @@ const ENGLISH: Messages = {
   reviewInPrHeading: count => `Review in the PR (${count})`,
   markReviewedButton: '✓ Reviewed',
   requestChangesButton: 'Request changes',
-  requestChangesPrompt: (location, title) => `In ${location} (${title}): `,
+  changeRequest: ({ category, title, location, problem, fencedExcerpt }) =>
+    [
+      'review-radar flagged this change for review. Please fix it.',
+      '',
+      `Finding: [${category}] ${title}`,
+      `Where: ${location}`,
+      `Problem: ${problem}`,
+      ...(fencedExcerpt ? ['', 'Code under review:', fencedExcerpt] : []),
+      '',
+      'Correct the problem described above, or revert the change if it should not be there. Keep everything else as it is, and tell me what you changed.',
+      '',
+    ].join('\n'),
   reanalyzeButton: '↻ Re-analyze',
 
   noChangesSummary: 'No changes against the base.',
@@ -92,7 +114,18 @@ const SPANISH: Messages = {
   reviewInPrHeading: count => `Revisar en la PR (${count})`,
   markReviewedButton: '✓ Revisado',
   requestChangesButton: 'Pedir cambios',
-  requestChangesPrompt: (location, title) => `En ${location} (${title}): `,
+  changeRequest: ({ category, title, location, problem, fencedExcerpt }) =>
+    [
+      'review-radar ha marcado este cambio para revisión. Corrígelo, por favor.',
+      '',
+      `Hallazgo: [${category}] ${title}`,
+      `Dónde: ${location}`,
+      `Problema: ${problem}`,
+      ...(fencedExcerpt ? ['', 'Código en revisión:', fencedExcerpt] : []),
+      '',
+      'Corrige el problema descrito arriba, o revierte el cambio si no debería estar. Deja todo lo demás como está y dime qué has cambiado.',
+      '',
+    ].join('\n'),
   reanalyzeButton: '↻ Re-analizar',
 
   noChangesSummary: 'Sin cambios respecto a la base.',

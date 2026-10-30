@@ -80,3 +80,21 @@ test('manual mode says how to run an analysis', { options: { autoAnalyze: false 
   expect(await ui.find({ type: 'Text', text: /Automatic analysis is off/ })).toBeTruthy()
   await ui.unmount()
 })
+
+test('Request changes writes the whole finding into the prompt', async ($, on) => {
+  on('state.get', storedState(STORED_REPORT))
+  const filled: string[] = []
+  on('prompt.fill', (_, event) => {
+    filled.push(event.text)
+    return { isFilled: true, text: event.text, cursor: event.text.length }
+  })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'request-changes-abc' })
+
+  expect(filled.length).toBe(1)
+  expect(filled[0]?.includes('Finding: [business-logic] New discount')).toBe(true)
+  expect(filled[0]?.includes('Where: src/price.ts:4')).toBe(true)
+  expect(filled[0]?.includes('+const discount = 0.15')).toBe(true)
+  await ui.unmount()
+})

@@ -7,6 +7,7 @@
 import type { EngineInterface } from 'claude-code'
 
 import type { Finding, Report } from '../types'
+import { buildChangeRequest } from './change-request'
 import type { Messages } from './messages'
 import { findingLocation } from './text-report'
 
@@ -91,7 +92,7 @@ function drawFindingCard({ ui, messages, actions }: PaneInput, finding: Finding)
   const { Box, Text, Button, Code } = ui
   const reviewKey = reviewKeyOf(finding)
   const location = findingLocation(finding)
-  const requestChangesText = messages.requestChangesPrompt(location, finding.title)
+  const changeRequest = buildChangeRequest(finding, messages)
 
   return (
     <Box flexDirection="column" gap={1} borderStyle="round" paddingX={1}>
@@ -112,7 +113,7 @@ function drawFindingCard({ ui, messages, actions }: PaneInput, finding: Finding)
         <Button
           key={`request-changes-${reviewKey}`}
           label={messages.requestChangesButton}
-          onPress={() => actions.insertInPrompt(requestChangesText)}
+          onPress={() => actions.insertInPrompt(changeRequest)}
         />
       </Box>
     </Box>

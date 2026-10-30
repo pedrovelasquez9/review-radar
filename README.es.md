@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-**Mod de Claude Code · v0.2.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR».
+**Mod de Claude Code · v0.3.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR».
 
 Los cambios de cada versión están en el [changelog](CHANGELOG.md) (en inglés).
 
@@ -15,7 +15,7 @@ El objetivo: confirmar o pedir cambios sobre lo importante sin abrir los archivo
 - **Enseña el cambio en el propio panel.** Cada hallazgo crítico trae su categoría, `archivo:línea`, una frase con qué revisar y el hunk del diff que lo contiene (una ventana alrededor de la línea si el hunk es largo).
 - **Cierra el ciclo.** Cada hallazgo tiene dos botones (aquí con sus nombres en español; la interfaz sale en inglés salvo que configures `language: es`, ver [Configuración](#configuración)):
   - **✓ Revisado** lo pliega. La marca va ligada al código que viste: se mantiene en los siguientes análisis mientras ese hunk no cambie.
-  - **Pedir cambios** inserta `En archivo:línea (título): ` en tu prompt, para que solo escribas qué quieres cambiar.
+  - **Pedir cambios** escribe en tu prompt una petición de corrección completa: el hallazgo y su categoría, `archivo:línea`, el problema que supone, el código en revisión como diff y la instrucción de corregirlo (o revertirlo si no debería estar) dejando el resto como está. Añade lo que quieras y envíalo: la sesión lo corrige sin necesitar más contexto.
 - **Deja el resto para la PR.** Los cambios rutinarios (tests, docs, estilos, renombrados, refactors sin cambio de comportamiento) quedan plegados en *Revisar en la PR*.
 
 ### Categorías críticas
@@ -170,6 +170,7 @@ Claude Code solo deja que un mod use la interfaz del motor (`$`) y declare estad
 | `hooks/models.ts` | Llamadas a los modelos de triaje y revisión, con el respaldo del de revisión |
 | `hooks/pane.tsx` | El panel, como vista del informe y de las acciones de sus botones |
 | `hooks/text-report.ts` | El informe como texto, para `/review-radar` |
+| `hooks/change-request.ts` | La petición de corrección que *Pedir cambios* escribe en el prompt |
 | `hooks/messages.ts` | Todos los textos que ve la persona, en inglés y en español |
 | `hooks/settings.ts` | Las opciones del plugin y sus valores por defecto |
 | `hooks/json.ts` | Extraer el objeto JSON de la respuesta de un modelo |
