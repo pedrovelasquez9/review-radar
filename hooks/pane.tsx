@@ -9,6 +9,7 @@ import type { EngineInterface } from 'claude-code'
 import type { Finding, Report } from '../types'
 import { buildChangeRequest } from '../core/change-request'
 import type { Messages } from '../core/messages'
+import { progressDescription, reportHeadline, reviewKeyOf } from '../core/report-view'
 import { findingLocation } from '../core/text-report'
 
 // The element constructors (Box, Text, Button, Code…) of the surface the pane is drawn on.
@@ -49,7 +50,7 @@ export function drawReviewPane(input: PaneInput) {
 
   return (
     <Box flexDirection="column" gap={1}>
-      <Text dimColor>{paneHeadline(input)}</Text>
+      <Text dimColor>{reportHeadline(report, messages, input.isAutoAnalysisOn)}</Text>
       {report.summary !== '' && <Text>{report.summary}</Text>}
 
       <Box flexDirection="column" gap={1}>
@@ -71,27 +72,6 @@ export function drawReviewPane(input: PaneInput) {
   )
 }
 
-// Findings stored before review keys existed fall back to file, line and title.
-export function reviewKeyOf(finding: Finding): string {
-  return finding.reviewKey ?? `${finding.file}:${finding.line ?? ''}:${finding.title}`
-}
-
-// The dim line at the top: what the mod is doing, or the base branch once done.
-function paneHeadline({ report, messages, isAutoAnalysisOn }: PaneInput): string {
-  switch (report.status) {
-    case 'no-repo':
-      return messages.notAGitRepository
-    case 'idle':
-      return isAutoAnalysisOn ? messages.waitingForFirstTurn : messages.autoAnalysisOff
-    case 'analyzing':
-      return messages.loaderTitle(report.baseBranch)
-    case 'error':
-      return messages.analysisFailed(report.errorMessage ?? '')
-    case 'ready':
-      return messages.baseBranchLabel(report.baseBranch)
-  }
-}
-
 // A highlighted card while an analysis runs: what it is doing now and how long
 // it usually takes. It changes only when the step changes: no timer redraws it.
 function drawLoader({ ui, messages, report }: PaneInput) {
@@ -106,18 +86,6 @@ function drawLoader({ ui, messages, report }: PaneInput) {
       <Text dimColor>{messages.loaderHint}</Text>
     </Box>
   )
-}
-
-function progressDescription(report: Report, messages: Messages): string {
-  const progress = report.progress ?? { step: 'reading-changes' }
-  switch (progress.step) {
-    case 'reading-changes':
-      return messages.progressReadingChanges
-    case 'triage':
-      return messages.progressTriage(progress.fileCount)
-    case 'deep-review':
-      return messages.progressDeepReview(progress.fileCount, progress.model)
-  }
 }
 
 // One bordered card per finding: category and title, location and reason, the

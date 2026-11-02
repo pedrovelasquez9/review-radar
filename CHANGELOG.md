@@ -2,6 +2,21 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-11-02
+
+### Added
+
+- **OpenCode support.** review-radar runs in OpenCode (1.17 or newer) as a TUI plugin, `opencode-review-radar`, with the same analysis:
+  - At the end of the first turn that leaves changes on the branch, the session's sidebar shows the review: the analysis's step while it runs, then how many changes need you and one line per finding.
+  - `/review-radar` opens a review dialog: the summary, the findings to review, the reviewed ones and what can wait for the PR. A finding opens with its reason and its diff in the theme's colors; `r` marks it reviewed, `c` writes the complete fix request into the prompt.
+  - The models are asked through OpenCode, so any provider works: the session's own model by default, or `model` in the plugin options. Each question runs in a child session with every tool off and every permission denied, deleted right after.
+  - The `unrequested` category reads your prompts and the files changed with `edit`, `write`, `multiedit` and `apply_patch`.
+  - Reviewed marks and the last report are kept per project across restarts.
+
+### Changed
+
+- The analysis now lives in `core/`, shared by the Claude Code mod and the OpenCode plugin; each agent has a thin adapter. Nothing changes for Claude Code users.
+
 ## [0.6.0] - 2026-11-02
 
 ### Changed
@@ -62,6 +77,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.7.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.7.0
 [0.6.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.6.0
 [0.5.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.5.0
 [0.4.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.4.0

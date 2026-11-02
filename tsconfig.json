@@ -3,5 +3,7 @@
   "compilerOptions": {
     "noUnusedLocals": true,
     "noUnusedParameters": true
-  }
+  },
+  // The OpenCode plugin has its own tsconfig (opencode/tsconfig.json).
+  "exclude": ["opencode", "node_modules"]
 }

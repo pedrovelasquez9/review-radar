@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod · v0.5.0.** A review pane for the human in the loop. After Claude builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR".
+**Claude Code mod and OpenCode plugin · v0.7.0.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
 
 See what changed in each version in the [changelog](CHANGELOG.md).
 
@@ -152,30 +152,86 @@ Then `/reload-plugins`. Use `/plugin` to disable or uninstall it.
 - Unrequested changes are judged only in files Claude edited with Edit, Write or NotebookEdit in the main conversation. Files changed through Bash or by a subagent are reviewed like any other change, but not checked against your requests.
 - An analysis runs again only when the diff changes, so a new prompt that widens the task updates the unrequested findings at the next change or with *Re-analyze*.
 
+## OpenCode
+
+review-radar also runs in [OpenCode](https://opencode.ai) (1.17 or newer) as a TUI plugin, with the same analysis. OpenCode has no side panes, so the review lives in the terminal:
+
+- **Sidebar.** At the end of the first turn that leaves changes on the branch, the session's sidebar shows a *Review* section: where the analysis is while it runs, then how many changes need you and one line per finding (`[category] title` and `file:line`). Findings you mark as reviewed leave it. Click it to open the review.
+- **`/review-radar`** (also in the command list, *ctrl+p*) opens the review dialog: the summary, the findings to review, the reviewed ones, what can wait for the PR, and *Re-analyze*. Pick a finding to see its reason and its diff in the theme's diff colors, then:
+  - `r` marks it reviewed (or not reviewed again),
+  - `c` writes the complete fix request into the prompt (as *Request changes* does in Claude Code) and closes the dialog,
+  - `←` goes back to the list, `esc` closes the dialog.
+- A toast says when changes need your review.
+
+OpenCode hides the sidebar in narrow terminals (about 120 columns or fewer); widen the window or open the review with `/review-radar`.
+
+### Install in OpenCode
+
+Add the package to the `plugin` list of your TUI config, `~/.config/opencode/tui.json` (all projects) or `.opencode/tui.json` (one project), with its options:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [["opencode-review-radar", { "language": "en" }]]
+}
+```
+
+From a local clone, use the clone's folder instead of the package name (run `bun install` in it first). Restart OpenCode to load it.
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `language` | `en`, `es` | `en` |
+| `model` | `provider/model`, e.g. `anthropic/claude-opus-5-5` | the session's own model |
+| `triageModel` | `provider/model`, for sorting large diffs | the review model |
+| `autoAnalyze` | `true`, `false` | `true` |
+
+The models are asked through OpenCode itself, so any provider you set up there works. Each question runs in a child session of yours with every tool off and every permission denied, so the model can only answer; the child session is deleted right after. The review's quality depends on the model: a small local model may miss findings or answer in English.
+
+### Limits in OpenCode
+
+- It needs the TUI: `opencode run` and other headless uses do not analyze.
+- An analysis runs when a session goes idle (the agent finished its turn) and the branch diff changed since the last one.
+- The `unrequested` category reads your prompts and the files changed with `edit`, `write`, `multiedit` and `apply_patch`.
+
 ## Project layout
 
-Claude Code lets a mod use its engine interface (`$`) and declare session state only in the hooks module itself, `register.tsx`. So `register.tsx` is the only file that talks to the engine: it wraps what the rest needs into plain functions (`engine.ts`) and hands the pane the state it read. Every other file is plain TypeScript you can read and test on its own.
+The analysis is shared; each agent gets a thin adapter.
+
+- `core/` is plain TypeScript with no agent API: the analysis talks to the agent only through the `Engine` port (`core/engine.ts`).
+- `hooks/` is the Claude Code mod. Claude Code lets a mod use its engine interface (`$`) and declare session state only in the hooks module itself, `register.tsx`, so that file builds the `Engine` from `$` and hands the pane the state it read.
+- `opencode/` is the OpenCode TUI plugin: its `Engine`, the sidebar and the review dialog.
 
 | File | Responsibility |
 | --- | --- |
-| `hooks/register.tsx` | Entry point: connects the engine's events (session start, the command, tool calls, turn end, pane drawing) to the analysis and the pane, holds the session state, and reads the conversation for `intent.ts` |
-| `hooks/engine.ts` | The `Engine` interface: what the analysis needs from Claude Code, as plain functions |
-| `hooks/analysis.ts` | The pipeline: read the diff, reuse unchanged files, triage, deep review, attach diff excerpts, store the report |
-| `hooks/git.ts` | The base branch and the branch diff, untracked files included |
-| `hooks/diff.ts` | Reading a unified diff: per-file split, lockfiles, hunks, excerpts, hashing |
-| `hooks/triage.ts` | Stage 1: triage prompt, its answer, and the files always reviewed in depth |
-| `hooks/review.ts` | Stage 2: review prompt and its answer |
-| `hooks/intent.ts` | Your requests and the files Claude edited, read from the session's conversation, for the `unrequested` category |
-| `hooks/secrets.ts` | Deterministic secret scan and its merge with the model's findings |
-| `hooks/models.ts` | Calls to the triage and review models, with the review model's fallback |
+| `core/engine.ts` | The `Engine` port: what the analysis needs from the agent, as plain functions |
+| `core/analysis.ts` | The pipeline: read the diff, reuse unchanged files, triage, deep review, attach diff excerpts, store the report |
+| `core/git.ts` | The base branch and the branch diff, untracked files included |
+| `core/diff.ts` | Reading a unified diff: per-file split, lockfiles, hunks, excerpts, hashing |
+| `core/triage.ts` | Stage 1: triage prompt, its answer, and the files always reviewed in depth |
+| `core/review.ts` | Stage 2: review prompt and its answer |
+| `core/intent.ts` | Your requests and the files the agent edited, for the `unrequested` category; each agent reads them from its own conversation |
+| `core/secrets.ts` | Deterministic secret scan and its merge with the model's findings |
+| `core/report-view.ts` | What every view shows the same way: review keys, the headline, the loader's step |
+| `core/text-report.ts` | The report as text, for `/review-radar` in Claude Code |
+| `core/change-request.ts` | The fix request *Request changes* writes into the prompt |
+| `core/messages.ts` | Every text the person sees, in English and Spanish |
+| `core/settings.ts` | The settings every agent reads into |
+| `core/json.ts` | Extracting the JSON object from a model's answer |
+| `hooks/register.tsx` | Claude Code entry point: connects the engine's events (session start, the command, tool calls, turn end, pane drawing) to the analysis and the pane, and holds the session state |
+| `hooks/models.ts` | Claude Code's model calls, with the review model's fallback |
+| `hooks/transcript.ts` | Your requests and Claude's edits, from Claude Code's transcript |
 | `hooks/pane.tsx` | The pane, as a view of the report and the actions its buttons run |
-| `hooks/text-report.ts` | The report as text, for `/review-radar` |
-| `hooks/change-request.ts` | The fix request *Request changes* writes into the prompt |
-| `hooks/messages.ts` | Every text the person sees, in English and Spanish |
-| `hooks/settings.ts` | The plugin options and their defaults |
-| `hooks/json.ts` | Extracting the JSON object from a model's answer |
+| `hooks/settings.ts` | The mod's options and their defaults |
+| `opencode/src/tui.ts` | OpenCode entry point: the turn-end analysis, the command, the sidebar slot |
+| `opencode/src/engine.ts` | The `Engine` over OpenCode's plugin API, and which model reviews |
+| `opencode/src/models.ts` | Model calls in a throwaway child session with tools and permissions off |
+| `opencode/src/intent.ts` | Your requests and the agent's edits, from OpenCode's messages |
+| `opencode/src/store.ts` | The report and the reviewed marks: Solid signals, saved per project |
+| `opencode/src/sidebar.ts`, `review-dialog.ts`, `elements.ts` | The sidebar, the review dialog, and the OpenTUI builders they use |
+| `opencode/src/settings.ts` | The plugin options and their defaults |
 | `types/index.d.ts` | Finding and report types, and the mod's state contract |
-| `tests/` | One test file per module, plus `fixtures.ts`: sample diffs and a fake engine that answers like git and a model |
+| `tests/` | The core and the Claude Code mod: one test file per module, plus `fixtures.ts` with sample diffs and a fake engine |
+| `opencode/tests/` | The OpenCode plugin: its views drawn with OpenTUI's test renderer, and its readers |
 
 ## Development
 
@@ -185,6 +241,14 @@ From inside the folder:
 claude plugin validate .
 claude plugin test .
 npx tsc -p .
+```
+
+For the OpenCode plugin:
+
+```shell
+bun install
+bun test opencode
+npx tsc -p opencode
 ```
 
 `tsc` reads the Claude Code types from `.claude-plugin/types/`, which Claude Code writes the first time it loads the mod (installed, or with `claude --plugin-dir .`). The folder is not versioned: it holds the MCP connectors of the machine that loaded the mod.

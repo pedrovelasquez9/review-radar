@@ -1,0 +1,3 @@
+# OpenCode loads plugins with Solid set up for OpenTUI; the tests need the same.
+[test]
+preload = ["@opentui/solid/preload"]

@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-**Mod de Claude Code · v0.5.0.** Un panel de revisión para el humano en el bucle. Cuando Claude termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR».
+**Mod de Claude Code y plugin de OpenCode · v0.7.0.** Un panel de revisión para el humano en el bucle. Cuando el agente termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR». En [OpenCode](#opencode) la misma revisión vive en la barra lateral y en un diálogo.
 
 Los cambios de cada versión están en el [changelog](CHANGELOG.md) (en inglés).
 
@@ -152,39 +152,103 @@ Después, `/reload-plugins`. Usa `/plugin` para desactivarlo o desinstalarlo.
 - Los cambios no pedidos solo se juzgan en archivos que Claude editó con Edit, Write o NotebookEdit en la conversación principal. Los cambiados con Bash o por un subagente se revisan como cualquier otro cambio, pero no se comparan con tus peticiones.
 - Un análisis solo se repite cuando cambia el diff, así que un prompt nuevo que amplía la tarea actualiza los hallazgos de cambios no pedidos en el siguiente cambio o con *Re-analizar*.
 
-## Estructura
+## OpenCode
 
-Claude Code solo deja que un mod use la interfaz del motor (`$`) y declare estado de sesión en el propio módulo de hooks, `register.tsx`. Por eso `register.tsx` es el único archivo que habla con el motor: envuelve lo que necesita el resto en funciones simples (`engine.ts`) y le pasa al panel el estado que lee. Todos los demás archivos son TypeScript normal, que se puede leer y probar por separado.
+review-radar también funciona en [OpenCode](https://opencode.ai) (1.17 o posterior) como plugin de la TUI, con el mismo análisis. OpenCode no tiene paneles laterales, así que la revisión vive en la terminal:
+
+- **Barra lateral.** Al terminar el primer turno que deja cambios en la rama, la barra lateral de la sesión muestra una sección *Revisión*: en qué paso va el análisis mientras se ejecuta y, después, cuántos cambios requieren tu revisión y una línea por hallazgo (`[categoría] título` y `archivo:línea`). Los que marcas como revisados desaparecen. Al pulsarla se abre la revisión.
+- **`/review-radar`** (también en la lista de comandos, *ctrl+p*) abre el diálogo de revisión: el resumen, los hallazgos por revisar, los revisados, lo que puede esperar a la PR y *Re-analizar*. Elige un hallazgo para ver por qué importa y su diff con los colores de diff del tema, y luego:
+  - `r` lo marca como revisado (o lo vuelve a dejar sin revisar),
+  - `c` escribe en el prompt la petición de corrección completa (como *Pedir cambios* en Claude Code) y cierra el diálogo,
+  - `←` vuelve a la lista y `esc` cierra el diálogo.
+- Un aviso te dice cuándo hay cambios que revisar.
+
+OpenCode oculta la barra lateral en terminales estrechas (unas 120 columnas o menos): ensancha la ventana o abre la revisión con `/review-radar`.
+
+### Instalación en OpenCode
+
+Añade el paquete a la lista `plugin` de tu configuración de la TUI, `~/.config/opencode/tui.json` (todos los proyectos) o `.opencode/tui.json` (un proyecto), con sus opciones:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [["opencode-review-radar", { "language": "es" }]]
+}
+```
+
+Desde un clon local, pon la carpeta del clon en lugar del nombre del paquete (antes, ejecuta `bun install` en ella). Reinicia OpenCode para cargarlo.
+
+| Opción | Valores | Por defecto |
+| --- | --- | --- |
+| `language` | `en`, `es` | `en` |
+| `model` | `proveedor/modelo`, p. ej. `anthropic/claude-opus-5-5` | el modelo de la propia sesión |
+| `triageModel` | `proveedor/modelo`, para clasificar diffs grandes | el modelo de revisión |
+| `autoAnalyze` | `true`, `false` | `true` |
+
+Los modelos se consultan a través del propio OpenCode, así que vale cualquier proveedor que tengas configurado ahí. Cada consulta se hace en una sesión hija de la tuya con todas las herramientas desactivadas y todos los permisos denegados, de modo que el modelo solo puede responder; la sesión hija se borra al terminar. La calidad de la revisión depende del modelo: uno local pequeño puede pasar por alto hallazgos o responder en inglés.
+
+### Límites en OpenCode
+
+- Necesita la TUI: `opencode run` y otros usos sin interfaz no analizan.
+- Se analiza cuando una sesión queda en reposo (el agente terminó su turno) y el diff de la rama cambió desde el último análisis.
+- La categoría `unrequested` lee tus prompts y los archivos cambiados con `edit`, `write`, `multiedit` y `apply_patch`.
+
+## Estructura del proyecto
+
+El análisis es común; cada agente tiene un adaptador fino.
+
+- `core/` es TypeScript sin API de ningún agente: el análisis solo habla con el agente a través del puerto `Engine` (`core/engine.ts`).
+- `hooks/` es el mod de Claude Code. Claude Code solo permite usar su interfaz del motor (`$`) y declarar estado de sesión en el propio módulo de hooks, `register.tsx`, así que ese archivo construye el `Engine` a partir de `$` y le pasa al panel el estado que leyó.
+- `opencode/` es el plugin de la TUI de OpenCode: su `Engine`, la barra lateral y el diálogo de revisión.
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `hooks/register.tsx` | Punto de entrada: conecta los eventos del motor (inicio de sesión, el comando, llamadas a herramientas, fin de turno, dibujo del panel) con el análisis y el panel, guarda el estado de la sesión y lee la conversación para `intent.ts` |
-| `hooks/engine.ts` | La interfaz `Engine`: lo que el análisis necesita de Claude Code, como funciones simples |
-| `hooks/analysis.ts` | El flujo: leer el diff, reutilizar archivos sin cambios, triaje, revisión a fondo, añadir los fragmentos del diff y guardar el informe |
-| `hooks/git.ts` | La rama base y el diff de la rama, archivos sin trackear incluidos |
-| `hooks/diff.ts` | Lectura de un diff unificado: separación por archivo, lockfiles, hunks, fragmentos y hashes |
-| `hooks/triage.ts` | Fase 1: prompt del triaje, su respuesta y los archivos que siempre se revisan a fondo |
-| `hooks/review.ts` | Fase 2: prompt de la revisión y su respuesta |
-| `hooks/intent.ts` | Tus peticiones y los archivos que editó Claude, leídos de la conversación de la sesión, para la categoría `unrequested` |
-| `hooks/secrets.ts` | Escaneo determinista de secretos y su fusión con los hallazgos del modelo |
-| `hooks/models.ts` | Llamadas a los modelos de triaje y revisión, con el respaldo del de revisión |
+| `core/engine.ts` | El puerto `Engine`: lo que el análisis necesita del agente, como funciones normales |
+| `core/analysis.ts` | El flujo: leer el diff, reutilizar archivos sin cambios, triaje, revisión a fondo, añadir los extractos del diff y guardar el informe |
+| `core/git.ts` | La rama base y el diff de la rama, archivos sin seguimiento incluidos |
+| `core/diff.ts` | Lectura de un diff unificado: separación por archivo, lockfiles, hunks, extractos, hashes |
+| `core/triage.ts` | Fase 1: prompt de triaje, su respuesta y los archivos que siempre se revisan a fondo |
+| `core/review.ts` | Fase 2: prompt de revisión y su respuesta |
+| `core/intent.ts` | Tus peticiones y los archivos que editó el agente, para la categoría `unrequested`; cada agente los lee de su propia conversación |
+| `core/secrets.ts` | Detección determinista de secretos y su fusión con los hallazgos del modelo |
+| `core/report-view.ts` | Lo que todas las vistas muestran igual: claves de revisado, el titular, el paso del indicador de carga |
+| `core/text-report.ts` | El informe como texto, para `/review-radar` en Claude Code |
+| `core/change-request.ts` | La petición de corrección que escribe *Pedir cambios* en el prompt |
+| `core/messages.ts` | Todos los textos que ve la persona, en inglés y en español |
+| `core/settings.ts` | La configuración común a todos los agentes |
+| `core/json.ts` | Extraer el objeto JSON de la respuesta de un modelo |
+| `hooks/register.tsx` | Punto de entrada de Claude Code: conecta los eventos del motor (inicio de sesión, el comando, llamadas a herramientas, fin de turno, dibujo del panel) con el análisis y el panel, y guarda el estado de la sesión |
+| `hooks/models.ts` | Las llamadas a modelos de Claude Code, con el modelo de respaldo para la revisión |
+| `hooks/transcript.ts` | Tus peticiones y las ediciones de Claude, desde la conversación de Claude Code |
 | `hooks/pane.tsx` | El panel, como vista del informe y de las acciones de sus botones |
-| `hooks/text-report.ts` | El informe como texto, para `/review-radar` |
-| `hooks/change-request.ts` | La petición de corrección que *Pedir cambios* escribe en el prompt |
-| `hooks/messages.ts` | Todos los textos que ve la persona, en inglés y en español |
-| `hooks/settings.ts` | Las opciones del plugin y sus valores por defecto |
-| `hooks/json.ts` | Extraer el objeto JSON de la respuesta de un modelo |
-| `types/index.d.ts` | Tipos de hallazgos e informe, y el contrato de estado del mod |
-| `tests/` | Un archivo de tests por módulo, más `fixtures.ts`: diffs de ejemplo y un motor falso que responde como git y como un modelo |
+| `hooks/settings.ts` | Las opciones del mod y sus valores por defecto |
+| `opencode/src/tui.ts` | Punto de entrada de OpenCode: el análisis al terminar el turno, el comando y la sección de la barra lateral |
+| `opencode/src/engine.ts` | El `Engine` sobre la API de plugins de OpenCode, y qué modelo revisa |
+| `opencode/src/models.ts` | Consultas al modelo en una sesión hija temporal sin herramientas ni permisos |
+| `opencode/src/intent.ts` | Tus peticiones y las ediciones del agente, desde los mensajes de OpenCode |
+| `opencode/src/store.ts` | El informe y las marcas de revisado: señales de Solid, guardadas por proyecto |
+| `opencode/src/sidebar.ts`, `review-dialog.ts`, `elements.ts` | La barra lateral, el diálogo de revisión y los constructores de OpenTUI que usan |
+| `opencode/src/settings.ts` | Las opciones del plugin y sus valores por defecto |
+| `types/index.d.ts` | Tipos de hallazgo e informe, y el contrato de estado del mod |
+| `tests/` | El núcleo y el mod de Claude Code: un archivo de tests por módulo, más `fixtures.ts` con diffs de ejemplo y un motor falso |
+| `opencode/tests/` | El plugin de OpenCode: sus vistas dibujadas con el renderizador de pruebas de OpenTUI, y sus lectores |
 
 ## Desarrollo
 
-Desde dentro de la carpeta:
+Desde la carpeta:
 
 ```shell
 claude plugin validate .
 claude plugin test .
 npx tsc -p .
+```
+
+Para el plugin de OpenCode:
+
+```shell
+bun install
+bun test opencode
+npx tsc -p opencode
 ```
 
 `tsc` lee los tipos de Claude Code de `.claude-plugin/types/`, que Claude Code escribe la primera vez que carga el mod (instalado, o con `claude --plugin-dir .`). La carpeta no se versiona: contiene los conectores MCP de la máquina que cargó el mod.

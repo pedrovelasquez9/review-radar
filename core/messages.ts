@@ -51,6 +51,15 @@ export type Messages = {
   statusLineDeepReview: (fileCount: number) => string
   needsReviewToast: (count: number) => string
 
+  // The OpenCode TUI: its command, sidebar and dialog.
+  commandTitle: string
+  openReviewHint: string
+  summaryHeading: string
+  reviewedHeading: (count: number) => string
+  unmarkReviewedButton: string
+  backToListHint: string
+  closeHint: string
+
   textReportHeadline: (baseBranch: string, summary: string) => string
   textReportPrCount: (count: number) => string
   commandFailed: string
@@ -104,6 +113,14 @@ const ENGLISH: Messages = {
   statusLineDeepReview: fileCount => `review-radar: deep review of ${fileCount} file(s)…`,
   needsReviewToast: count => `review-radar: ${count} change(s) need your review`,
 
+  commandTitle: 'review-radar: open the review',
+  openReviewHint: '/review-radar opens the review',
+  summaryHeading: 'Summary',
+  reviewedHeading: count => `Reviewed (${count})`,
+  unmarkReviewedButton: '↺ Not reviewed',
+  backToListHint: '← back',
+  closeHint: 'esc close',
+
   textReportHeadline: (baseBranch, summary) => `Review against ${baseBranch}: ${summary}`,
   textReportPrCount: count => `Review in the PR: ${count} change(s).`,
   commandFailed: 'review-radar could not finish the analysis. Try again, or check the pane for the error.',
@@ -156,6 +173,14 @@ const SPANISH: Messages = {
   statusLineAnalyzing: 'review-radar: analizando cambios…',
   statusLineDeepReview: fileCount => `review-radar: revisando ${fileCount} archivo(s) a fondo…`,
   needsReviewToast: count => `review-radar: ${count} cambio(s) requieren tu revisión`,
+
+  commandTitle: 'review-radar: abrir la revisión',
+  openReviewHint: '/review-radar abre la revisión',
+  summaryHeading: 'Resumen',
+  reviewedHeading: count => `Revisado (${count})`,
+  unmarkReviewedButton: '↺ Sin revisar',
+  backToListHint: '← volver',
+  closeHint: 'esc cerrar',
 
   textReportHeadline: (baseBranch, summary) => `Revisión contra ${baseBranch}: ${summary}`,
   textReportPrCount: count => `Revisar en la PR: ${count} cambio(s).`,
