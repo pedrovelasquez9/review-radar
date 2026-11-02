@@ -9,7 +9,7 @@
       "name": "review-radar",
       "source": "./",
       "description": "Review pane that shows, with their diff, only the branch changes that need a human; the rest goes to the PR.",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "category": "development",
       "keywords": ["code-review", "human-in-the-loop", "diff", "pull-request"]
     }

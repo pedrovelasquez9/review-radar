@@ -23,6 +23,9 @@ export type Engine = {
   // The person's prompts and the files Claude edited, read from this session's
   // conversation (file paths absolute, as the tools got them).
   readSessionIntent: () => Promise<SessionIntent>
+  // Called when an analysis finds branch changes to review, just before its
+  // loader shows: the moment the pane has something to show.
+  revealPane: () => void
   // The line in Claude Code's status bar; undefined clears it.
   showStatus: (text: string | undefined) => void
   showToast: (text: string) => void

@@ -129,7 +129,7 @@ Set them in any of these ways:
 
 ## Usage
 
-- Open a session in a repository and work as usual. The **Review** pane opens beside the chat and fills in at the end of each turn that changed files (unless `autoAnalyze` is off). While an analysis runs, the pane is cleared to a highlighted loader that says which step it is on (reading the changes, sorting files by risk, deep review with the chosen model), and the new results replace it when they are ready. *Re-analyze* and `/review-radar` switch to the loader at once. A toast tells you when something needs your review.
+- Open a session in a repository and work as usual. The **Review** pane opens beside the chat by itself at the end of the first turn that leaves changes on the branch, already showing the loader, and fills in at the end of each turn that changed files (unless `autoAnalyze` is off). Outside a git repository, or while nothing has changed, it stays closed; `/review-radar` opens it at any time. While an analysis runs, the pane is cleared to a highlighted loader that says which step it is on (reading the changes, sorting files by risk, deep review with the chosen model), and the new results replace it when they are ready. *Re-analyze* and `/review-radar` switch to the loader at once. A toast tells you when something needs your review.
 - `/review-radar` opens the pane, forces a full analysis and also prints the report, diffs included, in the transcript. Analysis takes about 20–30 s on a mid-sized branch.
 - In the pane: read the summary, go through *Needs your review*, mark each finding **✓ Reviewed** or press **Request changes**, and unfold *Review in the PR* if you want the full list.
 

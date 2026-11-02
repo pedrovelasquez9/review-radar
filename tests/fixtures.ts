@@ -53,6 +53,8 @@ type FakeEngineOptions = {
 
 export type FakeEngine = Engine & {
   modelRequests: ModelCompleteRequest[]
+  // How many times the analysis asked to open the pane.
+  revealPaneCount: () => number
   // Each loader step the report went through, in order.
   progressSteps: string[]
   currentReport: () => Report
@@ -64,6 +66,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
   let report: Report = EMPTY_REPORT
   const modelRequests: ModelCompleteRequest[] = []
   const progressSteps: string[] = []
+  let revealPaneCount = 0
 
   // stdout for the git commands the analysis runs; undefined is a failed command.
   const answerGit = (gitArgs: string[]): string | undefined => {
@@ -103,11 +106,15 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
       if (step !== undefined && step !== previousStep) progressSteps.push(step)
     },
     readSessionIntent: async () => options.sessionIntent ?? { requests: [], editedFiles: [] },
+    revealPane: () => {
+      revealPaneCount += 1
+    },
     showStatus: () => {},
     showToast: () => {},
 
     modelRequests,
     progressSteps,
+    revealPaneCount: () => revealPaneCount,
     currentReport: () => report,
     setDiff: nextDiff => {
       diff = nextDiff

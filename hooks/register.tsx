@@ -31,6 +31,10 @@ const isPrListOpenState = atom({ plugin: 'review-radar', key: 'isPrListOpen' } a
 // Review keys of the findings the person marked as reviewed.
 const reviewedKeysState = atom({ plugin: 'review-radar', key: 'reviewedKeys' } as const, [])
 
+// The pane opens by itself once per session: when the first turn that changed
+// files leaves branch changes to review. After that, /review-radar opens it.
+let hasRevealedPane = false
+
 // Tools that may change files. A turn that used none of them is not analyzed.
 const FILE_CHANGING_TOOLS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'])
 
@@ -49,13 +53,15 @@ export const register: Register = (on, options) => {
 
     // This also runs after a reload of the mod, which stops any analysis in flight.
     await update($, reportState, recoverInterruptedReport)
-    void $.ui.open({ id: PANE_ID, title: messages.paneTitle })
-    // Headless runs (-p, the SDK) and manual mode analyze only when asked.
+    // Headless runs (-p, the SDK) and manual mode analyze only when asked. This
+    // one prepares the report without opening the pane: changes from before the
+    // session are not news until a turn touches the branch.
     if (event.isInteractive && settings.isAutoAnalysisOn) void queueAnalysis(createEngine($), settings)
     return started
   })
 
   on('command.run', { command: COMMAND_NAME }, async $ => {
+    hasRevealedPane = true
     void $.ui.open({ id: PANE_ID, title: messages.paneTitle })
     // Run directly, not through the queue: waiting on the queue would spend this
     // hook's time budget, while time spent inside engine calls (git, models) does not.
@@ -77,7 +83,7 @@ export const register: Register = (on, options) => {
     const shouldAnalyze = isMainTurn && !event.isAborted && didTurnChangeFiles && settings.isAutoAnalysisOn
     if (shouldAnalyze) {
       didTurnChangeFiles = false
-      void queueAnalysis(createEngine($), settings)
+      void queueAnalysis(createEngine($, messages.paneTitle), settings)
     }
     return completed
   })
@@ -96,7 +102,8 @@ export const register: Register = (on, options) => {
 }
 
 // What the analysis needs from the engine, as plain functions over `$`.
-function createEngine($: EngineInterface): Engine {
+// With `paneTitle`, the analysis opens the pane (once) when it finds changes.
+function createEngine($: EngineInterface, paneTitle?: string): Engine {
   return {
     runCommand: async (argv, timeoutMs) => {
       const result = await $.process.run(argv, { timeoutMs })
@@ -109,6 +116,11 @@ function createEngine($: EngineInterface): Engine {
       await update($, reportState, change)
     },
     readSessionIntent: async () => readIntentFromTranscript(await $.session.messages()),
+    revealPane: () => {
+      if (paneTitle === undefined || hasRevealedPane) return
+      hasRevealedPane = true
+      void $.ui.open({ id: PANE_ID, title: paneTitle })
+    },
     showStatus: text => $.ui.status(text),
     showToast: text => $.ui.toast(text),
   }

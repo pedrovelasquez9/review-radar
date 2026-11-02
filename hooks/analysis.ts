@@ -110,6 +110,7 @@ async function runAnalysis(
 
   // From here on the pane shows its loader, step by step.
   await showAnalyzing(engine, baseBranch)
+  engine.revealPane()
   engine.showStatus(messages.statusLineAnalyzing)
 
   const { diffWithoutLockfiles, lockfiles } = separateLockfiles(fullDiff)

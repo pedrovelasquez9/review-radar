@@ -151,3 +151,18 @@ test('an automatic analysis of an unchanged diff never shows the loader', async 
 
   expect(engine.progressSteps).toEqual([])
 })
+
+test('the pane is revealed only when there are changes to review', async () => {
+  const engine = createFakeEngine({ diff: '', reviewAnswer: PRICE_REVIEW_ANSWER })
+
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+  expect(engine.revealPaneCount()).toBe(0)
+
+  engine.setDiff(PRICE_DIFF)
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+  expect(engine.revealPaneCount()).toBe(1)
+
+  // Same diff again: nothing new, so no second reveal.
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+  expect(engine.revealPaneCount()).toBe(1)
+})

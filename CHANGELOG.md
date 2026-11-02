@@ -2,6 +2,14 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-11-02
+
+### Changed
+
+- **The pane opens when there is something to review.** It no longer opens at session start: it opens by itself at the end of the first turn that leaves changes on the branch, already showing the loader, so it is never an empty pane waiting for a turn. Outside a git repository it never opens by itself.
+- It opens by itself once per session. If you close it, later turns do not reopen it; `/review-radar` opens it at any time.
+- The analysis at session start still runs, without opening the pane: changes made before the session are ready in the report when you open it.
+
 ## [0.5.0] - 2026-10-31
 
 ### Changed
@@ -54,6 +62,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.6.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.6.0
 [0.5.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.5.0
 [0.4.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.4.0
 [0.3.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.3.0
