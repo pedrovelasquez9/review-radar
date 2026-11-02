@@ -3,9 +3,10 @@
 import type { ModelCompleteRequest, ModelCompleteResult } from 'claude-code'
 
 import type { Report } from '../types'
-import { EMPTY_REPORT } from '../hooks/analysis'
-import type { Engine } from '../hooks/engine'
-import type { SessionIntent } from '../hooks/intent'
+import { EMPTY_REPORT } from '../core/analysis'
+import type { Engine } from '../core/engine'
+import type { SessionIntent } from '../core/intent'
+import { askReviewModel, askTriageModel } from '../hooks/models'
 
 // Where the fake repository lives, as git prints it.
 export const REPOSITORY_ROOT = 'C:/work/shop'
@@ -87,17 +88,21 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     usage: { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
   })
 
+  const completeWithModel = async (request: ModelCompleteRequest): Promise<ModelCompleteResult> => {
+    modelRequests.push(request)
+    if (options.blockedModels?.includes(request.model)) throw new Error(`model ${request.model} is blocked`)
+    return answeredBy(options.reviewAnswer)
+  }
+
   return {
     runCommand: async argv => {
       const stdout = answerGit(argv.slice(1))
       return { exitCode: stdout === undefined ? 1 : 0, stdout: stdout ?? '' }
     },
     readTextFile: async () => undefined,
-    completeWithModel: async request => {
-      modelRequests.push(request)
-      if (options.blockedModels?.includes(request.model)) throw new Error(`model ${request.model} is blocked`)
-      return answeredBy(options.reviewAnswer)
-    },
+    // Through Claude Code's model calls (hooks/models.ts), with opus as the review model.
+    askTriageModel: (systemPrompt, prompt) => askTriageModel(completeWithModel, systemPrompt, prompt),
+    askReviewModel: (systemPrompt, prompt) => askReviewModel(completeWithModel, 'opus', systemPrompt, prompt),
     readReport: async () => report,
     updateReport: async change => {
       const previousStep = report.progress?.step

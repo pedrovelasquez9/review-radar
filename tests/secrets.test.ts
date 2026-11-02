@@ -1,8 +1,8 @@
 import { expect, test } from 'claude-code/testing'
 
-import { messagesFor } from '../hooks/messages'
-import { parseReviewAnswer } from '../hooks/review'
-import { findLiteralSecrets, mergeSecretFindings } from '../hooks/secrets'
+import { messagesFor } from '../core/messages'
+import { parseReviewAnswer } from '../core/review'
+import { findLiteralSecrets, mergeSecretFindings } from '../core/secrets'
 import { PAY_DIFF } from './fixtures'
 
 const ENGLISH = messagesFor('en')

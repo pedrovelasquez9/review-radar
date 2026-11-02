@@ -7,9 +7,9 @@
 import type { EngineInterface } from 'claude-code'
 
 import type { Finding, Report } from '../types'
-import { buildChangeRequest } from './change-request'
-import type { Messages } from './messages'
-import { findingLocation } from './text-report'
+import { buildChangeRequest } from '../core/change-request'
+import type { Messages } from '../core/messages'
+import { findingLocation } from '../core/text-report'
 
 // The element constructors (Box, Text, Button, Code…) of the surface the pane is drawn on.
 export type UiElements = ReturnType<EngineInterface['ui']['resolve']>

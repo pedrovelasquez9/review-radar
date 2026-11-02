@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { EMPTY_REPORT, analyzeBranch, recoverInterruptedReport } from '../hooks/analysis'
+import { EMPTY_REPORT, analyzeBranch, recoverInterruptedReport } from '../core/analysis'
 import { DEFAULT_SETTINGS } from '../hooks/settings'
 import { createFakeEngine, fileDiff } from './fixtures'
 
@@ -71,7 +71,7 @@ test('a blocked review model falls back to sonnet, and the summary says so', asy
   expect(engine.currentReport().summary.endsWith('(reviewed with sonnet: opus was unavailable)')).toBe(true)
 })
 
-test('the review is told what was asked and which files Claude edited', async () => {
+test('the review is told what was asked and which files the agent edited', async () => {
   const engine = createFakeEngine({
     diff: PRICE_DIFF + fileDiff('src/cart.ts', 'const items = []') + fileDiff('README.md', 'New intro'),
     reviewAnswer: PRICE_REVIEW_ANSWER,
@@ -86,7 +86,7 @@ test('the review is told what was asked and which files Claude edited', async ()
   const prompt = String(engine.modelRequests[0]?.prompt ?? '')
   expect(prompt.includes('1. Add a 15% discount to prices')).toBe(true)
   expect(prompt.includes('2. Keep the cart untouched')).toBe(true)
-  expect(prompt.includes('Files Claude edited in this session: src/price.ts, README.md')).toBe(true)
+  expect(prompt.includes('Files the agent edited in this session: src/price.ts, README.md')).toBe(true)
 })
 
 test('without recorded requests, nothing is judged as unrequested', async () => {

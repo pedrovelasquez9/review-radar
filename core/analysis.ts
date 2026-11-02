@@ -10,7 +10,6 @@ import { hasIntent, toRepositoryPaths } from './intent'
 import type { SessionIntent } from './intent'
 import { messagesFor } from './messages'
 import type { Messages } from './messages'
-import { askReviewModel, askTriageModel } from './models'
 import { buildReviewPrompt, parseReviewAnswer, reviewSystemPrompt } from './review'
 import { findLiteralSecrets, mergeSecretFindings } from './secrets'
 import type { Settings } from './settings'
@@ -127,7 +126,7 @@ async function runAnalysis(
   )
   const sessionIntent = await loadSessionIntent(engine)
 
-  // Files holding a secret, and files Claude edited in this session (to check
+  // Files holding a secret, and files the agent edited in this session (to check
   // them against the requests), always get the deep review.
   const filesToAlwaysReview = new Set([
     ...secretFindings.map(({ file }) => file),
@@ -169,7 +168,7 @@ async function runAnalysis(
   if (criticalCount > 0) engine.showToast(messages.needsReviewToast(criticalCount))
 }
 
-// The session's requests and the files Claude edited, with paths as the diff
+// The session's requests and the files the agent edited, with paths as the diff
 // names them; undefined when there is nothing to judge "unrequested" against.
 async function loadSessionIntent(engine: Engine): Promise<SessionIntent | undefined> {
   const recorded = await engine.readSessionIntent()
@@ -238,8 +237,7 @@ async function triageChangedFiles(
 
   if (changedChars >= MIN_CHARS_FOR_TRIAGE) {
     await showProgress(engine, { step: 'triage', fileCount: changedFiles.length })
-    const triageAnswer = await askTriageModel(
-      engine,
+    const triageAnswer = await engine.askTriageModel(
       triageSystemPrompt(messages.languageNameForModel),
       buildTriagePrompt(changedFiles).slice(0, MAX_TRIAGE_PROMPT_CHARS),
     )
@@ -306,7 +304,7 @@ async function reviewInDepth(
     maxDiffChars: MAX_REVIEW_DIFF_CHARS,
   })
 
-  const answer = await askReviewModel(engine, settings.reviewModel, reviewSystemPrompt(messages.languageNameForModel), prompt)
+  const answer = await engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), prompt)
   const { summary, findings } = parseReviewAnswer(answer.text)
 
   const truncatedNote = isTruncated ? messages.truncatedDiffNote : ''

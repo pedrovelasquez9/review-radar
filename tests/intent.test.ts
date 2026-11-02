@@ -1,7 +1,8 @@
 import { expect, test } from 'claude-code/testing'
 import type { SessionMessage } from 'claude-code'
 
-import { hasIntent, readIntentFromTranscript, toRepositoryPaths } from '../hooks/intent'
+import { hasIntent, toRepositoryPaths } from '../core/intent'
+import { readIntentFromTranscript } from '../hooks/transcript'
 
 function userMessage(text: string): SessionMessage {
   return { role: 'user', text, toolUses: [] }

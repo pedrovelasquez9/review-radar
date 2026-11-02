@@ -1,8 +1,8 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { Finding } from '../types'
-import { buildChangeRequest } from '../hooks/change-request'
-import { messagesFor } from '../hooks/messages'
+import { buildChangeRequest } from '../core/change-request'
+import { messagesFor } from '../core/messages'
 
 const DISCOUNT_FINDING: Finding = {
   severity: 'critical',

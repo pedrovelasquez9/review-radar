@@ -1,27 +1,31 @@
 // Calls to the models, through the session's own Claude client.
 
-import type { Engine } from './engine'
+import type { ModelCompleteRequest, ModelCompleteResult } from 'claude-code'
+
+import type { ReviewModelAnswer } from '../core/engine'
 import type { ReviewModel } from './settings'
+
+type CompleteWithModel = (request: ModelCompleteRequest) => Promise<ModelCompleteResult>
 
 const TRIAGE_MODEL = 'haiku'
 // Used when the configured review model cannot answer.
 const FALLBACK_REVIEW_MODEL: ReviewModel = 'sonnet'
 
-export type ReviewModelAnswer = { text: string; answeredBy: ReviewModel }
-
 // The triage answer, or undefined when the call fails in any way: a failed
 // triage simply clears no file.
-export async function askTriageModel(engine: Engine, systemPrompt: string, prompt: string): Promise<string | undefined> {
-  const reply = await engine
-    .completeWithModel({
-      model: TRIAGE_MODEL,
-      system: systemPrompt,
-      prompt,
-      effort: 'low',
-      maxTokens: 4000,
-      timeoutMs: 60_000,
-    })
-    .catch(() => undefined)
+export async function askTriageModel(
+  completeWithModel: CompleteWithModel,
+  systemPrompt: string,
+  prompt: string,
+): Promise<string | undefined> {
+  const reply = await completeWithModel({
+    model: TRIAGE_MODEL,
+    system: systemPrompt,
+    prompt,
+    effort: 'low',
+    maxTokens: 4000,
+    timeoutMs: 60_000,
+  }).catch(() => undefined)
 
   return reply?.isAnswered ? reply.text : undefined
 }
@@ -30,7 +34,7 @@ export async function askTriageModel(engine: Engine, systemPrompt: string, promp
 // organization blocks, an API error), the fallback model. An interrupted call
 // is not retried. Throws when no model answered.
 export async function askReviewModel(
-  engine: Engine,
+  completeWithModel: CompleteWithModel,
   preferredModel: ReviewModel,
   systemPrompt: string,
   prompt: string,
@@ -40,7 +44,7 @@ export async function askReviewModel(
 
   for (const model of modelsToTry) {
     try {
-      const reply = await engine.completeWithModel({
+      const reply = await completeWithModel({
         model,
         // The system prompt is the same on every call: cached, it is billed once.
         system: [{ text: systemPrompt, cache: true }],

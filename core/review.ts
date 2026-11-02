@@ -15,7 +15,7 @@ export type ReviewPromptInput = {
   // Files reviewed in an earlier analysis and unchanged since.
   unchangedFiles: string[]
   earlierCriticalFindings: Finding[]
-  // What the person asked for and what Claude edited in this session, when known.
+  // What the person asked for and what the agent edited in this session, when known.
   sessionIntent?: SessionIntent
   maxDiffChars: number
 }
@@ -32,7 +32,7 @@ Judge each change by WHAT IT DOES, never by framework or language. Mark as "crit
 - security: authn/authz, input trust boundaries, crypto, CORS, injection surfaces
 - infra: deploy, CI, containers, runtime config, feature flags affecting production
 - suspicious: whatever looks like a mistake, in any file: values inconsistent with their neighbours or with other files in the diff (an id, number, date or name that contradicts the pattern around it), copy-paste leftovers, a renamed or removed thing still referenced, a condition or sign flipped. Check every changed value against its context before calling a file routine.
-- unrequested: only when the prompt lists what the developer asked for in this session. A change in one of the files Claude edited in this session that none of those requests asked for or clearly needs: an unrelated file touched, a behaviour changed beyond the task, a new dependency, a refactor or rename nobody asked for, code deleted outside the task. Not unrequested: what the requested change needs to work (imports, types, call sites, tests and docs of the requested code). Judge against the requests as a whole: later requests may widen or change earlier ones. In "why", say which request it goes beyond. A change that fits another category and is also unrequested gets the other category, with "not requested" said in "why".
+- unrequested: only when the prompt lists what the developer asked for in this session. A change in one of the files the agent edited in this session that none of those requests asked for or clearly needs: an unrelated file touched, a behaviour changed beyond the task, a new dependency, a refactor or rename nobody asked for, code deleted outside the task. Not unrequested: what the requested change needs to work (imports, types, call sites, tests and docs of the requested code). Judge against the requests as a whole: later requests may widen or change earlier ones. In "why", say which request it goes beyond. A change that fits another category and is also unrequested gets the other category, with "not requested" said in "why".
 Everything else (renames, formatting, tests, UI copy, styling, refactors with no behaviour change, docs) is "pr": fine to review in the pull request.
 Be strict: a critical list longer than ~7 items is noise; merge related changes into one finding.
 Answer ONLY a JSON object, no prose, no code fences:
@@ -80,14 +80,14 @@ export function parseReviewAnswer(answer: string): ReviewAnswer {
   }
 }
 
-// The requests, numbered, and the files Claude edited: what the "unrequested"
+// The requests, numbered, and the files the agent edited: what the "unrequested"
 // category is judged against. Files changed by earlier work on the branch are
 // not listed, so they are never called unrequested.
 function describeSessionIntent(intent: SessionIntent): string[] {
   return [
     'What the developer asked for in this session, oldest first:',
     ...intent.requests.map((request, index) => `${index + 1}. ${request.replace(/\s+/g, ' ')}`),
-    `Files Claude edited in this session: ${intent.editedFiles.join(', ')}`,
+    `Files the agent edited in this session: ${intent.editedFiles.join(', ')}`,
   ]
 }
 

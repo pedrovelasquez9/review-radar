@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
-import { splitDiffByFile } from '../hooks/diff'
-import { buildTriagePrompt, mustAlwaysInspect, parseTriageAnswer } from '../hooks/triage'
+import { splitDiffByFile } from '../core/diff'
+import { buildTriagePrompt, mustAlwaysInspect, parseTriageAnswer } from '../core/triage'
 import { LOCKFILE_DIFF, PAY_DIFF } from './fixtures'
 
 const files = splitDiffByFile(PAY_DIFF + LOCKFILE_DIFF)

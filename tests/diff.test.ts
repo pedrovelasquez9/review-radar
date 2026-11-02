@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { excerptForFinding, findHunkContainingLine, separateLockfiles, splitDiffByFile } from '../hooks/diff'
+import { excerptForFinding, findHunkContainingLine, separateLockfiles, splitDiffByFile } from '../core/diff'
 import { LOCKFILE_DIFF, PAY_DIFF } from './fixtures'
 
 const payFileDiff = splitDiffByFile(PAY_DIFF)[0]?.diffText ?? ''
