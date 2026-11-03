@@ -50,6 +50,9 @@ type FakeEngineOptions = {
   blockedModels?: string[]
   // What the session recorded; edited files as absolute paths. None by default.
   sessionIntent?: SessionIntent
+  // What `git diff --function-context` and `git diff -U10` print; the plain diff by default.
+  functionContextDiff?: string
+  tenLinesDiff?: string
 }
 
 export type FakeEngine = Engine & {
@@ -77,6 +80,8 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     if (command === 'rev-parse --abbrev-ref origin/HEAD') return 'origin/main'
     if (command.startsWith('rev-parse --verify')) return 'abc123'
     if (command.startsWith('merge-base')) return 'abc123'
+    if (command.startsWith('diff ') && command.includes('--function-context')) return options.functionContextDiff ?? diff
+    if (command.startsWith('diff ') && command.includes('-U10')) return options.tenLinesDiff ?? diff
     if (command.startsWith('diff ')) return diff
     if (command.startsWith('ls-files')) return ''
     return undefined

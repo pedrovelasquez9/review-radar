@@ -34,12 +34,26 @@ export async function findBaseBranch(engine: Engine): Promise<string> {
 // Everything the branch changed since it left the base: commits, uncommitted
 // edits and untracked files, as one unified diff.
 export async function readBranchDiff(engine: Engine, baseBranch: string): Promise<string> {
-  const forkPoint = (await runGit(engine, ['merge-base', 'HEAD', baseBranch])) ?? 'HEAD'
-  const trackedDiff = (await runGit(engine, ['diff', '--no-color', '--no-ext-diff', '-U3', forkPoint])) ?? ''
+  const trackedDiff = await readTrackedDiff(engine, baseBranch, ['-U3'])
   const untrackedDiff = await readUntrackedFilesAsDiff(engine)
 
   const separator = trackedDiff && untrackedDiff ? '\n' : ''
   return trackedDiff + separator + untrackedDiff
+}
+
+// How much unchanged code the deep review sees around each change: the whole
+// enclosing function (git finds it from the file's language), or 10 lines.
+export type WiderContext = 'function' | 'ten-lines'
+
+// The committed and uncommitted changes again, with wider context. Untracked
+// files are left out: their diff already holds the whole file.
+export function readWiderBranchDiff(engine: Engine, baseBranch: string, context: WiderContext): Promise<string> {
+  return readTrackedDiff(engine, baseBranch, context === 'function' ? ['--function-context'] : ['-U10'])
+}
+
+async function readTrackedDiff(engine: Engine, baseBranch: string, contextArgs: string[]): Promise<string> {
+  const forkPoint = (await runGit(engine, ['merge-base', 'HEAD', baseBranch])) ?? 'HEAD'
+  return (await runGit(engine, ['diff', '--no-color', '--no-ext-diff', ...contextArgs, forkPoint])) ?? ''
 }
 
 // stdout of a successful git command, trimmed; undefined when it fails.

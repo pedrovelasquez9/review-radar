@@ -7,6 +7,43 @@ import { createFakeEngine, fileDiff } from './fixtures'
 
 const PRICE_DIFF = fileDiff('src/price.ts', 'const discount = 0.15')
 
+// PRICE_DIFF as `git diff --function-context` prints it: the whole function around the change.
+const PRICE_FUNCTION_DIFF = `diff --git a/src/price.ts b/src/price.ts
+--- a/src/price.ts
++++ b/src/price.ts
+@@ -1,3 +1,4 @@
+ export function price(total: number) {
+ const first = 1
++const discount = 0.15
+ }`
+
+test('the deep review sees the whole function around each change when it fits', async () => {
+  const engine = createFakeEngine({
+    diff: PRICE_DIFF,
+    functionContextDiff: PRICE_FUNCTION_DIFF,
+    reviewAnswer: '{"summary":"s","findings":[]}',
+  })
+
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+
+  expect(String(engine.modelRequests[0]?.prompt).includes('export function price(total: number)')).toBe(true)
+})
+
+test('wider context that would cost one more review call is dropped', async () => {
+  const engine = createFakeEngine({
+    diff: PRICE_DIFF,
+    functionContextDiff: PRICE_FUNCTION_DIFF,
+    tenLinesDiff: PRICE_FUNCTION_DIFF,
+    reviewAnswer: '{"summary":"s","findings":[]}',
+  })
+
+  // The plain diff fits in the budget; the function's does not.
+  await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewBudgetChars: PRICE_DIFF.length }, false)
+
+  expect(engine.modelRequests.length).toBe(1)
+  expect(String(engine.modelRequests[0]?.prompt).includes('export function price')).toBe(false)
+})
+
 // Three files of about 100 characters each, with no logic change: the triage may clear them.
 const THREE_FILES_DIFF =
   fileDiff('src/a.ts', "const a = 'one'") + fileDiff('src/b.ts', "const b = 'two'") + fileDiff('src/c.ts', "const c = 'three'")

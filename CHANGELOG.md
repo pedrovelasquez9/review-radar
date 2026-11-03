@@ -2,6 +2,12 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.10.0] - 2026-11-03
+
+### Added
+
+- **Function context for the deep review.** The review model now reads each change inside its whole enclosing function (`git diff --function-context`, which knows each language's functions), so a bug that only shows next to the code around it is visible. When that would cost one more review call, it gets 10 lines around each change instead, and the plain diff when even that does not fit. A file whose wider diff alone is over the budget keeps its plain diff. Hashes, the secret scan and the excerpts under findings still use the plain diff, so nothing else changes.
+
 ## [0.9.0] - 2026-11-03
 
 ### Added
@@ -98,6 +104,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.10.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.10.0
 [0.9.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.9.0
 [0.8.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.8.0
 [0.7.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.7.0

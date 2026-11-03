@@ -7,7 +7,7 @@ import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles,
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
 import { hasLogicChange } from './logic-change'
-import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff } from './git'
+import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff, readWiderBranchDiff } from './git'
 import { hasIntent, toRepositoryPaths } from './intent'
 import type { SessionIntent } from './intent'
 import { messagesFor } from './messages'
@@ -142,7 +142,7 @@ async function runAnalysis(
   )
 
   const deepReview = await reviewInDepth(engine, settings, messages, {
-    filesToReview,
+    filesToReview: await widenContext(engine, settings, baseBranch, filesToReview),
     routineFindings,
     unchangedFiles,
     reusedFindings,
@@ -272,6 +272,34 @@ async function triageChangedFiles(
     }))
 
   return { filesToReview, routineFindings }
+}
+
+// The files to review with as much surrounding code as fits without one more
+// review call: the whole enclosing function, else 10 lines around each change,
+// else the plain diff. A file whose wider diff alone is over the budget keeps its
+// plain diff. Only the review reads the wider diffs: hashes, the secret scan and
+// the excerpts under findings use the plain one.
+async function widenContext(
+  engine: Engine,
+  settings: Settings,
+  baseBranch: string,
+  files: FileDiff[],
+): Promise<FileDiff[]> {
+  if (files.length === 0) return files
+  const partCount = splitIntoParts(files, settings.reviewBudgetChars).length
+
+  for (const context of ['function', 'ten-lines'] as const) {
+    const widerDiff = await readWiderBranchDiff(engine, baseBranch, context)
+    const widerByFile = new Map(splitDiffByFile(widerDiff).map(wider => [wider.file, wider.diffText]))
+    const widened = files.map((file): FileDiff => {
+      const widerText = widerByFile.get(file.file)
+      const fits = widerText !== undefined && widerText.length <= settings.reviewBudgetChars
+      // The last file of a diff has no closing newline (git output is trimmed).
+      return fits ? { file: file.file, diffText: widerText.endsWith('\n') ? widerText : `${widerText}\n` } : file
+    })
+    if (splitIntoParts(widened, settings.reviewBudgetChars).length <= partCount) return widened
+  }
+  return files
 }
 
 type DeepReviewInput = {
