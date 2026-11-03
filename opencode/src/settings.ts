@@ -1,6 +1,7 @@
 // The plugin's options, as written in tui.json:
 //   "plugin": [["opencode-review-radar", { "language": "es", "model": "anthropic/claude-opus-5-5" }]]
 
+import { parseReviewMode, reviewBudgetForContext } from '../../core/settings'
 import type { Settings } from '../../core/settings'
 
 // A model as OpenCode names it: provider and model id.
@@ -22,6 +23,9 @@ export function readSettings(options: Record<string, unknown> | undefined): Open
     // Replaced by the session's model when none is set (see tui.ts).
     reviewModel: reviewModelRef ? formatModelRef(reviewModelRef) : '',
     isAutoAnalysisOn: options?.autoAnalyze !== false,
+    reviewMode: parseReviewMode(options?.reviewMode),
+    // Replaced by the review model's own budget, from its context window (see tui.ts).
+    reviewBudgetChars: reviewBudgetForContext(undefined),
     reviewModelRef,
     triageModelRef: parseModelRef(options?.triageModel),
   }

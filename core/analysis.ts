@@ -1,5 +1,6 @@
-// The analysis pipeline: read the branch diff, triage it when large, review
-// the files that need it in depth, and store the report the pane draws.
+// The analysis pipeline: read the branch diff, triage it when it does not fit
+// in one deep review, review the files that need it in depth (in parts when
+// they do not fit in one call), and store the report the pane draws.
 
 import type { AnalysisProgress, Finding, Report } from '../types'
 import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles, splitDiffByFile } from './diff'
@@ -15,11 +16,10 @@ import { findLiteralSecrets, mergeSecretFindings } from './secrets'
 import type { Settings } from './settings'
 import { buildTriagePrompt, mustAlwaysInspect, parseTriageAnswer, triageSystemPrompt } from './triage'
 
-// Below this many changed characters a triage saves little and risks a miss:
-// every changed file goes straight to the deep review.
-const MIN_CHARS_FOR_TRIAGE = 30_000
 const MAX_TRIAGE_PROMPT_CHARS = 80_000
-const MAX_REVIEW_DIFF_CHARS = 150_000
+// A deep review longer than this many calls is cut: the files left over go to
+// the PR list as not reviewed, and the summary says the diff was truncated.
+const MAX_REVIEW_PARTS = 6
 
 // The report before any analysis has run.
 export const EMPTY_REPORT: Report = {
@@ -134,6 +134,7 @@ async function runAnalysis(
   ])
   const { filesToReview, routineFindings } = await triageChangedFiles(
     engine,
+    settings,
     changedFiles,
     filesToAlwaysReview,
     messages,
@@ -223,10 +224,13 @@ function splitByEarlierAnalysis(
   return { changedFiles, unchangedFiles, reusedFindings }
 }
 
-// Which changed files get the deep review. Small diffs skip the triage: every
-// file is reviewed. Data/config files and `filesToAlwaysReview` are never cleared.
+// Which changed files get the deep review. Changes that fit in one review call
+// skip the triage, and so does the thorough mode: every file is reviewed, so
+// none can be cleared by mistake. Data/config files and `filesToAlwaysReview`
+// are never cleared.
 async function triageChangedFiles(
   engine: Engine,
+  settings: Settings,
   changedFiles: FileDiff[],
   filesToAlwaysReview: ReadonlySet<string>,
   messages: Messages,
@@ -235,11 +239,12 @@ async function triageChangedFiles(
   const filesToInspect = new Set(changedFiles.map(({ file }) => file))
   let titlesByFile = new Map<string, string>()
 
-  if (changedChars >= MIN_CHARS_FOR_TRIAGE) {
+  const needsTriage = settings.reviewMode === 'auto' && changedChars > settings.reviewBudgetChars
+  if (needsTriage) {
     await showProgress(engine, { step: 'triage', fileCount: changedFiles.length })
     const triageAnswer = await engine.askTriageModel(
       triageSystemPrompt(messages.languageNameForModel),
-      buildTriagePrompt(changedFiles).slice(0, MAX_TRIAGE_PROMPT_CHARS),
+      buildTriagePrompt(changedFiles).slice(0, Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars)),
     )
     const triage = parseTriageAnswer(triageAnswer ?? '', changedFiles)
     titlesByFile = triage.titlesByFile
@@ -276,7 +281,8 @@ type DeepReviewInput = {
 }
 
 // The review model reads the files that need it and writes the summary and the
-// findings. With nothing to review, the summary is kept or says all is routine.
+// findings, in as many parts as the review budget needs. With nothing to review,
+// the summary is kept or says all is routine.
 async function reviewInDepth(
   engine: Engine,
   settings: Settings,
@@ -288,29 +294,75 @@ async function reviewInDepth(
     return { summary, findings: [] }
   }
 
+  const allParts = splitIntoParts(input.filesToReview, settings.reviewBudgetChars)
+  const parts = allParts.slice(0, MAX_REVIEW_PARTS)
+  const leftOverFiles = allParts.slice(MAX_REVIEW_PARTS).flat()
   engine.showStatus(messages.statusLineDeepReview(input.filesToReview.length))
-  await showProgress(engine, {
-    step: 'deep-review',
-    fileCount: input.filesToReview.length,
-    model: settings.reviewModel,
-  })
-  const { prompt, isTruncated } = buildReviewPrompt({
-    diff: input.filesToReview.map(({ diffText }) => diffText).join(''),
-    lockfiles: input.lockfiles,
-    routineFiles: input.routineFindings.map(({ file }) => file),
-    unchangedFiles: input.unchangedFiles,
-    earlierCriticalFindings: input.reusedFindings.filter(finding => finding.severity === 'critical'),
-    sessionIntent: input.sessionIntent,
-    maxDiffChars: MAX_REVIEW_DIFF_CHARS,
-  })
 
-  const answer = await engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), prompt)
-  const { summary, findings } = parseReviewAnswer(answer.text)
+  const summaries: string[] = []
+  const findings: Finding[] = []
+  let isTruncated = leftOverFiles.length > 0
+  let answeredBy = settings.reviewModel
 
+  for (const [index, partFiles] of parts.entries()) {
+    const part = parts.length > 1 ? { index: index + 1, count: parts.length } : undefined
+    await showProgress(engine, {
+      step: 'deep-review',
+      fileCount: input.filesToReview.length,
+      model: settings.reviewModel,
+      ...(part && { part: part.index, partCount: part.count }),
+    })
+    const review = buildReviewPrompt({
+      diff: partFiles.map(({ diffText }) => diffText).join(''),
+      lockfiles: input.lockfiles,
+      routineFiles: input.routineFindings.map(({ file }) => file),
+      otherPartFiles: input.filesToReview.filter(file => !partFiles.includes(file)).map(({ file }) => file),
+      part,
+      unchangedFiles: input.unchangedFiles,
+      earlierCriticalFindings: input.reusedFindings.filter(finding => finding.severity === 'critical'),
+      sessionIntent: input.sessionIntent,
+      maxDiffChars: settings.reviewBudgetChars,
+    })
+
+    const answer = await engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.prompt)
+    const parsed = parseReviewAnswer(answer.text)
+    summaries.push(parsed.summary)
+    findings.push(...parsed.findings)
+    isTruncated ||= review.isTruncated
+    if (answer.answeredBy !== settings.reviewModel) answeredBy = answer.answeredBy
+  }
+
+  // ponytail: the first part's summary stands for the branch (every part is told
+  // the whole file list); a summary of summaries would cost one more call.
+  const summary = summaries.find(text => text !== '') ?? ''
   const truncatedNote = isTruncated ? messages.truncatedDiffNote : ''
   const fallbackNote =
-    answer.answeredBy === settings.reviewModel ? '' : messages.fallbackModelNote(settings.reviewModel, answer.answeredBy)
-  return { summary: summary + truncatedNote + fallbackNote, findings }
+    answeredBy === settings.reviewModel ? '' : messages.fallbackModelNote(settings.reviewModel, answeredBy)
+  const notReviewedFindings = leftOverFiles.map(
+    ({ file }): Finding => ({ severity: 'pr', category: 'routine', file, title: messages.notReviewedTitle, why: '' }),
+  )
+  return { summary: summary + truncatedNote + fallbackNote, findings: [...findings, ...notReviewedFindings] }
+}
+
+// Files grouped, in diff order, into parts of at most `budgetChars` characters.
+// A file longer than the budget is a part of its own, cut when it is reviewed.
+export function splitIntoParts(files: FileDiff[], budgetChars: number): FileDiff[][] {
+  const parts: FileDiff[][] = []
+  let current: FileDiff[] = []
+  let currentChars = 0
+
+  for (const file of files) {
+    const fits = currentChars + file.diffText.length <= budgetChars
+    if (!fits && current.length > 0) {
+      parts.push(current)
+      current = []
+      currentChars = 0
+    }
+    current.push(file)
+    currentChars += file.diffText.length
+  }
+  if (current.length > 0) parts.push(current)
+  return parts
 }
 
 // Each critical finding gets the diff excerpt the pane draws under it, and the

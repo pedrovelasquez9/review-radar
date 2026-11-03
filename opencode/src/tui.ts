@@ -6,7 +6,8 @@ import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from '@opencode-ai/plug
 
 import { queueAnalysis } from '../../core/analysis'
 import { messagesFor } from '../../core/messages'
-import { createOpenCodeEngine, findReviewModel } from './engine'
+import { reviewBudgetForContext } from '../../core/settings'
+import { createOpenCodeEngine, findContextTokens, findReviewModel } from './engine'
 import { openReviewList } from './review-dialog'
 import { formatModelRef, readSettings } from './settings'
 import { drawSidebar } from './sidebar'
@@ -25,10 +26,15 @@ const tui: TuiPlugin = async (api, options) => {
 
   const engineFor = (sessionID: string) => createOpenCodeEngine({ api, settings, store, directory, sessionID })
   // The settings for one analysis: the review model named as it will be asked,
-  // for the loader and the summary.
+  // for the loader and the summary, and how much diff it reads in one call.
   const settingsFor = (sessionID: string) => {
     const model = findReviewModel(api, settings, sessionID)
-    return { ...settings, reviewModel: model ? formatModelRef(model) : settings.reviewModel }
+    if (model === undefined) return settings
+    return {
+      ...settings,
+      reviewModel: formatModelRef(model),
+      reviewBudgetChars: reviewBudgetForContext(findContextTokens(api, model)),
+    }
   }
   const analyze = (sessionID: string, isForced: boolean) =>
     queueAnalysis(engineFor(sessionID), settingsFor(sessionID), isForced)

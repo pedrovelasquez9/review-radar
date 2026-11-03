@@ -33,7 +33,10 @@ export function progressDescription(report: Report, messages: Messages): string 
       return messages.progressReadingChanges
     case 'triage':
       return messages.progressTriage(progress.fileCount)
-    case 'deep-review':
-      return messages.progressDeepReview(progress.fileCount, progress.model)
+    case 'deep-review': {
+      const description = messages.progressDeepReview(progress.fileCount, progress.model)
+      const hasParts = progress.part !== undefined && progress.partCount !== undefined
+      return hasParts ? `${description} (${progress.part}/${progress.partCount})` : description
+    }
   }
 }

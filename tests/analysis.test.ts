@@ -1,10 +1,55 @@
 import { expect, test } from 'claude-code/testing'
 
-import { EMPTY_REPORT, analyzeBranch, recoverInterruptedReport } from '../core/analysis'
+import { EMPTY_REPORT, analyzeBranch, recoverInterruptedReport, splitIntoParts } from '../core/analysis'
+import { splitDiffByFile } from '../core/diff'
 import { DEFAULT_SETTINGS } from '../hooks/settings'
 import { createFakeEngine, fileDiff } from './fixtures'
 
 const PRICE_DIFF = fileDiff('src/price.ts', 'const discount = 0.15')
+
+// Three files of about 100 characters each.
+const THREE_FILES_DIFF =
+  fileDiff('src/a.ts', 'const a = 1') + fileDiff('src/b.ts', 'const b = 2') + fileDiff('src/c.ts', 'const c = 3')
+
+test('changes that fit in one review skip the triage, however large', async () => {
+  const engine = createFakeEngine({ diff: THREE_FILES_DIFF, reviewAnswer: '{"summary":"s","findings":[]}' })
+
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+
+  expect(engine.modelRequests.map(request => request.model)).toEqual(['opus'])
+})
+
+test('changes over the budget are triaged in auto mode, then reviewed in parts', async () => {
+  const engine = createFakeEngine({ diff: THREE_FILES_DIFF, reviewAnswer: '{"summary":"s","findings":[]}' })
+
+  await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewBudgetChars: 150 }, false)
+
+  // The fake triage answers with no verdicts, so every file is still reviewed.
+  expect(engine.modelRequests.map(request => request.model)).toEqual(['haiku', 'opus', 'opus', 'opus'])
+  expect(String(engine.modelRequests[1]?.prompt).includes('This is part 1 of 3')).toBe(true)
+  expect(String(engine.modelRequests[1]?.prompt).includes('reviewed in another part (do not report): src/b.ts, src/c.ts')).toBe(
+    true,
+  )
+})
+
+test('the thorough mode never triages', async () => {
+  const engine = createFakeEngine({ diff: THREE_FILES_DIFF, reviewAnswer: '{"summary":"s","findings":[]}' })
+
+  await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewMode: 'thorough', reviewBudgetChars: 150 }, false)
+
+  expect(engine.modelRequests.map(request => request.model)).toEqual(['opus', 'opus', 'opus'])
+  expect(engine.progressSteps.includes('triage')).toBe(false)
+})
+
+test('files are grouped into parts that fit the budget, in diff order', async () => {
+  const files = splitDiffByFile(THREE_FILES_DIFF)
+  const fileNames = (budget: number) => splitIntoParts(files, budget).map(part => part.map(({ file }) => file))
+
+  expect(fileNames(10_000)).toEqual([['src/a.ts', 'src/b.ts', 'src/c.ts']])
+  expect(fileNames(150)).toEqual([['src/a.ts'], ['src/b.ts'], ['src/c.ts']])
+  // A file over the budget is still a part of its own.
+  expect(fileNames(10)).toEqual([['src/a.ts'], ['src/b.ts'], ['src/c.ts']])
+})
 
 const PRICE_REVIEW_ANSWER = JSON.stringify({
   summary: 'Changes pricing.',

@@ -44,6 +44,8 @@ export type Messages = {
   truncatedDiffNote: string
   fallbackModelNote: (preferredModel: string, usedModel: string) => string
   routineChangeTitle: string
+  // A file left out of a deep review too long to finish.
+  notReviewedTitle: string
   secretFindingTitle: string
   secretFindingReason: string
 
@@ -105,6 +107,7 @@ const ENGLISH: Messages = {
   truncatedDiffNote: ' (diff truncated: also review the full PR)',
   fallbackModelNote: (preferredModel, usedModel) => ` (reviewed with ${usedModel}: ${preferredModel} was unavailable)`,
   routineChangeTitle: 'Routine change',
+  notReviewedTitle: 'Not reviewed: too many changes for one analysis',
   secretFindingTitle: 'Possible secret in the code',
   secretFindingReason:
     'An added line looks like a literal credential: move it to a secret or environment variable, and rotate it if it was ever pushed.',
@@ -166,6 +169,7 @@ const SPANISH: Messages = {
   truncatedDiffNote: ' (diff truncado: revisa también la PR completa)',
   fallbackModelNote: (preferredModel, usedModel) => ` (revisado con ${usedModel}: ${preferredModel} no estaba disponible)`,
   routineChangeTitle: 'Cambio rutinario',
+  notReviewedTitle: 'Sin revisar: demasiados cambios para un análisis',
   secretFindingTitle: 'Posible secreto en el código',
   secretFindingReason:
     'Una línea añadida parece contener una credencial literal: muévela a un secreto o variable de entorno, y rótala si llegó a subirse.',

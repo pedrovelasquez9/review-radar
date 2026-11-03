@@ -2,6 +2,17 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] - 2026-11-03
+
+### Added
+
+- **`reviewMode` setting.** `auto` (the default) or `thorough`. `thorough` never triages: every changed file gets the deep review, so the triage can never clear a file by mistake. It spends more tokens on large branches.
+- **Deep review in parts.** When the files to review do not fit in one call, the review is split into parts (up to 6), and each part is told which files the others read. The loader shows the part it is on. Before, the diff was cut at 150,000 characters; now files past 6 parts are listed in the PR list as not reviewed.
+
+### Changed
+
+- **The triage runs only when the changes do not fit in one deep review.** Before, it ran from 30,000 characters on. Now each review model has a budget of diff it reads well in one call: 150,000 characters for `opus` and `sonnet`, 100,000 for `haiku`. In OpenCode the budget comes from the model's context window (half of it, at 3 characters per token), or 48,000 characters when the window is not known, so small local models get parts they can read.
+
 ## [0.7.0] - 2026-11-02
 
 ### Added
@@ -77,6 +88,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.8.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.8.0
 [0.7.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.7.0
 [0.6.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.6.0
 [0.5.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.5.0

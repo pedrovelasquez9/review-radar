@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod and OpenCode plugin · v0.7.0.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
+**Claude Code mod and OpenCode plugin · v0.8.0.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
 
 See what changed in each version in the [changelog](CHANGELOG.md).
 
@@ -45,8 +45,8 @@ AI assistants sometimes do more than asked: a version bump a project rule asked 
 
 1. **Diff.** `git diff` of the working tree against the merge base, plus untracked files. Lockfiles are left out of what the models read; only their names are passed on.
 2. **Secret floor.** A deterministic scan of added lines for literal credentials (API keys, tokens, private keys, JWTs). A hit is always critical, whatever the model says.
-3. **Triage (large diffs only).** When the changed files add up to 30,000 characters or more, **Haiku** at low effort sorts files into *inspect* or *routine* from their changed lines alone. Data and config files (by path and extension), files with a secret, and files Claude edited in this session always go on to the deep review. A file the triage skips or answers unreadably is inspected.
-4. **Deep review.** The review model (**Opus** by default, at high effort) reads the full diff of the files to inspect, together with your requests in this session and the files Claude edited, and returns a summary plus findings. Its instructions are prompt-cached. If that model cannot answer (no access, blocked by your organization, an API error), **Sonnet** reviews instead and the summary says so.
+3. **Triage (only when the changes do not fit in one review).** Each review model has a budget of diff it reads well in one call: 150,000 characters for `opus` and `sonnet`, 100,000 for `haiku`. When the changed files fit in it, every file goes to the deep review. Past it, and only in the `auto` mode, **Haiku** at low effort sorts files into *inspect* or *routine* from their changed lines alone. Data and config files (by path and extension), files with a secret, and files Claude edited in this session always go on to the deep review. A file the triage skips or answers unreadably is inspected. The `thorough` mode never triages.
+4. **Deep review.** The review model (**Opus** by default, at high effort) reads the full diff of the files to inspect, together with your requests in this session and the files Claude edited, and returns a summary plus findings. When the files to review do not fit in its budget, the review is split into parts (up to 6 calls), each told which files the other parts read. Its instructions are prompt-cached. If that model cannot answer (no access, blocked by your organization, an API error), **Sonnet** reviews instead and the summary says so.
 5. **Incremental.** Each file's diff is hashed. On the next turn only files whose diff changed are sent again; unchanged files keep their findings (and the model is told about them). A turn that ran no file-changing tool does not run git at all. `/review-radar` and *Re-analyze* force a full review.
 
 ## Requirements
@@ -105,10 +105,11 @@ Do not load an installed copy and a `--plugin-dir` copy at the same time.
 | `language` | `en`, `es` | `en` | Language of the pane, the report and the model's summaries and findings. Changing it redoes the next analysis in the new language. |
 | `reviewModel` | `opus`, `sonnet`, `haiku` | `opus` | Model for the deep review. `sonnet` is cheaper and faster; `haiku` is cheapest and catches less. Falls back to `sonnet` when the chosen one cannot answer. |
 | `autoAnalyze` | `true`, `false` | `true` | Analyze at the end of every turn that changed files. With `false`, only `/review-radar` and *Re-analyze* run an analysis, so tokens are spent only when you ask. |
+| `reviewMode` | `auto`, `thorough` | `auto` | `auto` sorts out routine files with a fast model only when the changes do not fit in one deep review. `thorough` never does: every changed file gets the deep review, in several calls if needed. More tokens on large branches, nothing cleared by the sorting. |
 
 Set them in any of these ways:
 
-- In a session: open `/config` and change the *Language*, *Review model* and *Analyze automatically* rows. The mod reloads with the new values.
+- In a session: open `/config` and change the *Language*, *Review model*, *Analyze automatically* and *Review mode* rows. The mod reloads with the new values.
 - When installing:
 
   ```shell
@@ -145,7 +146,7 @@ Then `/reload-plugins`. Use `/plugin` to disable or uninstall it.
 ## Limits
 
 - Whether a change is business logic, architecture or a mistake is the model's judgment: it can miss things or vary between runs. Only the secret scan is deterministic. Use review-radar to focus your review, not to replace it.
-- The deep review reads up to 150,000 characters of diff; past that the summary says it was cut. The triage reads up to 80,000. At most 40 untracked files are read.
+- The deep review reads up to 6 parts of the review budget (900,000 characters with `opus`); files past that are listed in the PR list as not reviewed, and the summary says the diff was cut. A single file larger than the budget is cut. The triage reads up to 80,000 characters. At most 40 untracked files are read.
 - Incremental reuse keeps findings of unchanged files from an earlier run, so cross-file context for those files comes from that run.
 - A turn whose only changes came from tools outside Edit/Write/NotebookEdit/Bash/PowerShell (for example an MCP tool), or from you editing files by hand, is not analyzed automatically: run `/review-radar`.
 - Headless runs (`claude -p`, the SDK) analyze only when `/review-radar` is called.
@@ -184,8 +185,9 @@ From a local clone, use the clone's folder instead of the package name (run `bun
 | `model` | `provider/model`, e.g. `anthropic/claude-opus-5-5` | the session's own model |
 | `triageModel` | `provider/model`, for sorting large diffs | the review model |
 | `autoAnalyze` | `true`, `false` | `true` |
+| `reviewMode` | `auto`, `thorough` (see [Configuration](#configuration)) | `auto` |
 
-The models are asked through OpenCode itself, so any provider you set up there works. Each question runs in a child session of yours with every tool off and every permission denied, so the model can only answer; the child session is deleted right after. The review's quality depends on the model: a small local model may miss findings or answer in English.
+The models are asked through OpenCode itself, so any provider you set up there works. Each question runs in a child session of yours with every tool off and every permission denied, so the model can only answer; the child session is deleted right after. The review budget comes from the model's context window as OpenCode reports it (half of it, at 3 characters per token, up to 150,000 characters); for a model with no known window, 48,000 characters are assumed. The review's quality depends on the model: a small local model may miss findings or answer in English.
 
 ### Limits in OpenCode
 

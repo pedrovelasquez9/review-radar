@@ -72,6 +72,12 @@ export function findReviewModel(api: TuiPluginApi, settings: OpenCodeSettings, s
   return providerID && modelPath.length > 0 ? { providerID, modelID: modelPath.join('/') } : undefined
 }
 
+// The model's context window in tokens, when its provider says it.
+export function findContextTokens(api: TuiPluginApi, model: ModelRef): number | undefined {
+  const provider = api.state.provider.find(({ id }) => id === model.providerID)
+  return provider?.models[model.modelID]?.limit?.context
+}
+
 // Runs a program by its arguments (no shell), killed past the timeout.
 async function runCommand(argv: string[], cwd: string, timeoutMs: number) {
   const child = Bun.spawn(argv, { cwd, stdout: 'pipe', stderr: 'ignore' })

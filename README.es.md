@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-**Mod de Claude Code y plugin de OpenCode · v0.7.0.** Un panel de revisión para el humano en el bucle. Cuando el agente termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR». En [OpenCode](#opencode) la misma revisión vive en la barra lateral y en un diálogo.
+**Mod de Claude Code y plugin de OpenCode · v0.8.0.** Un panel de revisión para el humano en el bucle. Cuando el agente termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR». En [OpenCode](#opencode) la misma revisión vive en la barra lateral y en un diálogo.
 
 Los cambios de cada versión están en el [changelog](CHANGELOG.md) (en inglés).
 
@@ -45,8 +45,8 @@ Los asistentes de IA a veces hacen más de lo pedido: subir una versión porque 
 
 1. **Diff.** `git diff` del árbol de trabajo contra el merge base, más los archivos sin trackear. Los lockfiles no se pasan a los modelos; solo sus nombres.
 2. **Suelo de secretos.** Un escaneo determinista de las líneas añadidas busca credenciales literales (API keys, tokens, claves privadas, JWT). Si encuentra una, es crítica diga lo que diga el modelo.
-3. **Triaje (solo diffs grandes).** Cuando los archivos cambiados suman 30.000 caracteres o más, **Haiku** con esfuerzo bajo separa los archivos en *inspeccionar* o *rutinario* mirando solo sus líneas cambiadas. Los archivos de datos y configuración (por ruta y extensión), los que tienen un secreto y los que Claude editó en esta sesión pasan siempre a la revisión a fondo. Un archivo que el triaje se salta o cuya respuesta no se puede leer se inspecciona.
-4. **Revisión a fondo.** El modelo de revisión (**Opus** por defecto, con esfuerzo alto) lee el diff completo de los archivos a inspeccionar, junto con tus peticiones en esta sesión y los archivos que editó Claude, y devuelve un resumen y los hallazgos. Sus instrucciones quedan en la caché de prompts. Si ese modelo no puede responder (sin acceso, bloqueado por tu organización, un error de la API), revisa **Sonnet** y el resumen lo indica.
+3. **Triaje (solo cuando los cambios no caben en una revisión).** Cada modelo de revisión tiene un presupuesto de diff que lee bien en una llamada: 150.000 caracteres para `opus` y `sonnet`, 100.000 para `haiku`. Si los archivos cambiados caben, todos pasan a la revisión a fondo. Si no caben, y solo en el modo `auto`, **Haiku** con esfuerzo bajo separa los archivos en *inspeccionar* o *rutinario* mirando solo sus líneas cambiadas. Los archivos de datos y configuración (por ruta y extensión), los que tienen un secreto y los que Claude editó en esta sesión pasan siempre a la revisión a fondo. Un archivo que el triaje se salta o cuya respuesta no se puede leer se inspecciona. El modo `thorough` nunca hace triaje.
+4. **Revisión a fondo.** El modelo de revisión (**Opus** por defecto, con esfuerzo alto) lee el diff completo de los archivos a inspeccionar, junto con tus peticiones en esta sesión y los archivos que editó Claude, y devuelve un resumen y los hallazgos. Si los archivos a revisar no caben en su presupuesto, la revisión se reparte en partes (hasta 6 llamadas), y cada una sabe qué archivos leen las demás. Sus instrucciones quedan en la caché de prompts. Si ese modelo no puede responder (sin acceso, bloqueado por tu organización, un error de la API), revisa **Sonnet** y el resumen lo indica.
 5. **Incremental.** Se guarda un hash del diff de cada archivo. En el siguiente turno solo se vuelven a enviar los archivos cuyo diff cambió; los demás conservan sus hallazgos (y el modelo los conoce). Un turno sin herramientas que modifiquen archivos ni siquiera ejecuta git. `/review-radar` y *Re-analizar* fuerzan una revisión completa.
 
 ## Requisitos
@@ -105,10 +105,11 @@ No cargues a la vez una copia instalada y otra con `--plugin-dir`.
 | `language` | `en`, `es` | `en` | Idioma del panel, del informe y de los resúmenes y hallazgos del modelo. Al cambiarlo, el siguiente análisis se rehace en el nuevo idioma. |
 | `reviewModel` | `opus`, `sonnet`, `haiku` | `opus` | Modelo de la revisión a fondo. `sonnet` es más barato y rápido; `haiku` es el más barato y detecta menos. Si el elegido no puede responder, revisa `sonnet`. |
 | `autoAnalyze` | `true`, `false` | `true` | Analiza al final de cada turno que cambió archivos. Con `false`, solo `/review-radar` y *Re-analizar* lanzan un análisis, así que solo gastas tokens cuando lo pides. |
+| `reviewMode` | `auto`, `thorough` | `auto` | `auto` aparta los archivos rutinarios con un modelo rápido solo cuando los cambios no caben en una revisión a fondo. `thorough` nunca lo hace: todos los archivos cambiados pasan por la revisión a fondo, en varias llamadas si hace falta. Más tokens en ramas grandes, y el triaje no descarta nada. |
 
 Puedes configurarlas de cualquiera de estas formas:
 
-- En una sesión: abre `/config` y cambia las filas *Language*, *Review model* y *Analyze automatically*. El mod se recarga con los nuevos valores.
+- En una sesión: abre `/config` y cambia las filas *Language*, *Review model*, *Analyze automatically* y *Review mode*. El mod se recarga con los nuevos valores.
 - Al instalar:
 
   ```shell
@@ -145,7 +146,7 @@ Después, `/reload-plugins`. Usa `/plugin` para desactivarlo o desinstalarlo.
 ## Límites
 
 - Decidir si un cambio es lógica de negocio, arquitectura o un error es criterio del modelo: puede pasar algo por alto o variar entre ejecuciones. Solo el escaneo de secretos es determinista. Usa review-radar para enfocar tu revisión, no para sustituirla.
-- La revisión a fondo lee hasta 150.000 caracteres de diff; si hay más, el resumen avisa de que se truncó. El triaje lee hasta 80.000. Se leen como máximo 40 archivos sin trackear.
+- La revisión a fondo lee hasta 6 partes del presupuesto del modelo (900.000 caracteres con `opus`); los archivos que no entran aparecen en la lista de la PR como sin revisar y el resumen avisa del corte. Un solo archivo mayor que el presupuesto se corta. El triaje lee hasta 80.000 caracteres. Se leen como máximo 40 archivos sin trackear.
 - La reutilización incremental conserva los hallazgos de los archivos sin cambios de un análisis anterior, así que el contexto entre archivos para esos viene de aquel análisis.
 - Un turno cuyos cambios vienen solo de herramientas que no son Edit/Write/NotebookEdit/Bash/PowerShell (por ejemplo, una herramienta MCP), o de que edites archivos a mano, no se analiza solo: ejecuta `/review-radar`.
 - En modo headless (`claude -p`, el SDK) solo se analiza al llamar a `/review-radar`.
@@ -184,8 +185,9 @@ Desde un clon local, pon la carpeta del clon en lugar del nombre del paquete (an
 | `model` | `proveedor/modelo`, p. ej. `anthropic/claude-opus-5-5` | el modelo de la propia sesión |
 | `triageModel` | `proveedor/modelo`, para clasificar diffs grandes | el modelo de revisión |
 | `autoAnalyze` | `true`, `false` | `true` |
+| `reviewMode` | `auto`, `thorough` (ver [Configuración](#configuración)) | `auto` |
 
-Los modelos se consultan a través del propio OpenCode, así que vale cualquier proveedor que tengas configurado ahí. Cada consulta se hace en una sesión hija de la tuya con todas las herramientas desactivadas y todos los permisos denegados, de modo que el modelo solo puede responder; la sesión hija se borra al terminar. La calidad de la revisión depende del modelo: uno local pequeño puede pasar por alto hallazgos o responder en inglés.
+Los modelos se consultan a través del propio OpenCode, así que vale cualquier proveedor que tengas configurado ahí. Cada consulta se hace en una sesión hija de la tuya con todas las herramientas desactivadas y todos los permisos denegados, de modo que el modelo solo puede responder; la sesión hija se borra al terminar. El presupuesto de la revisión sale de la ventana de contexto del modelo según la informa OpenCode (la mitad, a 3 caracteres por token, hasta 150.000 caracteres); para un modelo sin ventana conocida se suponen 48.000 caracteres. La calidad de la revisión depende del modelo: uno local pequeño puede pasar por alto hallazgos o responder en inglés.
 
 ### Límites en OpenCode
 

@@ -1,6 +1,6 @@
 {
   "name": "review-radar",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "Programación en español",
     "url": "https://github.com/pedrovelasquez9"
@@ -42,6 +42,13 @@
       "title": "Analyze automatically",
       "description": "Analyze at the end of every turn that changed files. Off: only /review-radar and the Re-analyze button run an analysis (and spend tokens).",
       "default": true
+    },
+    "reviewMode": {
+      "type": "string",
+      "title": "Review mode",
+      "description": "auto: a fast model sorts out routine files only when the changes do not fit in one deep review. thorough: every changed file gets the deep review, in several calls if needed (more tokens, nothing cleared by the sorting).",
+      "options": ["auto", "thorough"],
+      "default": "auto"
     }
   },
   "homepage": "https://github.com/pedrovelasquez9/review-radar#readme",

@@ -12,6 +12,10 @@ export type ReviewPromptInput = {
   diff: string
   lockfiles: string[]
   routineFiles: string[]
+  // Files the deep review reads in another part of this analysis.
+  otherPartFiles: string[]
+  // Which part this is, when the deep review is split into several.
+  part?: { index: number; count: number }
   // Files reviewed in an earlier analysis and unchanged since.
   unchangedFiles: string[]
   earlierCriticalFindings: Finding[]
@@ -44,6 +48,14 @@ export function buildReviewPrompt(input: ReviewPromptInput): { prompt: string; i
   const isTruncated = input.diff.length > input.maxDiffChars
   const contextLines: string[] = []
 
+  if (input.part) {
+    contextLines.push(
+      `This is part ${input.part.index} of ${input.part.count} of the review: report findings only for the files in the diff below, but write the summary about the whole branch.`,
+    )
+  }
+  if (input.otherPartFiles.length > 0) {
+    contextLines.push(`Also changed, reviewed in another part (do not report): ${input.otherPartFiles.join(', ')}`)
+  }
   if (input.lockfiles.length > 0) {
     contextLines.push(`Lockfiles changed (contents omitted): ${input.lockfiles.join(', ')}`)
   }

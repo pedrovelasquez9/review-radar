@@ -23,7 +23,8 @@ export type ReportStatus = 'idle' | 'analyzing' | 'ready' | 'error' | 'no-repo'
 export type AnalysisProgress =
   | { step: 'reading-changes' }
   | { step: 'triage'; fileCount: number }
-  | { step: 'deep-review'; fileCount: number; model: string }
+  // `part` and `partCount` are set when the deep review is split into several calls.
+  | { step: 'deep-review'; fileCount: number; model: string; part?: number; partCount?: number }
 
 export type Report = {
   status: ReportStatus
