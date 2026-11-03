@@ -1,6 +1,7 @@
-// Stage 1 of the analysis, for large diffs only: a small fast model sorts the
-// changed files into "inspect" (goes to the deep review) or "routine" (goes to
-// the PR list). It never writes findings.
+// Stage 1 of the analysis, for changes too large for one deep review: a small
+// fast model sorts the changed files into "inspect" (goes to the deep review) or
+// "routine" (goes to the PR list). It never writes findings, and it cannot clear
+// data/config files or files with a logic change (see logic-change.ts).
 
 import type { FileDiff } from './diff'
 import { extractJsonObject } from './json'

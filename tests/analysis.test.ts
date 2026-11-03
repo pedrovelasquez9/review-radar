@@ -7,9 +7,24 @@ import { createFakeEngine, fileDiff } from './fixtures'
 
 const PRICE_DIFF = fileDiff('src/price.ts', 'const discount = 0.15')
 
-// Three files of about 100 characters each.
+// Three files of about 100 characters each, with no logic change: the triage may clear them.
 const THREE_FILES_DIFF =
-  fileDiff('src/a.ts', 'const a = 1') + fileDiff('src/b.ts', 'const b = 2') + fileDiff('src/c.ts', 'const c = 3')
+  fileDiff('src/a.ts', "const a = 'one'") + fileDiff('src/b.ts', "const b = 'two'") + fileDiff('src/c.ts', "const c = 'three'")
+
+test('the triage is never shown files it could not clear', async () => {
+  const engine = createFakeEngine({
+    diff: THREE_FILES_DIFF + fileDiff('src/price.ts', 'const discount = 0.15') + fileDiff('app.yaml', 'replicas: two'),
+    reviewAnswer: '{"summary":"s","findings":[]}',
+  })
+
+  await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewBudgetChars: 150 }, false)
+
+  const triagePrompt = String(engine.modelRequests[0]?.prompt)
+  expect(engine.modelRequests[0]?.model).toBe('haiku')
+  expect(triagePrompt.includes('### src/a.ts')).toBe(true)
+  expect(triagePrompt.includes('src/price.ts')).toBe(false)
+  expect(triagePrompt.includes('app.yaml')).toBe(false)
+})
 
 test('changes that fit in one review skip the triage, however large', async () => {
   const engine = createFakeEngine({ diff: THREE_FILES_DIFF, reviewAnswer: '{"summary":"s","findings":[]}' })

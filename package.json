@@ -1,6 +1,6 @@
 {
   "name": "opencode-review-radar",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "OpenCode TUI plugin: after each turn that changed code, shows in the sidebar and a review dialog what needs a human (business logic, architecture, data and migrations, secrets, third parties, unrequested changes); the rest goes to the PR.",
   "type": "module",
   "license": "MIT",

@@ -2,6 +2,16 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] - 2026-11-03
+
+### Added
+
+- **Logic-change safety net.** A code file whose changed lines alter a decision or a computation (a condition, a comparison, boolean logic, a number, a `return` or `throw`) always gets the deep review: the triage can no longer clear it. It is found without a model, by comparing each changed line's shape, so renames and reformatting do not count, while a `>` turned into `>=` or a new `0.15` does. Docs, styles and tests never count.
+
+### Changed
+
+- The triage is only shown the files it could clear. Data and config files, files with a secret or a logic change, and files the agent edited in this session go straight to the deep review, so the triage prompt is shorter.
+
 ## [0.8.0] - 2026-11-03
 
 ### Added
@@ -88,6 +98,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.9.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.9.0
 [0.8.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.8.0
 [0.7.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.7.0
 [0.6.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.6.0

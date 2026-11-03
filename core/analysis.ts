@@ -6,6 +6,7 @@ import type { AnalysisProgress, Finding, Report } from '../types'
 import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles, splitDiffByFile } from './diff'
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
+import { hasLogicChange } from './logic-change'
 import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff } from './git'
 import { hasIntent, toRepositoryPaths } from './intent'
 import type { SessionIntent } from './intent'
@@ -226,8 +227,8 @@ function splitByEarlierAnalysis(
 
 // Which changed files get the deep review. Changes that fit in one review call
 // skip the triage, and so does the thorough mode: every file is reviewed, so
-// none can be cleared by mistake. Data/config files and `filesToAlwaysReview`
-// are never cleared.
+// none can be cleared by mistake. Data/config files, files with a logic change
+// and `filesToAlwaysReview` are never cleared, so the triage is not even shown them.
 async function triageChangedFiles(
   engine: Engine,
   settings: Settings,
@@ -240,19 +241,22 @@ async function triageChangedFiles(
   let titlesByFile = new Map<string, string>()
 
   const needsTriage = settings.reviewMode === 'auto' && changedChars > settings.reviewBudgetChars
-  if (needsTriage) {
-    await showProgress(engine, { step: 'triage', fileCount: changedFiles.length })
+  const clearableFiles = needsTriage
+    ? changedFiles.filter(
+        fileDiff => !mustAlwaysInspect(fileDiff.file) && !filesToAlwaysReview.has(fileDiff.file) && !hasLogicChange(fileDiff),
+      )
+    : []
+  if (clearableFiles.length > 0) {
+    await showProgress(engine, { step: 'triage', fileCount: clearableFiles.length })
     const triageAnswer = await engine.askTriageModel(
       triageSystemPrompt(messages.languageNameForModel),
-      buildTriagePrompt(changedFiles).slice(0, Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars)),
+      buildTriagePrompt(clearableFiles).slice(0, Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars)),
     )
-    const triage = parseTriageAnswer(triageAnswer ?? '', changedFiles)
+    const triage = parseTriageAnswer(triageAnswer ?? '', clearableFiles)
     titlesByFile = triage.titlesByFile
 
-    for (const { file } of changedFiles) {
-      const mustReview = mustAlwaysInspect(file) || filesToAlwaysReview.has(file)
-      const isClearedByTriage = !triage.filesToInspect.has(file) && !mustReview
-      if (isClearedByTriage) filesToInspect.delete(file)
+    for (const { file } of clearableFiles) {
+      if (!triage.filesToInspect.has(file)) filesToInspect.delete(file)
     }
   }
 
