@@ -3,7 +3,7 @@ import { expect, test } from 'claude-code/testing'
 import { analyzeBranch } from '../core/analysis'
 import { chooseContextFiles } from '../core/project-context'
 import { DEFAULT_SETTINGS } from '../hooks/settings'
-import { createFakeEngine, fileDiff } from './fixtures'
+import { createFakeEngine, fileDiff, promptText } from './fixtures'
 
 test('agent files from the root down come first, then the README, then the docs', async () => {
   const paths = [
@@ -32,7 +32,7 @@ test('the review reads the project docs as business context', async () => {
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  const prompt = String(engine.modelRequests[0]?.prompt)
+  const prompt = promptText(engine.modelRequests[0])
   expect(prompt.includes("The project's own docs, for business context")).toBe(true)
   expect(prompt.includes('### AGENTS.md\nDiscounts never go above 10%.')).toBe(true)
   expect(prompt.indexOf('AGENTS.md') < prompt.indexOf('README.md')).toBe(true)
@@ -48,7 +48,7 @@ test('long docs are cut to the context budget', async () => {
   // A fifth of a 20,000-character budget: 4,000 characters of docs.
   await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewBudgetChars: 20_000 }, false)
 
-  const prompt = String(engine.modelRequests[0]?.prompt)
+  const prompt = promptText(engine.modelRequests[0])
   expect(prompt.includes('x'.repeat(4_000))).toBe(true)
   expect(prompt.includes('x'.repeat(4_001))).toBe(false)
   expect(prompt.includes('A shop.')).toBe(false)
@@ -62,5 +62,5 @@ test('without docs the prompt has no project context', async () => {
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  expect(String(engine.modelRequests[0]?.prompt).includes("project's own docs")).toBe(false)
+  expect(promptText(engine.modelRequests[0]).includes("project's own docs")).toBe(false)
 })

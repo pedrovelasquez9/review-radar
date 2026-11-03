@@ -37,6 +37,7 @@ export async function askReviewModel(
   completeWithModel: CompleteWithModel,
   preferredModel: ReviewModel,
   systemPrompt: string,
+  cachedBlocks: string[],
   prompt: string,
 ): Promise<ReviewModelAnswer> {
   const modelsToTry = preferredModel === FALLBACK_REVIEW_MODEL ? [preferredModel] : [preferredModel, FALLBACK_REVIEW_MODEL]
@@ -48,7 +49,9 @@ export async function askReviewModel(
         model,
         // The system prompt is the same on every call: cached, it is billed once.
         system: [{ text: systemPrompt, cache: true }],
-        prompt,
+        // The project docs and the session's requests repeat across parts and
+        // turns: each block is cached up to its end, the rest is billed afresh.
+        prompt: [...cachedBlocks.map(text => ({ text: `${text}\n\n`, cache: true as const })), { text: prompt }],
         effort: 'high',
         maxTokens: 8000,
         timeoutMs: 300_000,

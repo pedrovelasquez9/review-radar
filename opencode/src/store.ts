@@ -41,7 +41,9 @@ export function createReviewStore(kv: TuiPluginApi['kv'], directory: string): Re
     updateReport: change => {
       const next = change(report())
       setReport(next)
-      kv.set(reportKey, { shape: REPORT_SHAPE, value: next })
+      // The loader's steps are not worth a disk write each: only finished
+      // reports are stored (a restart mid-analysis shows the last one).
+      if (next.status !== 'analyzing') kv.set(reportKey, { shape: REPORT_SHAPE, value: next })
     },
     reviewedKeys,
     setReviewed: (reviewKey, isReviewed) => {

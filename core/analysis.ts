@@ -3,13 +3,13 @@
 // they do not fit in one call), and store the report the pane draws.
 
 import type { AnalysisProgress, Finding, Report } from '../types'
-import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles, splitDiffByFile } from './diff'
+import { excerptForFinding, findHunkContainingLine, hashText, separateGeneratedFiles, splitDiffByFile } from './diff'
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
 import { hasLogicChange } from './logic-change'
 import { MAX_REVIEW_CONTEXT_CHARS, MAX_TRIAGE_CONTEXT_CHARS, describeProjectContext, readProjectContext } from './project-context'
 import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff, readWiderBranchDiff } from './git'
-import { hasIntent, toRepositoryPaths } from './intent'
+import { hasIntent, keepRequestsWithinBudget, toRepositoryPaths } from './intent'
 import type { SessionIntent } from './intent'
 import { messagesFor } from './messages'
 import type { Messages } from './messages'
@@ -114,8 +114,8 @@ async function runAnalysis(
   engine.revealPane()
   engine.showStatus(messages.statusLineAnalyzing)
 
-  const { diffWithoutLockfiles, lockfiles } = separateLockfiles(fullDiff)
-  const files = splitDiffByFile(diffWithoutLockfiles)
+  const allFiles = splitDiffByFile(fullDiff)
+  const { sourceFiles: files, generatedFiles } = separateGeneratedFiles(allFiles)
   const fileDiffHashes = await hashEachFile(files)
 
   const canReuseEarlierFindings = !isForced && isSameLanguage
@@ -126,7 +126,8 @@ async function runAnalysis(
   const secretFindings = findLiteralSecrets(fullDiff, messages).filter(
     finding => !unchangedFiles.includes(finding.file),
   )
-  const sessionIntent = await loadSessionIntent(engine)
+  // The session's conversation is read only when a model will be asked.
+  const sessionIntent = changedFiles.length > 0 ? await loadSessionIntent(engine) : undefined
 
   // Files holding a secret, and files the agent edited in this session (to check
   // them against the requests), always get the deep review.
@@ -158,12 +159,12 @@ async function runAnalysis(
     routineFindings,
     unchangedFiles,
     reusedFindings,
-    lockfiles,
+    generatedFiles,
     sessionIntent,
     previousSummary: previousReport.summary,
   })
 
-  const diffByFile = new Map(splitDiffByFile(fullDiff).map(({ file, diffText }) => [file, diffText]))
+  const diffByFile = new Map(allFiles.map(({ file, diffText }) => [file, diffText]))
   const newFindings = await attachDiffExcerpts(mergeSecretFindings(deepReview.findings, secretFindings), diffByFile)
   const findings = [...newFindings, ...reusedFindings, ...routineFindings]
 
@@ -190,7 +191,7 @@ async function loadSessionIntent(engine: Engine): Promise<SessionIntent | undefi
   if (repositoryRoot === undefined) return undefined
 
   const intent: SessionIntent = {
-    requests: recorded.requests,
+    requests: keepRequestsWithinBudget(recorded.requests),
     editedFiles: toRepositoryPaths(recorded.editedFiles, repositoryRoot),
   }
   return hasIntent(intent) ? intent : undefined
@@ -305,13 +306,17 @@ async function widenContext(
   const partCount = splitIntoParts(files, settings.reviewBudgetChars).length
 
   for (const context of ['function', 'ten-lines'] as const) {
-    const widerDiff = await readWiderBranchDiff(engine, baseBranch, context)
+    const widerDiff = await readWiderBranchDiff(
+      engine,
+      baseBranch,
+      context,
+      files.map(({ file }) => file),
+    )
     const widerByFile = new Map(splitDiffByFile(widerDiff).map(wider => [wider.file, wider.diffText]))
     const widened = files.map((file): FileDiff => {
       const widerText = widerByFile.get(file.file)
       const fits = widerText !== undefined && widerText.length <= settings.reviewBudgetChars
-      // The last file of a diff has no closing newline (git output is trimmed).
-      return fits ? { file: file.file, diffText: widerText.endsWith('\n') ? widerText : `${widerText}\n` } : file
+      return fits ? { file: file.file, diffText: widerText } : file
     })
     if (splitIntoParts(widened, settings.reviewBudgetChars).length <= partCount) return widened
   }
@@ -325,7 +330,7 @@ type DeepReviewInput = {
   routineFindings: Finding[]
   unchangedFiles: string[]
   reusedFindings: Finding[]
-  lockfiles: string[]
+  generatedFiles: string[]
   sessionIntent: SessionIntent | undefined
   previousSummary: string
 }
@@ -365,7 +370,7 @@ async function reviewInDepth(
     const review = buildReviewPrompt({
       diff: partFiles.map(({ diffText }) => diffText).join(''),
       projectContext: input.projectContext,
-      lockfiles: input.lockfiles,
+      generatedFiles: input.generatedFiles,
       routineFiles: input.routineFindings.map(({ file }) => file),
       otherPartFiles: input.filesToReview.filter(file => !partFiles.includes(file)).map(({ file }) => file),
       part,
@@ -375,7 +380,11 @@ async function reviewInDepth(
       maxDiffChars: settings.reviewBudgetChars,
     })
 
-    const answer = await engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.prompt)
+    const answer = await engine.askReviewModel(
+      reviewSystemPrompt(messages.languageNameForModel),
+      review.cachedBlocks,
+      review.prompt,
+    )
     const parsed = parseReviewAnswer(answer.text)
     summaries.push(parsed.summary)
     findings.push(...parsed.findings)

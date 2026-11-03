@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { SessionMessage } from 'claude-code'
 
-import { hasIntent, toRepositoryPaths } from '../core/intent'
+import { hasIntent, keepRequestsWithinBudget, toRepositoryPaths } from '../core/intent'
 import { readIntentFromTranscript } from '../hooks/transcript'
 
 function userMessage(text: string): SessionMessage {
@@ -71,4 +71,16 @@ test('intent needs both a request and an edited file', async () => {
   expect(hasIntent({ requests: ['Fix it'], editedFiles: ['a.ts'] })).toBe(true)
   expect(hasIntent({ requests: [], editedFiles: ['a.ts'] })).toBe(false)
   expect(hasIntent({ requests: ['Fix it'], editedFiles: [] })).toBe(false)
+})
+
+test('a long session keeps its first request and the latest ones', async () => {
+  const requests = ['Build the cart', ...Array.from({ length: 20 }, (_, index) => `${index}`.padEnd(1_000, '.'))]
+
+  const kept = keepRequestsWithinBudget(requests)
+
+  expect(kept[0]).toBe('Build the cart')
+  expect(kept[1]).toBe('(5 earlier request(s) left out)')
+  expect(kept.at(-1)).toBe(requests.at(-1))
+  expect(kept.length).toBe(17)
+  expect(keepRequestsWithinBudget(['a', 'b'])).toEqual(['a', 'b'])
 })

@@ -5,6 +5,12 @@ import type { Engine } from './engine'
 const GIT_TIMEOUT_MS = 20_000
 // Untracked files are read one by one; past this many the rest are left out.
 const MAX_UNTRACKED_FILES = 40
+// An untracked text file is kept up to this many characters: past it, it is a
+// log or a dump, and holding it whole would only cost memory (the deep review
+// reads at most its budget of it anyway).
+const MAX_UNTRACKED_FILE_CHARS = 1_000_000
+// The wider diff names the files to review when their paths fit on a command line.
+const MAX_PATHSPEC_CHARS = 8_000
 // Tried in order when the remote does not name its default branch.
 const BASE_BRANCH_CANDIDATES = ['origin/main', 'origin/master', 'main', 'master']
 
@@ -45,15 +51,29 @@ export async function readBranchDiff(engine: Engine, baseBranch: string): Promis
 // enclosing function (git finds it from the file's language), or 10 lines.
 export type WiderContext = 'function' | 'ten-lines'
 
-// The committed and uncommitted changes again, with wider context. Untracked
-// files are left out: their diff already holds the whole file.
-export function readWiderBranchDiff(engine: Engine, baseBranch: string, context: WiderContext): Promise<string> {
-  return readTrackedDiff(engine, baseBranch, context === 'function' ? ['--function-context'] : ['-U10'])
+// The committed and uncommitted changes of `files` again, with wider context.
+// Untracked files are left out: their diff already holds the whole file.
+export function readWiderBranchDiff(
+  engine: Engine,
+  baseBranch: string,
+  context: WiderContext,
+  files: string[],
+): Promise<string> {
+  const contextArgs = context === 'function' ? ['--function-context'] : ['-U10']
+  const fitsOnCommandLine = files.join(' ').length <= MAX_PATHSPEC_CHARS
+  return readTrackedDiff(engine, baseBranch, contextArgs, fitsOnCommandLine ? files : [])
 }
 
-async function readTrackedDiff(engine: Engine, baseBranch: string, contextArgs: string[]): Promise<string> {
+// `paths` empty: the whole repository.
+async function readTrackedDiff(
+  engine: Engine,
+  baseBranch: string,
+  contextArgs: string[],
+  paths: string[] = [],
+): Promise<string> {
   const forkPoint = (await runGit(engine, ['merge-base', 'HEAD', baseBranch])) ?? 'HEAD'
-  return (await runGit(engine, ['diff', '--no-color', '--no-ext-diff', ...contextArgs, forkPoint])) ?? ''
+  const pathspec = paths.length > 0 ? ['--', ...paths] : []
+  return (await runGit(engine, ['diff', '--no-color', '--no-ext-diff', ...contextArgs, forkPoint, ...pathspec])) ?? ''
 }
 
 // stdout of a successful git command, trimmed; undefined when it fails.
@@ -72,7 +92,7 @@ async function readUntrackedFilesAsDiff(engine: Engine): Promise<string> {
     const content = await engine.readTextFile(path)
     // A NUL character means a binary file: left out.
     const isReadableText = content !== undefined && !content.includes('\u0000')
-    if (isReadableText) fileDiffs.push(newFileDiff(path, content))
+    if (isReadableText) fileDiffs.push(newFileDiff(path, content.slice(0, MAX_UNTRACKED_FILE_CHARS)))
   }
   return fileDiffs.join('')
 }

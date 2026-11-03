@@ -10,28 +10,31 @@ export type FileDiff = {
 // Longest excerpt drawn under a finding; a longer hunk is cut around the line.
 const MAX_EXCERPT_LINES = 80
 
-const LOCKFILE_PATTERN = /(^|\/)[^/]*(\.lock|-lock\.json|-lock\.ya?ml|\.lockb)$/
+// Files no person writes: lockfiles, build output at the root, minified files,
+// source maps and test snapshots. The files they come from are in the diff.
+const GENERATED_FILE_PATTERN =
+  /(^|\/)[^/]*(\.lock|-lock\.json|-lock\.ya?ml|\.lockb)$|^(dist|coverage)\/|\.min\.(js|css)$|\.map$|(^|\/)__snapshots__\/|\.snap$/
 const HUNK_HEADER_PATTERN = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?/
 
+// Each file's text ends in exactly one newline, wherever it sat in the diff: git's
+// output comes trimmed, and the last file's hash must not change because
+// another file now follows it (that would send it to the models again).
 export function splitDiffByFile(diff: string): FileDiff[] {
   return diff
     .split(/(?=^diff --git )/m)
     .filter(section => section.startsWith('diff --git '))
     .map(section => ({
       file: /^diff --git a\/(\S+)/.exec(section)?.[1] ?? '',
-      diffText: section,
+      diffText: `${section.trimEnd()}\n`,
     }))
 }
 
-// Lockfiles drown a diff in generated lines; the manifest next to them says what changed.
-export function separateLockfiles(diff: string): { diffWithoutLockfiles: string; lockfiles: string[] } {
-  const files = splitDiffByFile(diff)
-  const lockfiles = files.filter(({ file }) => LOCKFILE_PATTERN.test(file))
-  const others = files.filter(({ file }) => !LOCKFILE_PATTERN.test(file))
-
+// Generated files drown a diff in lines nobody wrote; the models get their names
+// only. The secret scan still reads them, in the whole diff.
+export function separateGeneratedFiles(files: FileDiff[]): { sourceFiles: FileDiff[]; generatedFiles: string[] } {
   return {
-    diffWithoutLockfiles: others.map(({ diffText }) => diffText).join(''),
-    lockfiles: lockfiles.map(({ file }) => file),
+    sourceFiles: files.filter(({ file }) => !GENERATED_FILE_PATTERN.test(file)),
+    generatedFiles: files.filter(({ file }) => GENERATED_FILE_PATTERN.test(file)).map(({ file }) => file),
   }
 }
 

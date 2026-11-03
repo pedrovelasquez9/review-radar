@@ -38,9 +38,11 @@ export function createOpenCodeEngine({ api, settings, store, directory, sessionI
       askModel(api.client, sessionID, settings.triageModelRef ?? reviewModel(), systemPrompt, prompt).catch(
         () => undefined,
       ),
-    askReviewModel: async (systemPrompt, prompt) => {
+    // The repeated blocks still open the prompt, where providers that cache prompt
+    // prefixes on their own (OpenCode asks Anthropic's to) find them again.
+    askReviewModel: async (systemPrompt, cachedBlocks, prompt) => {
       const model = reviewModel()
-      const text = await askModel(api.client, sessionID, model, systemPrompt, prompt)
+      const text = await askModel(api.client, sessionID, model, systemPrompt, [...cachedBlocks, prompt].join('\n\n'))
       return { text, answeredBy: formatModelRef(model) }
     },
     readReport: async () => store.report(),

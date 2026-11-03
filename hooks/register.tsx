@@ -112,8 +112,8 @@ function createEngine($: EngineInterface, settings: ClaudeSettings, paneTitle?: 
     },
     readTextFile: path => $.fs.read(path).catch(() => undefined),
     askTriageModel: (systemPrompt, prompt) => askTriageModel(request => $.model.complete(request), systemPrompt, prompt),
-    askReviewModel: (systemPrompt, prompt) =>
-      askReviewModel(request => $.model.complete(request), settings.reviewModel, systemPrompt, prompt),
+    askReviewModel: (systemPrompt, cachedBlocks, prompt) =>
+      askReviewModel(request => $.model.complete(request), settings.reviewModel, systemPrompt, cachedBlocks, prompt),
     readReport: () => read($, reportState),
     updateReport: async change => {
       await update($, reportState, change)

@@ -11,6 +11,12 @@ import { askReviewModel, askTriageModel } from '../hooks/models'
 // Where the fake repository lives, as git prints it.
 export const REPOSITORY_ROOT = 'C:/work/shop'
 
+// A model request's whole prompt as text, whether it was sent as a string or as blocks.
+export function promptText(request: ModelCompleteRequest | undefined): string {
+  const prompt = request?.prompt ?? ''
+  return typeof prompt === 'string' ? prompt : prompt.map(block => block.text).join('')
+}
+
 // A fake Stripe-style key, assembled from parts so that secret scanners (and
 // GitHub's push protection) do not take this repository for one holding a real key.
 const FAKE_STRIPE_KEY = ['sk', 'live', 'abcdefghijklmnop1234'].join('_')
@@ -111,7 +117,8 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     readTextFile: async path => options.projectDocs?.[path],
     // Through Claude Code's model calls (hooks/models.ts), with opus as the review model.
     askTriageModel: (systemPrompt, prompt) => askTriageModel(completeWithModel, systemPrompt, prompt),
-    askReviewModel: (systemPrompt, prompt) => askReviewModel(completeWithModel, 'opus', systemPrompt, prompt),
+    askReviewModel: (systemPrompt, cachedBlocks, prompt) =>
+      askReviewModel(completeWithModel, 'opus', systemPrompt, cachedBlocks, prompt),
     readReport: async () => report,
     updateReport: async change => {
       const previousStep = report.progress?.step

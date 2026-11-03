@@ -1,15 +1,27 @@
 import { expect, test } from 'claude-code/testing'
 
-import { excerptForFinding, findHunkContainingLine, separateLockfiles, splitDiffByFile } from '../core/diff'
+import { excerptForFinding, findHunkContainingLine, separateGeneratedFiles, splitDiffByFile } from '../core/diff'
 import { LOCKFILE_DIFF, PAY_DIFF } from './fixtures'
 
 const payFileDiff = splitDiffByFile(PAY_DIFF)[0]?.diffText ?? ''
 
-test('lockfiles are kept out of what the models read', async () => {
-  const { diffWithoutLockfiles, lockfiles } = separateLockfiles(PAY_DIFF + LOCKFILE_DIFF)
+test('lockfiles and other generated files are kept out of what the models read', async () => {
+  const files = splitDiffByFile(PAY_DIFF + LOCKFILE_DIFF).concat(
+    ['dist/app.js', 'web/vendor.min.js', 'src/app.js.map', 'src/__snapshots__/cart.test.ts.snap', 'src/dist/real.ts'].map(
+      file => ({ file, diffText: '' }),
+    ),
+  )
+  const { sourceFiles, generatedFiles } = separateGeneratedFiles(files)
 
-  expect(lockfiles).toEqual(['package-lock.json'])
-  expect(splitDiffByFile(diffWithoutLockfiles).map(({ file }) => file)).toEqual(['src/pay.ts'])
+  expect(generatedFiles).toEqual([
+    'package-lock.json',
+    'dist/app.js',
+    'web/vendor.min.js',
+    'src/app.js.map',
+    'src/__snapshots__/cart.test.ts.snap',
+  ])
+  // Only the root's dist/ is build output.
+  expect(sourceFiles.map(({ file }) => file)).toEqual(['src/pay.ts', 'src/dist/real.ts'])
 })
 
 test('a finding shows the hunk that holds its line', async () => {

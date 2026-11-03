@@ -13,7 +13,7 @@ export type ReviewPromptInput = {
   diff: string
   // The app's docs (see project-context.ts); '' when it has none.
   projectContext: string
-  lockfiles: string[]
+  generatedFiles: string[]
   routineFiles: string[]
   // Files the deep review reads in another part of this analysis.
   otherPartFiles: string[]
@@ -47,13 +47,25 @@ Answer ONLY a JSON object, no prose, no code fences:
 {"summary":"<2 sentences in ${languageName}: what the change does overall>","findings":[{"severity":"critical"|"pr","category":"<one of the categories above, or 'routine' for pr>","file":"<path>","line":<new-file line number or omit>,"title":"<short, ${languageName}>","why":"<one sentence in ${languageName}: what to check and the risk>"}]}`
 }
 
+export type ReviewPrompt = {
+  // What opens the prompt and stays the same from one call to the next, so the
+  // prompt cache serves it: the project docs (the same across turns), then the
+  // session's requests (the same across the parts of one review).
+  cachedBlocks: string[]
+  // The rest: what this call reviews.
+  prompt: string
+  isTruncated: boolean
+}
+
 // The diff to review, preceded by what else changed so the summary covers the whole branch.
-export function buildReviewPrompt(input: ReviewPromptInput): { prompt: string; isTruncated: boolean } {
+export function buildReviewPrompt(input: ReviewPromptInput): ReviewPrompt {
   const isTruncated = input.diff.length > input.maxDiffChars
   const contextLines: string[] = []
 
-  const projectDocs = describeProjectContext(input.projectContext)
-  if (projectDocs !== '') contextLines.push(projectDocs, '')
+  const cachedBlocks = [
+    describeProjectContext(input.projectContext),
+    input.sessionIntent ? describeSessionIntent(input.sessionIntent).join('\n') : '',
+  ].filter(block => block !== '')
   if (input.part) {
     contextLines.push(
       `This is part ${input.part.index} of ${input.part.count} of the review: report findings only for the files in the diff below, but write the summary about the whole branch.`,
@@ -62,8 +74,8 @@ export function buildReviewPrompt(input: ReviewPromptInput): { prompt: string; i
   if (input.otherPartFiles.length > 0) {
     contextLines.push(`Also changed, reviewed in another part (do not report): ${input.otherPartFiles.join(', ')}`)
   }
-  if (input.lockfiles.length > 0) {
-    contextLines.push(`Lockfiles changed (contents omitted): ${input.lockfiles.join(', ')}`)
+  if (input.generatedFiles.length > 0) {
+    contextLines.push(`Generated files changed (lockfiles, build output, snapshots; contents omitted): ${input.generatedFiles.join(', ')}`)
   }
   if (input.routineFiles.length > 0) {
     contextLines.push(`Also changed, triaged as routine (do not report): ${input.routineFiles.join(', ')}`)
@@ -76,15 +88,12 @@ export function buildReviewPrompt(input: ReviewPromptInput): { prompt: string; i
       contextLines.push(`  earlier finding: ${finding.file}: ${finding.title}`)
     }
   }
-  if (input.sessionIntent) {
-    contextLines.push(...describeSessionIntent(input.sessionIntent))
-  }
   if (isTruncated) {
     contextLines.push(`NOTE: diff truncated to the first ${input.maxDiffChars} characters.`)
   }
 
   const prompt = [...contextLines, '', input.diff.slice(0, input.maxDiffChars)].join('\n')
-  return { prompt, isTruncated }
+  return { cachedBlocks, prompt, isTruncated }
 }
 
 // Throws when the answer holds no JSON object: the analysis then reports an error.

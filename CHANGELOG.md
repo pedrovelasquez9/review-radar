@@ -2,6 +2,24 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] - 2026-11-03
+
+### Changed
+
+Fewer tokens and less memory per analysis, with nothing taken away from what the review sees:
+
+- **Prompt cache for what repeats.** The project docs and your requests now open the review prompt as their own cached blocks, after the cached instructions. The parts of a split review read them from the cache, and so do the next turns while the docs do not change.
+- **Generated files go by name only.** Besides lockfiles, `dist/` and `coverage/` at the root, minified files, source maps and test snapshots are no longer sent to the models; their names are. The secret scan still reads them.
+- **No reads when nothing needs a model.** When every changed file kept its earlier findings, the session's conversation and the project docs are not read.
+- **The wider diff covers only the files to review**, instead of the whole branch, when their paths fit on a command line.
+- **Bounded requests.** Your requests are sent up to 16,000 characters: the first one, which usually sets the task, and the latest ones, with a note that the middle ones were left out.
+- **Bounded untracked files.** Each untracked file is read up to 1,000,000 characters.
+- **OpenCode** stores only finished reports, not each loader step.
+
+### Fixed
+
+- The last file of the diff was reviewed again whenever another file came after it, because git's trimmed output changed its hash. Each file's diff now ends the same way wherever it sits. After the upgrade, the first analysis reviews every file once.
+
 ## [0.11.0] - 2026-11-03
 
 ### Added
@@ -110,6 +128,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.12.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.12.0
 [0.11.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.11.0
 [0.10.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.10.0
 [0.9.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.9.0

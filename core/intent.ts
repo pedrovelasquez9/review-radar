@@ -14,6 +14,7 @@ export type SessionIntent = {
 // know the task without sending a whole session to the model.
 export const MAX_REQUESTS = 30
 const MAX_REQUEST_CHARS = 2_000
+const MAX_REQUESTS_TOTAL_CHARS = 16_000
 
 // Absolute paths as the diff names them: relative to the repository root, with
 // forward slashes. Paths outside the repository are dropped. Compared without
@@ -30,6 +31,25 @@ export function toRepositoryPaths(absolutePaths: readonly string[], repositoryRo
 // The intent is only useful when there is both something asked and something edited.
 export function hasIntent(intent: SessionIntent): boolean {
   return intent.requests.length > 0 && intent.editedFiles.length > 0
+}
+
+// The first request (it usually sets the task) and the latest ones, oldest
+// first, up to MAX_REQUESTS_TOTAL_CHARS: a long session is not sent whole on
+// every review. The dropped middle requests are marked so the model knows.
+export function keepRequestsWithinBudget(requests: string[]): string[] {
+  const [first, ...rest] = requests
+  if (first === undefined) return []
+
+  const latest: string[] = []
+  let usedChars = first.length
+  for (let index = rest.length - 1; index >= 0; index--) {
+    const request = rest[index]!
+    if (usedChars + request.length > MAX_REQUESTS_TOTAL_CHARS) break
+    latest.unshift(request)
+    usedChars += request.length
+  }
+  const droppedCount = rest.length - latest.length
+  return droppedCount > 0 ? [first, `(${droppedCount} earlier request(s) left out)`, ...latest] : [first, ...latest]
 }
 
 export function shortenRequest(text: string): string {

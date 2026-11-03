@@ -19,8 +19,9 @@ export type Engine = {
   readTextFile: (path: string) => Promise<string | undefined>
   // The triage model's answer, or undefined when the call failed in any way.
   askTriageModel: (systemPrompt: string, prompt: string) => Promise<string | undefined>
-  // Throws when no model answered.
-  askReviewModel: (systemPrompt: string, prompt: string) => Promise<ReviewModelAnswer>
+  // `cachedBlocks` open the prompt and are marked for the prompt cache where the
+  // platform has one: they repeat across calls. Throws when no model answered.
+  askReviewModel: (systemPrompt: string, cachedBlocks: string[], prompt: string) => Promise<ReviewModelAnswer>
   readReport: () => Promise<Report>
   updateReport: (change: (report: Report) => Report) => Promise<void>
   // The person's prompts and the files the agent edited, read from this

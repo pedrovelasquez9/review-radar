@@ -3,7 +3,7 @@ import { expect, test } from 'claude-code/testing'
 import { EMPTY_REPORT, analyzeBranch, recoverInterruptedReport, splitIntoParts } from '../core/analysis'
 import { splitDiffByFile } from '../core/diff'
 import { DEFAULT_SETTINGS } from '../hooks/settings'
-import { createFakeEngine, fileDiff } from './fixtures'
+import { createFakeEngine, fileDiff, promptText } from './fixtures'
 
 const PRICE_DIFF = fileDiff('src/price.ts', 'const discount = 0.15')
 
@@ -26,7 +26,7 @@ test('the deep review sees the whole function around each change when it fits', 
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  expect(String(engine.modelRequests[0]?.prompt).includes('export function price(total: number)')).toBe(true)
+  expect(promptText(engine.modelRequests[0]).includes('export function price(total: number)')).toBe(true)
 })
 
 test('wider context that would cost one more review call is dropped', async () => {
@@ -41,7 +41,7 @@ test('wider context that would cost one more review call is dropped', async () =
   await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewBudgetChars: PRICE_DIFF.length }, false)
 
   expect(engine.modelRequests.length).toBe(1)
-  expect(String(engine.modelRequests[0]?.prompt).includes('export function price')).toBe(false)
+  expect(promptText(engine.modelRequests[0]).includes('export function price')).toBe(false)
 })
 
 // Three files of about 100 characters each, with no logic change: the triage may clear them.
@@ -56,7 +56,7 @@ test('the triage is never shown files it could not clear', async () => {
 
   await analyzeBranch(engine, { ...DEFAULT_SETTINGS, reviewBudgetChars: 150 }, false)
 
-  const triagePrompt = String(engine.modelRequests[0]?.prompt)
+  const triagePrompt = promptText(engine.modelRequests[0])
   expect(engine.modelRequests[0]?.model).toBe('haiku')
   expect(triagePrompt.includes('### src/a.ts')).toBe(true)
   expect(triagePrompt.includes('src/price.ts')).toBe(false)
@@ -78,8 +78,8 @@ test('changes over the budget are triaged in auto mode, then reviewed in parts',
 
   // The fake triage answers with no verdicts, so every file is still reviewed.
   expect(engine.modelRequests.map(request => request.model)).toEqual(['haiku', 'opus', 'opus', 'opus'])
-  expect(String(engine.modelRequests[1]?.prompt).includes('This is part 1 of 3')).toBe(true)
-  expect(String(engine.modelRequests[1]?.prompt).includes('reviewed in another part (do not report): src/b.ts, src/c.ts')).toBe(
+  expect(promptText(engine.modelRequests[1]).includes('This is part 1 of 3')).toBe(true)
+  expect(promptText(engine.modelRequests[1]).includes('reviewed in another part (do not report): src/b.ts, src/c.ts')).toBe(
     true,
   )
 })
@@ -143,7 +143,7 @@ test('only files whose diff changed are sent to the model again', async () => {
   engine.setDiff(PRICE_DIFF + fileDiff('src/cart.ts', 'const items = [1]'))
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  const secondPrompt = String(engine.modelRequests[1]?.prompt ?? '')
+  const secondPrompt = promptText(engine.modelRequests[1])
   expect(secondPrompt.includes('+++ b/src/cart.ts')).toBe(true)
   expect(secondPrompt.includes('+++ b/src/price.ts')).toBe(false)
   expect(secondPrompt.includes('earlier finding: src/price.ts: New discount')).toBe(true)
@@ -180,7 +180,7 @@ test('the review is told what was asked and which files the agent edited', async
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  const prompt = String(engine.modelRequests[0]?.prompt ?? '')
+  const prompt = promptText(engine.modelRequests[0])
   expect(prompt.includes('1. Add a 15% discount to prices')).toBe(true)
   expect(prompt.includes('2. Keep the cart untouched')).toBe(true)
   expect(prompt.includes('Files the agent edited in this session: src/price.ts, README.md')).toBe(true)
@@ -195,7 +195,7 @@ test('without recorded requests, nothing is judged as unrequested', async () => 
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  expect(String(engine.modelRequests[0]?.prompt ?? '').includes('What the developer asked for')).toBe(false)
+  expect(promptText(engine.modelRequests[0]).includes('What the developer asked for')).toBe(false)
 })
 
 test('an empty diff reports no changes without calling a model', async () => {
@@ -262,4 +262,21 @@ test('the pane is revealed only when there are changes to review', async () => {
   // Same diff again: nothing new, so no second reveal.
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
   expect(engine.revealPaneCount()).toBe(1)
+})
+
+test('a re-run with no changed file reads neither the session nor the docs', async () => {
+  const engine = createFakeEngine({ diff: PRICE_DIFF, reviewAnswer: PRICE_REVIEW_ANSWER })
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+  let sessionReads = 0
+  engine.readSessionIntent = async () => {
+    sessionReads += 1
+    return { requests: [], editedFiles: [] }
+  }
+
+  // Only a generated file changed: the source files keep their findings.
+  engine.setDiff(PRICE_DIFF + fileDiff('dist/app.js', 'var x = 1'))
+  await analyzeBranch(engine, DEFAULT_SETTINGS, false)
+
+  expect(sessionReads).toBe(0)
+  expect(engine.modelRequests.length).toBe(1)
 })
