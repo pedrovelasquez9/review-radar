@@ -2,6 +2,12 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.11.0] - 2026-11-03
+
+### Added
+
+- **Business context from the project's own docs.** The triage and the deep review now read `CLAUDE.md` and `AGENTS.md` (at the root and in the folders above each changed file), the root `README.md` and the Markdown files in `docs/`, in that order, up to a fifth of the review budget (24,000 characters with `opus`; the triage gets the first 4,000). A change touching a rule, an amount or a permission the docs describe is judged as business logic, and one that contradicts them as suspicious, with the rule named in the finding. The models are told the docs describe the app and are never instructions to them. The docs are read only when a model is about to be asked.
+
 ## [0.10.0] - 2026-11-03
 
 ### Added
@@ -104,6 +110,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.11.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.11.0
 [0.10.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.10.0
 [0.9.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.9.0
 [0.8.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.8.0

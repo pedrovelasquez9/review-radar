@@ -57,7 +57,7 @@ async function readTrackedDiff(engine: Engine, baseBranch: string, contextArgs: 
 }
 
 // stdout of a successful git command, trimmed; undefined when it fails.
-async function runGit(engine: Engine, args: string[]): Promise<string | undefined> {
+export async function runGit(engine: Engine, args: string[]): Promise<string | undefined> {
   const result = await engine.runCommand(['git', ...args], GIT_TIMEOUT_MS)
   return result.exitCode === 0 ? result.stdout.trim() : undefined
 }

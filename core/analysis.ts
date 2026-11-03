@@ -7,6 +7,7 @@ import { excerptForFinding, findHunkContainingLine, hashText, separateLockfiles,
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
 import { hasLogicChange } from './logic-change'
+import { MAX_REVIEW_CONTEXT_CHARS, MAX_TRIAGE_CONTEXT_CHARS, describeProjectContext, readProjectContext } from './project-context'
 import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff, readWiderBranchDiff } from './git'
 import { hasIntent, toRepositoryPaths } from './intent'
 import type { SessionIntent } from './intent'
@@ -133,16 +134,27 @@ async function runAnalysis(
     ...secretFindings.map(({ file }) => file),
     ...(sessionIntent?.editedFiles ?? []),
   ])
+  // Read only when a model will be asked: up to a fifth of the review budget.
+  const projectContext =
+    changedFiles.length > 0
+      ? await readProjectContext(
+          engine,
+          changedFiles.map(({ file }) => file),
+          Math.min(MAX_REVIEW_CONTEXT_CHARS, Math.floor(settings.reviewBudgetChars / 5)),
+        )
+      : ''
   const { filesToReview, routineFindings } = await triageChangedFiles(
     engine,
     settings,
     changedFiles,
     filesToAlwaysReview,
     messages,
+    projectContext.slice(0, MAX_TRIAGE_CONTEXT_CHARS),
   )
 
   const deepReview = await reviewInDepth(engine, settings, messages, {
     filesToReview: await widenContext(engine, settings, baseBranch, filesToReview),
+    projectContext,
     routineFindings,
     unchangedFiles,
     reusedFindings,
@@ -235,6 +247,7 @@ async function triageChangedFiles(
   changedFiles: FileDiff[],
   filesToAlwaysReview: ReadonlySet<string>,
   messages: Messages,
+  projectContext: string,
 ): Promise<{ filesToReview: FileDiff[]; routineFindings: Finding[] }> {
   const changedChars = changedFiles.reduce((total, { diffText }) => total + diffText.length, 0)
   const filesToInspect = new Set(changedFiles.map(({ file }) => file))
@@ -250,7 +263,10 @@ async function triageChangedFiles(
     await showProgress(engine, { step: 'triage', fileCount: clearableFiles.length })
     const triageAnswer = await engine.askTriageModel(
       triageSystemPrompt(messages.languageNameForModel),
-      buildTriagePrompt(clearableFiles).slice(0, Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars)),
+      [describeProjectContext(projectContext), buildTriagePrompt(clearableFiles)]
+        .filter(part => part !== '')
+        .join('\n\n')
+        .slice(0, Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars)),
     )
     const triage = parseTriageAnswer(triageAnswer ?? '', clearableFiles)
     titlesByFile = triage.titlesByFile
@@ -304,6 +320,8 @@ async function widenContext(
 
 type DeepReviewInput = {
   filesToReview: FileDiff[]
+  // The app's docs (see project-context.ts); '' when it has none.
+  projectContext: string
   routineFindings: Finding[]
   unchangedFiles: string[]
   reusedFindings: Finding[]
@@ -346,6 +364,7 @@ async function reviewInDepth(
     })
     const review = buildReviewPrompt({
       diff: partFiles.map(({ diffText }) => diffText).join(''),
+      projectContext: input.projectContext,
       lockfiles: input.lockfiles,
       routineFiles: input.routineFindings.map(({ file }) => file),
       otherPartFiles: input.filesToReview.filter(file => !partFiles.includes(file)).map(({ file }) => file),

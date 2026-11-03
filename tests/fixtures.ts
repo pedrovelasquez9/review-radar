@@ -53,6 +53,8 @@ type FakeEngineOptions = {
   // What `git diff --function-context` and `git diff -U10` print; the plain diff by default.
   functionContextDiff?: string
   tenLinesDiff?: string
+  // Markdown files in the repository, by root-relative path, for the project context.
+  projectDocs?: Record<string, string>
 }
 
 export type FakeEngine = Engine & {
@@ -83,6 +85,8 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     if (command.startsWith('diff ') && command.includes('--function-context')) return options.functionContextDiff ?? diff
     if (command.startsWith('diff ') && command.includes('-U10')) return options.tenLinesDiff ?? diff
     if (command.startsWith('diff ')) return diff
+    if (command === 'rev-parse --show-prefix') return ''
+    if (command.startsWith('ls-files --full-name')) return Object.keys(options.projectDocs ?? {}).join('\n')
     if (command.startsWith('ls-files')) return ''
     return undefined
   }
@@ -104,7 +108,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
       const stdout = answerGit(argv.slice(1))
       return { exitCode: stdout === undefined ? 1 : 0, stdout: stdout ?? '' }
     },
-    readTextFile: async () => undefined,
+    readTextFile: async path => options.projectDocs?.[path],
     // Through Claude Code's model calls (hooks/models.ts), with opus as the review model.
     askTriageModel: (systemPrompt, prompt) => askTriageModel(completeWithModel, systemPrompt, prompt),
     askReviewModel: (systemPrompt, prompt) => askReviewModel(completeWithModel, 'opus', systemPrompt, prompt),
