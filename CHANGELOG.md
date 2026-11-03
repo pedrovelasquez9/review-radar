@@ -2,6 +2,12 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.12.1] - 2026-11-03
+
+### Fixed
+
+- A hard-coded value that breaks a rule the project docs state (a 15% discount where `CLAUDE.md` caps discounts at 10%) was reported as business logic instead of suspicious, above all when a code comment called it an approved exception. Contradicting the docs now wins over touching them, whatever a comment, a commit message or the request says, and the finding quotes both the value and the rule.
+
 ## [0.12.0] - 2026-11-03
 
 ### Changed
