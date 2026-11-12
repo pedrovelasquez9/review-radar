@@ -18,7 +18,7 @@ export function writeReport(directory: string, options: BenchOptions, cases: Ben
     `# review-radar bench · ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
     '',
     `Model **${options.model}**, ${options.runs} run(s) per case, ${cases.length} cases (${count(cases, 'bug')} with a planted bug, ${count(cases, 'clean')} clean).${options.isDryRun ? ' **Dry run: scripted answers, no model.**' : ''}`,
-    `A bug counts as found when a flagged finding is in its file, within ${LINE_TOLERANCE} lines when it gives one.`,
+    `A bug counts as found when a flagged finding is in its file, within ${LINE_TOLERANCE} lines when it gives one; as named (strict) when that finding also uses one of the words that name the defect (bench/keywords.ts).`,
     '',
     '| | ' + options.arms.join(' | ') + ' |',
     '| --- | ' + options.arms.map(() => '---').join(' | ') + ' |',
@@ -46,6 +46,9 @@ function summaryRows(arms: Arm[], records: RunRecord[]): string[] {
   const row = (label: string, cell: (arm: Arm) => string) => `| ${label} | ${arms.map(cell).join(' | ')} |`
   return [
     row('Bugs found', arm => percent(of(arm, 'bug').filter(record => record.score.isHit).length, of(arm, 'bug').length)),
+    row('Bugs found and named (strict)', arm =>
+      percent(of(arm, 'bug').filter(record => record.score.isStrictHit).length, of(arm, 'bug').length),
+    ),
     row('Clean changes without alarms', arm =>
       percent(of(arm, 'clean').filter(record => record.score.alarms === 0).length, of(arm, 'clean').length),
     ),
@@ -61,7 +64,11 @@ function summaryRows(arms: Arm[], records: RunRecord[]): string[] {
 function caseCell(benchCase: BenchCase, arm: Arm, records: RunRecord[]): string {
   const runs = records.filter(record => record.caseId === benchCase.id && record.arm === arm && !record.result.error)
   if (runs.length === 0) return '–'
-  if (benchCase.kind === 'bug') return `${runs.filter(record => record.score.isHit).length}/${runs.length} found`
+  if (benchCase.kind === 'bug') {
+    const found = runs.filter(record => record.score.isHit).length
+    const named = runs.filter(record => record.score.isStrictHit).length
+    return `${found}/${runs.length} found, ${named} named`
+  }
   return `alarms: ${runs.map(record => record.score.alarms).join(', ')}`
 }
 

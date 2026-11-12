@@ -15,6 +15,7 @@ import type { Engine } from './engine'
 import { IGNORE_FILE, parseIgnoreRules, separateIgnoredFiles } from './ignore-rules'
 import { applyFindingRules } from './finding-rules'
 import { hasLogicChange } from './logic-change'
+import { MAX_RELATED_CODE_CHARS, NO_RELATED_CODE, readRelatedCode } from './related-code'
 import { MAX_REVIEW_CONTEXT_CHARS, MAX_TRIAGE_CONTEXT_CHARS, describeProjectContext, readProjectContext } from './project-context'
 import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff, readRepositoryFile, readWiderBranchDiff } from './git'
 import { hasIntent, keepRequestsWithinBudget, toRepositoryPaths } from './intent'
@@ -187,8 +188,14 @@ async function runAnalysis(
     projectContext.slice(0, MAX_TRIAGE_CONTEXT_CHARS),
   )
 
+  // Read from the plain diff, only when files go to the review: up to a sixth of its budget.
+  const relatedCode =
+    filesToReview.length > 0
+      ? await readRelatedCode(engine, filesToReview, Math.min(MAX_RELATED_CODE_CHARS, Math.floor(settings.reviewBudgetChars / 6)))
+      : NO_RELATED_CODE
   const deepReview = await reviewInDepth(engine, settings, messages, {
     filesToReview: await widenContext(engine, settings, baseBranch, filesToReview),
+    relatedCode: relatedCode.text,
     projectContext,
     routineFindings,
     unchangedFiles,
@@ -198,7 +205,7 @@ async function runAnalysis(
     previousSummary: previousReport.summary,
   })
 
-  const checkedFindings = applyFindingRules(deepReview.findings, diffByFile, messages)
+  const checkedFindings = applyFindingRules(deepReview.findings, diffByFile, messages, relatedCode.affectedRanges)
   const newFindings = await attachDiffExcerpts(mergeSecretFindings(checkedFindings, secretFindings), diffByFile)
   const findings = [...newFindings, ...reusedFindings, ...routineFindings]
 
@@ -370,6 +377,8 @@ async function widenContext(
 
 type DeepReviewInput = {
   filesToReview: FileDiff[]
+  // Code outside the diff the change depends on (see related-code.ts); '' when none.
+  relatedCode: string
   // The app's docs (see project-context.ts); '' when it has none.
   projectContext: string
   routineFindings: Finding[]
@@ -415,6 +424,7 @@ async function reviewInDepth(
     const review = buildReviewPrompt({
       diff: partFiles.map(({ diffText }) => diffText).join(''),
       projectContext: input.projectContext,
+      relatedCode: input.relatedCode,
       ignoredFiles: input.ignoredFiles,
       routineFiles: input.routineFindings.map(({ file }) => file),
       otherPartFiles: input.filesToReview.filter(file => !partFiles.includes(file)).map(({ file }) => file),

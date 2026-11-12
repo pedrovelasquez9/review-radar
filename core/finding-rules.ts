@@ -9,6 +9,7 @@
 import type { Finding } from '../types'
 import { changedLinePositions } from './diff'
 import type { Messages } from './messages'
+import type { LineRange } from './related-code'
 
 // How far from a changed line a finding still belongs to that change: the
 // model often points at the condition above or the call below the edited line.
@@ -20,8 +21,15 @@ const DUPLICATE_TITLE_OVERLAP = 0.5
 // Words shorter than this carry no meaning of their own (articles, "of", "en").
 const MIN_TITLE_WORD_LENGTH = 4
 
-export function applyFindingRules(findings: Finding[], diffByFile: Map<string, string>, messages: Messages): Finding[] {
-  return mergeDuplicates(findings).map(finding => markPreExisting(finding, diffByFile, messages))
+// `affectedRanges`: code outside the diff that uses a name the diff changed (see
+// related-code.ts). A finding there is one the branch causes, not an old one.
+export function applyFindingRules(
+  findings: Finding[],
+  diffByFile: Map<string, string>,
+  messages: Messages,
+  affectedRanges: readonly LineRange[] = [],
+): Finding[] {
+  return mergeDuplicates(findings).map(finding => markPreExisting(finding, diffByFile, affectedRanges, messages))
 }
 
 // Keeps the first of each group of findings that state the same defect; a
@@ -59,10 +67,20 @@ function titleWords(title: string): Set<string> {
 // A critical finding the branch did not cause becomes a PR finding. Literal
 // secrets stay critical wherever they are: a credential in the code is a risk
 // whoever wrote it.
-function markPreExisting(finding: Finding, diffByFile: Map<string, string>, messages: Messages): Finding {
+function markPreExisting(
+  finding: Finding,
+  diffByFile: Map<string, string>,
+  affectedRanges: readonly LineRange[],
+  messages: Messages,
+): Finding {
   if (finding.severity !== 'critical' || finding.category === 'secrets') return finding
-  if (isCausedByBranch(finding, diffByFile)) return finding
+  if (isCausedByBranch(finding, diffByFile) || isInAffectedCode(finding, affectedRanges)) return finding
   return { ...finding, severity: 'pr', why: `${messages.preExistingNote} ${finding.why}`.trim() }
+}
+
+function isInAffectedCode(finding: Finding, affectedRanges: readonly LineRange[]): boolean {
+  const line = finding.line
+  return line !== undefined && affectedRanges.some(range => range.file === finding.file && line >= range.first && line <= range.last)
 }
 
 function isCausedByBranch(finding: Finding, diffByFile: Map<string, string>): boolean {

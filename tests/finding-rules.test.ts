@@ -133,3 +133,14 @@ test('an automatic analysis over the line limit asks no model and waits', async 
   await analyzeBranch(engine, settings, true)
   expect(engine.modelRequests.length).toBe(1)
 })
+
+test('a finding on code that uses a name the diff changed is caused by the branch', async () => {
+  const diffByFile = new Map([['src/cart.ts', CART_DIFF]])
+  const finding = critical({ file: 'src/labels.ts', line: 7, title: 'Switch misses the new status' })
+
+  const [withoutContext] = applyFindingRules([finding], diffByFile, MESSAGES)
+  const [withContext] = applyFindingRules([finding], diffByFile, MESSAGES, [{ file: 'src/labels.ts', first: 3, last: 18 }])
+
+  expect(withoutContext?.severity).toBe('pr')
+  expect(withContext?.severity).toBe('critical')
+})

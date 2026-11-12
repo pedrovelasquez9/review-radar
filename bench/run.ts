@@ -18,6 +18,7 @@ import type { BenchCase } from './cases'
 import { CASES } from './cases'
 import type { CompleteWithModel } from './claude-cli'
 import { claudeCli } from './claude-cli'
+import { DEFECT_KEYWORDS } from './keywords'
 import { createCaseRepo } from './repo'
 import type { CaseRepo } from './repo'
 import { writeReport } from './report'
@@ -114,7 +115,7 @@ function scriptedModel(benchCase: BenchCase, repo: CaseRepo): CompleteWithModel 
     const isBaseline = system.startsWith('You are a code reviewer')
     const findings =
       place && (isRadarReview || isBaseline)
-        ? [{ severity: 'critical', category: benchCase.defect?.category, file: place.file, line: place.line, title: 'Planted defect', why: '' }]
+        ? [{ severity: 'critical', category: benchCase.defect?.category, file: place.file, line: place.line, title: `Planted defect: ${DEFECT_KEYWORDS[benchCase.id]?.[0]}`, why: '' }]
         : []
     const text = isRadarReview || isBaseline ? JSON.stringify({ summary: 'Scripted.', findings }) : '{}'
     return { text, costUsd: 0, durationMs: 0 }

@@ -2,6 +2,14 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] - 2026-11-12
+
+### Added
+
+- **Related code next to the diff.** The deep review now also gets the code outside the diff that the change depends on, found with `git grep` and no model: where the names the diff defines or removes are used (a `switch` over a type that gained a case, a file reading a config key that was renamed) and where the functions its added lines call are defined (their parameters and units). Top-level declarations and config keys only, prose files left out, up to 3 places per name and a sixth of the review budget.
+- **Breakage outside the diff is caused by the branch.** A finding on code that uses a name the diff changed stays critical: since 0.13.0 it was listed for the PR as pre-existing, because its lines were not in the diff.
+- **A local benchmark** (`bench/`, not shipped): 41 cases (28 planted bugs, 13 clean changes) run review-radar and a plain-prompt baseline through your own Claude Code CLI, scored without a model judge. With the two changes above, review-radar finds and names 56/56 planted bugs with opus, sonnet and haiku (2 runs each) and raises no alarm on clean changes; before them, sonnet missed 5 and haiku 3. On the same cases the plain prompt raised alarms on 42–96% of the clean changes, depending on the model. The cases were written alongside these changes, so real-world cases (next) are the honest test.
+
 ## [0.13.0] - 2026-11-12
 
 ### Added
@@ -152,6 +160,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.14.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.14.0
 [0.13.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.13.0
 [0.12.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.12.0
 [0.11.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.11.0

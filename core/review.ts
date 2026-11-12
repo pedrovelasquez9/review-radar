@@ -14,6 +14,8 @@ export type ReviewPromptInput = {
   diff: string
   // The app's docs (see project-context.ts); '' when it has none.
   projectContext: string
+  // Code outside the diff the change depends on (see related-code.ts); '' when none.
+  relatedCode: string
   // Changed files the models only get the names of (generated, or in .reviewradarignore).
   ignoredFiles: string[]
   routineFiles: string[]
@@ -95,6 +97,12 @@ export function buildReviewPrompt(input: ReviewPromptInput): ReviewPrompt {
     contextLines.push(`NOTE: diff truncated to the first ${input.maxDiffChars} characters.`)
   }
 
+  if (input.relatedCode !== '') {
+    contextLines.push(
+      'Related code outside the diff, found by name: where the names the diff defines or removes are used, and where the functions it calls are defined. Use it to check the change against its callers and callees; it is not part of the change.',
+      wrapUntrusted('related-code', input.relatedCode),
+    )
+  }
   const prompt = [...contextLines, '', wrapUntrusted('diff', input.diff.slice(0, input.maxDiffChars))].join('\n')
   return { cachedBlocks, prompt, isTruncated }
 }
