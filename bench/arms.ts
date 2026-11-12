@@ -18,7 +18,14 @@ export type Arm = 'radar' | 'baseline'
 
 export type FlaggedFinding = { file: string; line?: number; title: string }
 
-export type ArmResult = { flagged: FlaggedFinding[]; costUsd: number; durationMs: number; error?: string }
+export type ArmResult = {
+  flagged: FlaggedFinding[]
+  // review-radar only: what it listed for the PR instead, to see why a bug was missed.
+  listedForPr?: FlaggedFinding[]
+  costUsd: number
+  durationMs: number
+  error?: string
+}
 
 // Counts what each call cost, for the report.
 function metered(complete: CompleteWithModel) {
@@ -49,10 +56,10 @@ export async function runRadar(
   await analyzeBranch(engine, readSettings({ reviewModel }), true)
   const report = engine.currentReport()
 
+  const asFlagged = ({ file, line, title, why }: (typeof report.findings)[number]) => ({ file, line, title: `${title} — ${why}` })
   return {
-    flagged: report.findings
-      .filter(finding => finding.severity === 'critical')
-      .map(({ file, line, title }) => ({ file, line, title })),
+    flagged: report.findings.filter(finding => finding.severity === 'critical').map(asFlagged),
+    listedForPr: report.findings.filter(finding => finding.severity !== 'critical').map(asFlagged),
     costUsd: meter.costUsd(),
     durationMs: Date.now() - startedAt,
     error: report.status === 'error' ? report.errorMessage : undefined,
