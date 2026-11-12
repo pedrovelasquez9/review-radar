@@ -70,10 +70,17 @@ export function removeItem(items: CartItem[], productId: string): CartItem[] {
 }
 `,
 
-  'src/auth.ts': `export type User = { id: string; role: 'admin' | 'customer'; sessionStartedAt: number }
+  'src/session.ts': `import config from '../config/app.json'
 
-const SESSION_LIFETIME_MS = 30 * 60 * 1000
+// How long a sign-in lasts, from config/app.json.
+export const SESSION_LIFETIME_MS = config.sessionMinutes * 60 * 1000
+`,
 
+  'src/auth.ts': `import { SESSION_LIFETIME_MS } from './session'
+
+export type User = { id: string; role: 'admin' | 'customer'; sessionStartedAt: number }
+
+// \`now\` and \`sessionStartedAt\` are milliseconds since the epoch.
 export function isSessionValid(user: User, now: number): boolean {
   return now - user.sessionStartedAt < SESSION_LIFETIME_MS
 }
@@ -92,7 +99,7 @@ import type { User } from './auth'
 
 export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'refunded'
 
-export type Order = { id: string; status: OrderStatus; totalCents: number }
+export type Order = { id: string; customerId: string; status: OrderStatus; totalCents: number }
 
 export function refundOrder(order: Order, user: User): Order {
   if (!canRefund(user)) throw new Error('only admins can refund')
@@ -124,7 +131,8 @@ export async function charge(orderId: string, amountCents: number, apiKey: strin
     try {
       const response = await fetch(PAYMENTS_URL, {
         method: 'POST',
-        headers: { authorization: \`Bearer \${apiKey}\`, 'content-type': 'application/json' },
+        // The order id makes a retried charge count once at the provider.
+        headers: { authorization: \`Bearer \${apiKey}\`, 'content-type': 'application/json', 'idempotency-key': orderId },
         body: JSON.stringify({ orderId, amountCents }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })

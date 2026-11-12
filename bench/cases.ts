@@ -28,11 +28,13 @@ export type BenchCase = {
   defect?: { category: string; places: DefectPlace[] }
 }
 
+import { HARD_CASES } from './cases-hard'
+
 // A fake live key, built from parts so that secret scanners (and GitHub's push
 // protection) do not take this repository for one that holds a real key.
 const FAKE_LIVE_KEY = ['sk', 'live', 'Zq8fTn3vLp0aWc6yRb2u'].join('_')
 
-export const CASES: BenchCase[] = [
+const BASIC_CASES: BenchCase[] = [
   {
     id: 'bug-free-shipping-boundary',
     kind: 'bug',
@@ -398,3 +400,6 @@ test('a quantity of zero is refused', () => {
     edits: [{ file: 'docs/rules.md', find: '# Shop rules\n', replace: '# Shop rules\n\nSupport answers Monday to Friday, 9:00 to 18:00.\n' }],
   },
 ]
+
+// The basic cases, then the harder ones (cases-hard.ts); `--cases hard-` runs only those.
+export const CASES: BenchCase[] = [...BASIC_CASES, ...HARD_CASES]
