@@ -3,18 +3,26 @@
 // they do not fit in one call), and store the report the pane draws.
 
 import type { AnalysisProgress, Finding, Report } from '../types'
-import { excerptForFinding, findHunkContainingLine, hashText, separateGeneratedFiles, splitDiffByFile } from './diff'
+import {
+  excerptForFinding,
+  excerptIdentity,
+  findHunkContainingLine,
+  hashText,
+  splitDiffByFile,
+} from './diff'
 import type { FileDiff } from './diff'
 import type { Engine } from './engine'
+import { IGNORE_FILE, parseIgnoreRules, separateIgnoredFiles } from './ignore-rules'
+import { applyFindingRules } from './finding-rules'
 import { hasLogicChange } from './logic-change'
 import { MAX_REVIEW_CONTEXT_CHARS, MAX_TRIAGE_CONTEXT_CHARS, describeProjectContext, readProjectContext } from './project-context'
-import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff, readWiderBranchDiff } from './git'
+import { findBaseBranch, findRepositoryRoot, isInsideGitRepository, readBranchDiff, readRepositoryFile, readWiderBranchDiff } from './git'
 import { hasIntent, keepRequestsWithinBudget, toRepositoryPaths } from './intent'
 import type { SessionIntent } from './intent'
 import { messagesFor } from './messages'
 import type { Messages } from './messages'
 import { buildReviewPrompt, parseReviewAnswer, reviewSystemPrompt } from './review'
-import { findLiteralSecrets, mergeSecretFindings } from './secrets'
+import { findLiteralSecrets, maskSecrets, mergeSecretFindings } from './secrets'
 import type { Settings } from './settings'
 import { buildTriagePrompt, mustAlwaysInspect, parseTriageAnswer, triageSystemPrompt } from './triage'
 
@@ -115,7 +123,8 @@ async function runAnalysis(
   engine.showStatus(messages.statusLineAnalyzing)
 
   const allFiles = splitDiffByFile(fullDiff)
-  const { sourceFiles: files, generatedFiles } = separateGeneratedFiles(allFiles)
+  const ignoreRules = parseIgnoreRules((await readRepositoryFile(engine, IGNORE_FILE)) ?? '')
+  const { sourceFiles: files, ignoredFiles } = separateIgnoredFiles(allFiles, ignoreRules)
   const fileDiffHashes = await hashEachFile(files)
 
   const canReuseEarlierFindings = !isForced && isSameLanguage
@@ -126,6 +135,31 @@ async function runAnalysis(
   const secretFindings = findLiteralSecrets(fullDiff, messages).filter(
     finding => !unchangedFiles.includes(finding.file),
   )
+  const diffByFile = new Map(allFiles.map(({ file, diffText }) => [file, diffText]))
+
+  // Past the limit an automatic analysis asks no model: the secret scan still
+  // runs, and the changed files wait for an analysis the person asks for. Their
+  // hashes are not stored, so the next analysis still sees them as changed.
+  const changedLineCount = countChangedLines(changedFiles)
+  const isOverAutoLimit = settings.maxAutoChangedLines > 0 && changedLineCount > settings.maxAutoChangedLines
+  if (!isForced && isOverAutoLimit) {
+    const waitingFindings = changedFiles.map(
+      ({ file }): Finding => ({ severity: 'pr', category: 'routine', file, title: messages.tooLargeForAutoTitle, why: '' }),
+    )
+    const shownSecrets = await attachDiffExcerpts(secretFindings, diffByFile)
+    await engine.updateReport((): Report => ({
+      status: 'ready',
+      summary: messages.tooLargeForAutoSummary(changedLineCount, settings.maxAutoChangedLines),
+      findings: [...shownSecrets, ...reusedFindings, ...waitingFindings],
+      baseBranch,
+      diffHash,
+      fileDiffHashes: Object.fromEntries(unchangedFiles.map(file => [file, fileDiffHashes[file]!])),
+      language: settings.language,
+      analyzedAt: Date.now(),
+    }))
+    return
+  }
+
   // The session's conversation is read only when a model will be asked.
   const sessionIntent = changedFiles.length > 0 ? await loadSessionIntent(engine) : undefined
 
@@ -159,13 +193,13 @@ async function runAnalysis(
     routineFindings,
     unchangedFiles,
     reusedFindings,
-    generatedFiles,
+    ignoredFiles,
     sessionIntent,
     previousSummary: previousReport.summary,
   })
 
-  const diffByFile = new Map(allFiles.map(({ file, diffText }) => [file, diffText]))
-  const newFindings = await attachDiffExcerpts(mergeSecretFindings(deepReview.findings, secretFindings), diffByFile)
+  const checkedFindings = applyFindingRules(deepReview.findings, diffByFile, messages)
+  const newFindings = await attachDiffExcerpts(mergeSecretFindings(checkedFindings, secretFindings), diffByFile)
   const findings = [...newFindings, ...reusedFindings, ...routineFindings]
 
   await engine.updateReport((): Report => ({
@@ -211,6 +245,18 @@ async function showAnalyzing(engine: Engine, baseBranch?: string): Promise<void>
 // Moves the pane's loader to the next step.
 async function showProgress(engine: Engine, progress: AnalysisProgress): Promise<void> {
   await engine.updateReport((report): Report => ({ ...report, progress }))
+}
+
+// Added plus removed lines, file headers left out.
+function countChangedLines(files: FileDiff[]): number {
+  let count = 0
+  for (const { diffText } of files) {
+    for (const line of diffText.split('\n')) {
+      const isFileHeader = line.startsWith('+++ ') || line.startsWith('--- ')
+      if (!isFileHeader && (line.startsWith('+') || line.startsWith('-'))) count++
+    }
+  }
+  return count
 }
 
 async function hashEachFile(files: FileDiff[]): Promise<Record<string, string>> {
@@ -262,12 +308,11 @@ async function triageChangedFiles(
     : []
   if (clearableFiles.length > 0) {
     await showProgress(engine, { step: 'triage', fileCount: clearableFiles.length })
+    const projectDocs = describeProjectContext(projectContext)
+    const changedLinesRoom = Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars) - projectDocs.length
     const triageAnswer = await engine.askTriageModel(
       triageSystemPrompt(messages.languageNameForModel),
-      [describeProjectContext(projectContext), buildTriagePrompt(clearableFiles)]
-        .filter(part => part !== '')
-        .join('\n\n')
-        .slice(0, Math.min(MAX_TRIAGE_PROMPT_CHARS, settings.reviewBudgetChars)),
+      [projectDocs, buildTriagePrompt(clearableFiles, changedLinesRoom)].filter(part => part !== '').join('\n\n'),
     )
     const triage = parseTriageAnswer(triageAnswer ?? '', clearableFiles)
     titlesByFile = triage.titlesByFile
@@ -330,7 +375,7 @@ type DeepReviewInput = {
   routineFindings: Finding[]
   unchangedFiles: string[]
   reusedFindings: Finding[]
-  generatedFiles: string[]
+  ignoredFiles: string[]
   sessionIntent: SessionIntent | undefined
   previousSummary: string
 }
@@ -370,7 +415,7 @@ async function reviewInDepth(
     const review = buildReviewPrompt({
       diff: partFiles.map(({ diffText }) => diffText).join(''),
       projectContext: input.projectContext,
-      generatedFiles: input.generatedFiles,
+      ignoredFiles: input.ignoredFiles,
       routineFiles: input.routineFindings.map(({ file }) => file),
       otherPartFiles: input.filesToReview.filter(file => !partFiles.includes(file)).map(({ file }) => file),
       part,
@@ -428,10 +473,14 @@ export function splitIntoParts(files: FileDiff[], budgetChars: number): FileDiff
 // Each critical finding gets the diff excerpt the pane draws under it, and the
 // review key its "reviewed" mark is stored under. A line the model gave outside
 // the diff is dropped, so the excerpt falls back to the whole file's hunks.
+// Literal secrets are masked in every text shown or copied into a prompt. The
+// review key leaves out the hunks' line numbers, so a mark survives edits that
+// only move the code.
 async function attachDiffExcerpts(findings: Finding[], diffByFile: Map<string, string>): Promise<Finding[]> {
   const withExcerpts: Finding[] = []
 
-  for (const finding of findings) {
+  for (const modelFinding of findings) {
+    const finding = { ...modelFinding, title: maskSecrets(modelFinding.title), why: maskSecrets(modelFinding.why) }
     const fileDiffText = diffByFile.get(finding.file)
     if (finding.severity !== 'critical' || fileDiffText === undefined) {
       withExcerpts.push(finding)
@@ -440,9 +489,9 @@ async function attachDiffExcerpts(findings: Finding[], diffByFile: Map<string, s
 
     const isLineInDiff = finding.line !== undefined && findHunkContainingLine(fileDiffText, finding.line) !== undefined
     const line = isLineInDiff ? finding.line : undefined
-    const diffExcerpt = excerptForFinding(fileDiffText, line)
-    const reviewKey = await hashText(`${finding.file}\n${diffExcerpt}`)
-    withExcerpts.push({ ...finding, line, diffExcerpt, reviewKey })
+    const excerpt = excerptForFinding(fileDiffText, line)
+    const reviewKey = await hashText(`${finding.file}\n${excerptIdentity(excerpt)}`)
+    withExcerpts.push({ ...finding, line, diffExcerpt: maskSecrets(excerpt), reviewKey })
   }
 
   return withExcerpts

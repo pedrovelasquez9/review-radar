@@ -5,16 +5,17 @@ import { DEFAULT_SETTINGS, readSettings } from '../hooks/settings'
 
 test('missing or unknown options fall back to the defaults', async () => {
   expect(readSettings({})).toEqual(DEFAULT_SETTINGS)
-  expect(readSettings({ language: 'fr', reviewModel: 'gpt', reviewMode: 'fast' })).toEqual(DEFAULT_SETTINGS)
+  expect(readSettings({ language: 'fr', reviewModel: 'gpt', reviewMode: 'fast', maxAutoChangedLines: -5 })).toEqual(DEFAULT_SETTINGS)
 })
 
 test('chosen options are read', async () => {
-  expect(readSettings({ language: 'es', reviewModel: 'haiku', autoAnalyze: false, reviewMode: 'thorough' })).toEqual({
+  expect(readSettings({ language: 'es', reviewModel: 'haiku', autoAnalyze: false, reviewMode: 'thorough', maxAutoChangedLines: 0 })).toEqual({
     language: 'es',
     reviewModel: 'haiku',
     isAutoAnalysisOn: false,
     reviewMode: 'thorough',
     reviewBudgetChars: 100_000,
+    maxAutoChangedLines: 0,
   })
 })
 

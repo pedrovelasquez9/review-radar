@@ -1,6 +1,6 @@
 import type { PluginOptions } from 'claude-code'
 
-import { MAX_REVIEW_BUDGET_CHARS, parseReviewMode } from '../core/settings'
+import { DEFAULT_MAX_AUTO_CHANGED_LINES, MAX_REVIEW_BUDGET_CHARS, parseMaxAutoChangedLines, parseReviewMode } from '../core/settings'
 import type { Settings } from '../core/settings'
 
 // What the person chose in the plugin's userConfig (see .claude-plugin/plugin.json).
@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS: ClaudeSettings = {
   isAutoAnalysisOn: true,
   reviewMode: 'auto',
   reviewBudgetChars: REVIEW_BUDGET_CHARS.opus,
+  maxAutoChangedLines: DEFAULT_MAX_AUTO_CHANGED_LINES,
 }
 
 // A missing or unknown value falls back to its default.
@@ -36,5 +37,6 @@ export function readSettings(options: PluginOptions): ClaudeSettings {
     isAutoAnalysisOn: options.autoAnalyze !== false,
     reviewMode: parseReviewMode(options.reviewMode),
     reviewBudgetChars: REVIEW_BUDGET_CHARS[reviewModel],
+    maxAutoChangedLines: parseMaxAutoChangedLines(options.maxAutoChangedLines),
   }
 }

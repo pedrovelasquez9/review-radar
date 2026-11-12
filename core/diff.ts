@@ -10,10 +10,6 @@ export type FileDiff = {
 // Longest excerpt drawn under a finding; a longer hunk is cut around the line.
 const MAX_EXCERPT_LINES = 80
 
-// Files no person writes: lockfiles, build output at the root, minified files,
-// source maps and test snapshots. The files they come from are in the diff.
-const GENERATED_FILE_PATTERN =
-  /(^|\/)[^/]*(\.lock|-lock\.json|-lock\.ya?ml|\.lockb)$|^(dist|coverage)\/|\.min\.(js|css)$|\.map$|(^|\/)__snapshots__\/|\.snap$/
 const HUNK_HEADER_PATTERN = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?/
 
 // Each file's text ends in exactly one newline, wherever it sat in the diff: git's
@@ -27,15 +23,6 @@ export function splitDiffByFile(diff: string): FileDiff[] {
       file: /^diff --git a\/(\S+)/.exec(section)?.[1] ?? '',
       diffText: `${section.trimEnd()}\n`,
     }))
-}
-
-// Generated files drown a diff in lines nobody wrote; the models get their names
-// only. The secret scan still reads them, in the whole diff.
-export function separateGeneratedFiles(files: FileDiff[]): { sourceFiles: FileDiff[]; generatedFiles: string[] } {
-  return {
-    sourceFiles: files.filter(({ file }) => !GENERATED_FILE_PATTERN.test(file)),
-    generatedFiles: files.filter(({ file }) => GENERATED_FILE_PATTERN.test(file)).map(({ file }) => file),
-  }
 }
 
 // The hunk whose range in the new file holds `line`, if any. A line outside
@@ -58,6 +45,25 @@ export function excerptForFinding(fileDiffText: string, line?: number): string {
   // Known limit: a plain cut at a line count; a cut hunk is drawn as plain code, still readable.
   const allHunkLines = splitIntoHunks(fileDiffText).join('').replace(/\n$/, '').split('\n')
   return allHunkLines.slice(0, MAX_EXCERPT_LINES).join('\n')
+}
+
+// The new-file lines a file's diff changes: each added line, and the line where
+// each removal happened (a removed line has no number of its own in the new file).
+export function changedLinePositions(fileDiffText: string): number[] {
+  const positions: number[] = []
+  for (const hunk of splitIntoHunks(fileDiffText)) {
+    const [header = '', ...bodyLines] = hunk.replace(/\n$/, '').split('\n')
+    for (const { text, newLineNumber } of numberHunkLines(header, bodyLines)) {
+      if (text.startsWith('+') || text.startsWith('-')) positions.push(newLineNumber)
+    }
+  }
+  return positions
+}
+
+// An excerpt without the line numbers of its @@ headers: the same code keeps the
+// same identity when edits elsewhere in the file move it up or down.
+export function excerptIdentity(excerpt: string): string {
+  return excerpt.replace(/^@@ [^@]*@@/gm, '@@')
 }
 
 export async function hashText(text: string): Promise<string> {

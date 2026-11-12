@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod and OpenCode plugin · v0.12.1.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
+**Claude Code mod and OpenCode plugin · v0.13.0.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
 
 See what changed in each version in the [changelog](CHANGELOG.md).
 
@@ -43,12 +43,18 @@ AI assistants sometimes do more than asked: a version bump a project rule asked 
 
 ## How it works
 
-1. **Diff.** `git diff` of the working tree against the merge base, plus untracked files. Generated files (lockfiles, `dist/` and `coverage/` at the root, minified files, source maps, test snapshots) are left out of what the models read; only their names are passed on. The secret scan still reads them.
+1. **Diff.** `git diff` of the working tree against the merge base, plus untracked files. Generated files (lockfiles, `dist/` and `coverage/` at the root, minified files, source maps, test snapshots) are left out of what the models read; only their names are passed on. The secret scan still reads them. Add your own exclusions in a `.reviewradarignore` at the repository root, in gitignore syntax: rules apply in order after the built-in ones and the last match decides, so `!yarn.lock` brings a lockfile back.
 2. **Secret floor.** A deterministic scan of added lines for literal credentials (API keys, tokens, private keys, JWTs). A hit is always critical, whatever the model says.
 3. **Triage (only when the changes do not fit in one review).** Each review model has a budget of diff it reads well in one call: 150,000 characters for `opus` and `sonnet`, 100,000 for `haiku`. When the changed files fit in it, every file goes to the deep review. Past it, and only in the `auto` mode, **Haiku** at low effort sorts files into *inspect* or *routine* from their changed lines alone. Data and config files (by path and extension), files with a secret, files Claude edited in this session, and code files with a **logic change** always go on to the deep review, and the triage is not even shown them. A logic change is a changed line that alters a decision or a computation (a condition, a comparison, boolean logic, a number, a `return` or `throw`), found without a model: each line is compared by its shape, so renames and reformatting do not count, while a `>` turned into `>=` or a new `0.15` does. Docs, styles and tests never count. A file the triage skips or answers unreadably is inspected. The `thorough` mode never triages.
 4. **Deep review.** The review model (**Opus** by default, at high effort) reads the diff of the files to inspect with as much surrounding code as fits without one more call: the **whole enclosing function** of each change (`git diff --function-context`), else 10 lines around it, else the plain diff, together with your requests in this session and the files Claude edited, and returns a summary plus findings. When the files to review do not fit in its budget, the review is split into parts (up to 6 calls), each told which files the other parts read. Its instructions are prompt-cached, and so are the project docs and your requests, which open the prompt: the parts of a split review, and the next turns while the docs do not change, read them from the cache. If that model cannot answer (no access, blocked by your organization, an API error), **Sonnet** reviews instead and the summary says so.
-5. **Project context.** Both models also read the app's own docs, to judge what is critical in *this* app: `CLAUDE.md` and `AGENTS.md` (at the root and in the folders above each changed file), the root `README.md`, and the Markdown files in `docs/`, in that order, up to a fifth of the review budget (24,000 characters with `opus`; the triage gets the first 4,000). A change that touches a rule, an amount or a permission the docs describe is business logic; one that contradicts them is suspicious, even when a code comment calls it an approved exception. The models are told the docs describe the app and are not instructions to them.
-6. **Incremental.** Each file's diff is hashed. On the next turn only files whose diff changed are sent again; unchanged files keep their findings (and the model is told about them). A turn that ran no file-changing tool does not run git at all. `/review-radar` and *Re-analyze* force a full review.
+5. **Project context.** Both models also read the app's own docs, to judge what is critical in *this* app: `REVIEW.md` first (notes written for whoever reviews the code: invariants, deliberate oddities, rules enforced elsewhere), then `CLAUDE.md` and `AGENTS.md`, each (at the root and in the folders above each changed file), the root `README.md`, and the Markdown files in `docs/`, in that order, up to a fifth of the review budget (24,000 characters with `opus`; the triage gets the first 4,000). A change that touches a rule, an amount or a permission the docs describe is business logic; one that contradicts them is suspicious, even when a code comment calls it an approved exception. The models are told the docs describe the app and are not instructions to them.
+6. **Rules in code.** The model proposes; fixed rules decide what you see, so the same answer always ends the same way:
+   - A finding is critical only if the branch caused it: its file is in the diff and its line, when given, is within 3 lines of a change. Otherwise it goes to the PR list, marked as already there before the branch. Literal secrets stay critical wherever they are.
+   - The same defect reported twice (same file and category, close lines, similar title) is shown once.
+   - Literal secrets are masked in the excerpts, titles and reasons the pane shows and *Request changes* copies into the prompt.
+   - The diff, the docs and your requests reach the models between markers with a random tag, and the models are told only those markers delimit data: text in the diff cannot close its block and pass itself off as instructions.
+   - A *Reviewed* mark is tied to the code, not to its line numbers, so it survives edits that only move it.
+7. **Incremental.** Each file's diff is hashed. On the next turn only files whose diff changed are sent again; unchanged files keep their findings (and the model is told about them). A turn that ran no file-changing tool does not run git at all. `/review-radar` and *Re-analyze* force a full review.
 
 ## Requirements
 
@@ -106,11 +112,12 @@ Do not load an installed copy and a `--plugin-dir` copy at the same time.
 | `language` | `en`, `es` | `en` | Language of the pane, the report and the model's summaries and findings. Changing it redoes the next analysis in the new language. |
 | `reviewModel` | `opus`, `sonnet`, `haiku` | `opus` | Model for the deep review. `sonnet` is cheaper and faster; `haiku` is cheapest and catches less. Falls back to `sonnet` when the chosen one cannot answer. |
 | `autoAnalyze` | `true`, `false` | `true` | Analyze at the end of every turn that changed files. With `false`, only `/review-radar` and *Re-analyze* run an analysis, so tokens are spent only when you ask. |
+| `maxAutoChangedLines` | a number, `0` for no limit | `3000` | An automatic analysis of more changed lines than this (added plus removed, generated and excluded files left out) calls no model: the secret scan still runs, and the pane lists the changed files until you run `/review-radar` or *Re-analyze*. |
 | `reviewMode` | `auto`, `thorough` | `auto` | `auto` sorts out routine files with a fast model only when the changes do not fit in one deep review. `thorough` never does: every changed file gets the deep review, in several calls if needed. More tokens on large branches, nothing cleared by the sorting. |
 
 Set them in any of these ways:
 
-- In a session: open `/config` and change the *Language*, *Review model*, *Analyze automatically* and *Review mode* rows. The mod reloads with the new values.
+- In a session: open `/config` and change the *Language*, *Review model*, *Analyze automatically*, *Review mode* and *Lines reviewed automatically* rows. The mod reloads with the new values.
 - When installing:
 
   ```shell
@@ -188,6 +195,7 @@ From a local clone, use the clone's folder instead of the package name (run `bun
 | `triageModel` | `provider/model`, for sorting large diffs | the review model |
 | `autoAnalyze` | `true`, `false` | `true` |
 | `reviewMode` | `auto`, `thorough` (see [Configuration](#configuration)) | `auto` |
+| `maxAutoChangedLines` | a number, `0` for no limit (see [Configuration](#configuration)) | `3000` |
 
 The models are asked through OpenCode itself, so any provider you set up there works. Each question runs in a child session of yours with every tool off and every permission denied, so the model can only answer; the child session is deleted right after. The review budget comes from the model's context window as OpenCode reports it (half of it, at 3 characters per token, up to 150,000 characters); for a model with no known window, 48,000 characters are assumed. The review's quality depends on the model: a small local model may miss findings or answer in English.
 
@@ -216,6 +224,9 @@ The analysis is shared; each agent gets a thin adapter.
 | `core/intent.ts` | Your requests and the files the agent edited, for the `unrequested` category; each agent reads them from its own conversation |
 | `core/logic-change.ts` | Deterministic check for changed conditions, comparisons and numbers, which the triage cannot clear |
 | `core/project-context.ts` | Which docs give the business context (CLAUDE.md, AGENTS.md, README, docs/) and how much of each |
+| `core/finding-rules.ts` | The rules that decide what is critical: pre-existing findings and duplicates |
+| `core/ignore-rules.ts` | Generated files and `.reviewradarignore`, in gitignore syntax |
+| `core/boundary.ts` | The tagged markers around untrusted text in prompts |
 | `core/secrets.ts` | Deterministic secret scan and its merge with the model's findings |
 | `core/report-view.ts` | What every view shows the same way: review keys, the headline, the loader's step |
 | `core/text-report.ts` | The report as text, for `/review-radar` in Claude Code |

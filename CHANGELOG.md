@@ -2,6 +2,24 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.13.0] - 2026-11-12
+
+### Added
+
+- **Rules in code decide what is critical.** The model's severity is now a proposal. A finding is critical only if the branch caused it: its file is in the diff and its line, when given, is within 3 lines of a change. Otherwise it goes to the PR list, marked as already there before the branch, so the wider context the review reads since 0.10.0 cannot turn old code into new alarms. Literal secrets stay critical wherever they are.
+- **Duplicates merged.** The same defect reported twice, within one answer or across the parts of a split review (same file and category, lines close together, similar title), is shown once, the critical copy kept.
+- **`.reviewradarignore`.** Your own exclusions at the repository root, in gitignore syntax. Rules apply after the built-in ones (lockfiles, root `dist/` and `coverage/`, minified files, source maps, snapshots) and the last match decides, so `!yarn.lock` brings a lockfile back. Excluded files reach the models by name only; the secret scan still reads them.
+- **`REVIEW.md` first.** Review instructions at the root, or in a folder above a changed file, are read before `CLAUDE.md` and `AGENTS.md`.
+- **`maxAutoChangedLines` setting** (3000 by default, `0` for no limit). An automatic analysis of more changed lines calls no model: the secret scan still runs, and the pane lists the changed files until you run `/review-radar` or *Re-analyze*.
+
+### Changed
+
+- **Secrets masked.** Literal secrets are cut to their first characters in the excerpts, titles and reasons the pane shows and *Request changes* copies into the prompt. Before, *Request changes* could copy a credential into the conversation.
+- **Untrusted text between tagged markers.** The diff, the project docs and your requests reach the models between markers with a random tag, and the models are told only those markers delimit data, so text in a diff cannot close its block and pass itself off as instructions.
+- **Reviewed marks survive moved code.** A mark is tied to the code under the finding, not to its line numbers. After the upgrade, existing marks are lost once.
+
+Everything still runs in your own session, through its Claude Code or OpenCode models: nothing new calls another service.
+
 ## [0.12.1] - 2026-11-03
 
 ### Fixed
@@ -134,6 +152,7 @@ First public version.
 - **`/review-radar` command**: opens the pane, forces a full analysis and prints the report, diffs included, in the conversation.
 - Installable from GitHub as its own marketplace.
 
+[0.13.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.13.0
 [0.12.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.12.0
 [0.11.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.11.0
 [0.10.0]: https://github.com/pedrovelasquez9/review-radar/releases/tag/v0.10.0

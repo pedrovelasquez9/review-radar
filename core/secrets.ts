@@ -21,6 +21,27 @@ const SECRET_PATTERNS: readonly RegExp[] = [
   /(api[_-]?key|secret|token|passw(or)?d|private[_-]?key)["']?\s*[:=]\s*["'][^"'\s]{12,}["']/i,
 ]
 
+// A private key's body, between its BEGIN and END lines (or the end of the text).
+const PRIVATE_KEY_BODY = /(-----BEGIN [A-Z ]*PRIVATE KEY-----)([\s\S]*?)(-----END [A-Z ]*PRIVATE KEY-----|$)/g
+// Inside a match, the run of characters that is the secret itself.
+const SECRET_VALUE = /[A-Za-z0-9_\-+/=.]{12,}/g
+const SHOWN_PREFIX_CHARS = 4
+
+// The text with every literal secret the scan recognizes cut to its first
+// characters: an excerpt shown in the pane, or a change request written into the
+// prompt, must not carry the credential itself.
+export function maskSecrets(text: string): string {
+  const maskValue = (value: string) => `${value.slice(0, SHOWN_PREFIX_CHARS)}••••`
+  let masked = text.replace(PRIVATE_KEY_BODY, (_, begin: string, body: string, end: string) => {
+    return begin + body.replace(/[A-Za-z0-9+/=]{8,}/g, '••••') + end
+  })
+  for (const pattern of SECRET_PATTERNS) {
+    const everyMatch = new RegExp(pattern.source, `${pattern.flags}g`)
+    masked = masked.replace(everyMatch, match => match.replace(SECRET_VALUE, maskValue))
+  }
+  return masked
+}
+
 export function findLiteralSecrets(diff: string, messages: Messages): Finding[] {
   const findings: Finding[] = []
   let currentFile = ''

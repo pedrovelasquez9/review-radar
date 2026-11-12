@@ -15,6 +15,9 @@ export type Settings = {
   // How many characters of diff the review model reads well in one call: past
   // it the review is split into parts (see core/analysis.ts).
   reviewBudgetChars: number
+  // An automatic analysis of more changed lines than this waits for the person
+  // to ask for it (/review-radar, Re-analyze); 0 never waits.
+  maxAutoChangedLines: number
 }
 
 // What the largest models get: longer prompts cost more without reading better.
@@ -22,6 +25,13 @@ export const MAX_REVIEW_BUDGET_CHARS = 150_000
 // Assumed for a model whose context window is not known: a small local model.
 const UNKNOWN_CONTEXT_TOKENS = 32_000
 const MIN_REVIEW_BUDGET_CHARS = 8_000
+
+export const DEFAULT_MAX_AUTO_CHANGED_LINES = 3_000
+
+// A whole number of lines, 0 included; anything else is the default.
+export function parseMaxAutoChangedLines(value: unknown): number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : DEFAULT_MAX_AUTO_CHANGED_LINES
+}
 
 export function parseReviewMode(value: unknown): ReviewMode {
   return value === 'thorough' ? 'thorough' : 'auto'

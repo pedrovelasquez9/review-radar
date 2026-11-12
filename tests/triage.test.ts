@@ -7,7 +7,7 @@ import { LOCKFILE_DIFF, PAY_DIFF } from './fixtures'
 const files = splitDiffByFile(PAY_DIFF + LOCKFILE_DIFF)
 
 test('triage sees only the changed lines', async () => {
-  const prompt = buildTriagePrompt(files)
+  const prompt = buildTriagePrompt(files, 10_000)
 
   expect(prompt.includes('const a = 1')).toBe(false)
   expect(prompt.includes('+const apiKey')).toBe(true)

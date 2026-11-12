@@ -46,6 +46,11 @@ export type Messages = {
   routineChangeTitle: string
   // A file left out of a deep review too long to finish.
   notReviewedTitle: string
+  // Opens the reason of a finding in code the branch did not change.
+  preExistingNote: string
+  // An automatic analysis skipped because the changes are larger than the limit.
+  tooLargeForAutoSummary: (changedLines: number, limit: number) => string
+  tooLargeForAutoTitle: string
   secretFindingTitle: string
   secretFindingReason: string
 
@@ -108,6 +113,10 @@ const ENGLISH: Messages = {
   fallbackModelNote: (preferredModel, usedModel) => ` (reviewed with ${usedModel}: ${preferredModel} was unavailable)`,
   routineChangeTitle: 'Routine change',
   notReviewedTitle: 'Not reviewed: too many changes for one analysis',
+  preExistingNote: '(Already there before this branch.)',
+  tooLargeForAutoSummary: (changedLines, limit) =>
+    `${changedLines} changed lines, over the ${limit} reviewed automatically: run /review-radar or Re-analyze to review them.`,
+  tooLargeForAutoTitle: 'Not reviewed yet: too many changes for an automatic analysis',
   secretFindingTitle: 'Possible secret in the code',
   secretFindingReason:
     'An added line looks like a literal credential: move it to a secret or environment variable, and rotate it if it was ever pushed.',
@@ -170,6 +179,10 @@ const SPANISH: Messages = {
   fallbackModelNote: (preferredModel, usedModel) => ` (revisado con ${usedModel}: ${preferredModel} no estaba disponible)`,
   routineChangeTitle: 'Cambio rutinario',
   notReviewedTitle: 'Sin revisar: demasiados cambios para un análisis',
+  preExistingNote: '(Ya estaba antes de esta rama.)',
+  tooLargeForAutoSummary: (changedLines, limit) =>
+    `${changedLines} líneas cambiadas, más de las ${limit} que se revisan automáticamente: ejecuta /review-radar o Re-analizar para revisarlas.`,
+  tooLargeForAutoTitle: 'Sin revisar todavía: demasiados cambios para un análisis automático',
   secretFindingTitle: 'Posible secreto en el código',
   secretFindingReason:
     'Una línea añadida parece contener una credencial literal: muévela a un secreto o variable de entorno, y rótala si llegó a subirse.',

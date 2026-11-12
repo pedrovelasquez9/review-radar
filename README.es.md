@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-**Mod de Claude Code y plugin de OpenCode · v0.12.1.** Un panel de revisión para el humano en el bucle. Cuando el agente termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR». En [OpenCode](#opencode) la misma revisión vive en la barra lateral y en un diálogo.
+**Mod de Claude Code y plugin de OpenCode · v0.13.0.** Un panel de revisión para el humano en el bucle. Cuando el agente termina un feature, review-radar lee el diff de tu rama y muestra, **con las líneas del diff y sus archivos**, solo los cambios que una persona tiene que confirmar: lógica de negocio, arquitectura, datos y migraciones, secretos, servicios de terceros, seguridad, infraestructura, todo lo que parezca un error y **los cambios que nadie pidió**. El resto queda listado como «revisar en la PR». En [OpenCode](#opencode) la misma revisión vive en la barra lateral y en un diálogo.
 
 Los cambios de cada versión están en el [changelog](CHANGELOG.md) (en inglés).
 
@@ -43,12 +43,18 @@ Los asistentes de IA a veces hacen más de lo pedido: subir una versión porque 
 
 ## Cómo funciona
 
-1. **Diff.** `git diff` del árbol de trabajo contra el merge base, más los archivos sin trackear. Los archivos generados (lockfiles, `dist/` y `coverage/` en la raíz, minificados, source maps y snapshots de tests) no se pasan a los modelos; solo sus nombres. La detección de secretos sí los lee.
+1. **Diff.** `git diff` del árbol de trabajo contra el merge base, más los archivos sin trackear. Los archivos generados (lockfiles, `dist/` y `coverage/` en la raíz, minificados, source maps y snapshots de tests) no se pasan a los modelos; solo sus nombres. La detección de secretos sí los lee. Añade tus propias exclusiones en un `.reviewradarignore` en la raíz del repositorio, con sintaxis de gitignore: las reglas se aplican en orden después de las incluidas y decide la última que coincide, así que `!yarn.lock` vuelve a incluir un lockfile.
 2. **Suelo de secretos.** Un escaneo determinista de las líneas añadidas busca credenciales literales (API keys, tokens, claves privadas, JWT). Si encuentra una, es crítica diga lo que diga el modelo.
 3. **Triaje (solo cuando los cambios no caben en una revisión).** Cada modelo de revisión tiene un presupuesto de diff que lee bien en una llamada: 150.000 caracteres para `opus` y `sonnet`, 100.000 para `haiku`. Si los archivos cambiados caben, todos pasan a la revisión a fondo. Si no caben, y solo en el modo `auto`, **Haiku** con esfuerzo bajo separa los archivos en *inspeccionar* o *rutinario* mirando solo sus líneas cambiadas. Los archivos de datos y configuración (por ruta y extensión), los que tienen un secreto los que Claude editó en esta sesión y los archivos de código con un **cambio de lógica** pasan siempre a la revisión a fondo, y el triaje ni siquiera los ve. Un cambio de lógica es una línea cambiada que altera una decisión o un cálculo (una condición, una comparación, lógica booleana, un número, un `return` o un `throw`), y se detecta sin modelo: cada línea se compara por su forma, así que los renombrados y el formato no cuentan, pero un `>` que pasa a `>=` o un `0.15` nuevo sí. La documentación, los estilos y los tests nunca cuentan. Un archivo que el triaje se salta o cuya respuesta no se puede leer se inspecciona. El modo `thorough` nunca hace triaje.
 4. **Revisión a fondo.** El modelo de revisión (**Opus** por defecto, con esfuerzo alto) lee el diff de los archivos a inspeccionar con todo el código de alrededor que quepa sin una llamada más: la **función completa** que contiene cada cambio (`git diff --function-context`), si no 10 líneas alrededor, y si no el diff normal, junto con tus peticiones en esta sesión y los archivos que editó Claude, y devuelve un resumen y los hallazgos. Si los archivos a revisar no caben en su presupuesto, la revisión se reparte en partes (hasta 6 llamadas), y cada una sabe qué archivos leen las demás. Sus instrucciones quedan en la caché de prompts, y también la documentación del proyecto y tus peticiones, que abren el prompt: las partes de una revisión repartida, y los turnos siguientes mientras la documentación no cambie, las leen de la caché. Si ese modelo no puede responder (sin acceso, bloqueado por tu organización, un error de la API), revisa **Sonnet** y el resumen lo indica.
-5. **Contexto del proyecto.** Los dos modelos leen también la documentación de la propia app, para juzgar qué es crítico en *esta* app: `CLAUDE.md` y `AGENTS.md` (en la raíz y en las carpetas por encima de cada archivo cambiado), el `README.md` de la raíz y los Markdown de `docs/`, en ese orden, hasta una quinta parte del presupuesto de la revisión (24.000 caracteres con `opus`; el triaje recibe los primeros 4.000). Un cambio que toca una regla, un importe o un permiso que la documentación describe es lógica de negocio; uno que la contradice es sospechoso, aunque un comentario del código lo llame excepción aprobada. A los modelos se les indica que la documentación describe la app y que no son instrucciones para ellos.
-6. **Incremental.** Se guarda un hash del diff de cada archivo. En el siguiente turno solo se vuelven a enviar los archivos cuyo diff cambió; los demás conservan sus hallazgos (y el modelo los conoce). Un turno sin herramientas que modifiquen archivos ni siquiera ejecuta git. `/review-radar` y *Re-analizar* fuerzan una revisión completa.
+5. **Contexto del proyecto.** Los dos modelos leen también la documentación de la propia app, para juzgar qué es crítico en *esta* app: primero `REVIEW.md` (notas para quien revisa el código: invariantes, rarezas deliberadas, reglas que se aplican en otro sitio), luego `CLAUDE.md` y `AGENTS.md`, cada uno (en la raíz y en las carpetas por encima de cada archivo cambiado), el `README.md` de la raíz y los Markdown de `docs/`, en ese orden, hasta una quinta parte del presupuesto de la revisión (24.000 caracteres con `opus`; el triaje recibe los primeros 4.000). Un cambio que toca una regla, un importe o un permiso que la documentación describe es lógica de negocio; uno que la contradice es sospechoso, aunque un comentario del código lo llame excepción aprobada. A los modelos se les indica que la documentación describe la app y que no son instrucciones para ellos.
+6. **Reglas en el código.** El modelo propone y unas reglas fijas deciden lo que ves, así que la misma respuesta siempre acaba igual:
+   - Un hallazgo solo es crítico si lo causó la rama: su archivo está en el diff y su línea, si la da, está a 3 líneas o menos de un cambio. Si no, pasa a la lista de la PR, marcado como algo que ya estaba antes de la rama. Los secretos literales siguen siendo críticos estén donde estén.
+   - El mismo defecto reportado dos veces (mismo archivo y categoría, líneas cercanas, título parecido) se muestra una vez.
+   - Los secretos literales se enmascaran en los extractos, títulos y motivos que muestra el panel y que *Pedir cambios* copia al prompt.
+   - El diff, la documentación y tus peticiones llegan a los modelos entre marcas con una etiqueta aleatoria, y a los modelos se les indica que solo esas marcas delimitan datos: un texto del diff no puede cerrar su bloque y hacerse pasar por instrucciones.
+   - La marca *Revisado* va ligada al código, no a sus números de línea, así que sobrevive a ediciones que solo lo desplazan.
+7. **Incremental.** Se guarda un hash del diff de cada archivo. En el siguiente turno solo se vuelven a enviar los archivos cuyo diff cambió; los demás conservan sus hallazgos (y el modelo los conoce). Un turno sin herramientas que modifiquen archivos ni siquiera ejecuta git. `/review-radar` y *Re-analizar* fuerzan una revisión completa.
 
 ## Requisitos
 
@@ -106,11 +112,12 @@ No cargues a la vez una copia instalada y otra con `--plugin-dir`.
 | `language` | `en`, `es` | `en` | Idioma del panel, del informe y de los resúmenes y hallazgos del modelo. Al cambiarlo, el siguiente análisis se rehace en el nuevo idioma. |
 | `reviewModel` | `opus`, `sonnet`, `haiku` | `opus` | Modelo de la revisión a fondo. `sonnet` es más barato y rápido; `haiku` es el más barato y detecta menos. Si el elegido no puede responder, revisa `sonnet`. |
 | `autoAnalyze` | `true`, `false` | `true` | Analiza al final de cada turno que cambió archivos. Con `false`, solo `/review-radar` y *Re-analizar* lanzan un análisis, así que solo gastas tokens cuando lo pides. |
+| `maxAutoChangedLines` | un número, `0` sin límite | `3000` | Un análisis automático de más líneas cambiadas que estas (añadidas más borradas, sin contar archivos generados ni excluidos) no llama a ningún modelo: la detección de secretos sí se ejecuta, y el panel lista los archivos cambiados hasta que ejecutes `/review-radar` o *Re-analizar*. |
 | `reviewMode` | `auto`, `thorough` | `auto` | `auto` aparta los archivos rutinarios con un modelo rápido solo cuando los cambios no caben en una revisión a fondo. `thorough` nunca lo hace: todos los archivos cambiados pasan por la revisión a fondo, en varias llamadas si hace falta. Más tokens en ramas grandes, y el triaje no descarta nada. |
 
 Puedes configurarlas de cualquiera de estas formas:
 
-- En una sesión: abre `/config` y cambia las filas *Language*, *Review model*, *Analyze automatically* y *Review mode*. El mod se recarga con los nuevos valores.
+- En una sesión: abre `/config` y cambia las filas *Language*, *Review model*, *Analyze automatically*, *Review mode* y *Lines reviewed automatically*. El mod se recarga con los nuevos valores.
 - Al instalar:
 
   ```shell
@@ -188,6 +195,7 @@ Desde un clon local, pon la carpeta del clon en lugar del nombre del paquete (an
 | `triageModel` | `proveedor/modelo`, para clasificar diffs grandes | el modelo de revisión |
 | `autoAnalyze` | `true`, `false` | `true` |
 | `reviewMode` | `auto`, `thorough` (ver [Configuración](#configuración)) | `auto` |
+| `maxAutoChangedLines` | un número, `0` sin límite (ver [Configuración](#configuración)) | `3000` |
 
 Los modelos se consultan a través del propio OpenCode, así que vale cualquier proveedor que tengas configurado ahí. Cada consulta se hace en una sesión hija de la tuya con todas las herramientas desactivadas y todos los permisos denegados, de modo que el modelo solo puede responder; la sesión hija se borra al terminar. El presupuesto de la revisión sale de la ventana de contexto del modelo según la informa OpenCode (la mitad, a 3 caracteres por token, hasta 150.000 caracteres); para un modelo sin ventana conocida se suponen 48.000 caracteres. La calidad de la revisión depende del modelo: uno local pequeño puede pasar por alto hallazgos o responder en inglés.
 
@@ -216,6 +224,9 @@ El análisis es común; cada agente tiene un adaptador fino.
 | `core/intent.ts` | Tus peticiones y los archivos que editó el agente, para la categoría `unrequested`; cada agente los lee de su propia conversación |
 | `core/logic-change.ts` | Detección determinista de condiciones, comparaciones y números cambiados, que el triaje no puede descartar |
 | `core/project-context.ts` | Qué documentación aporta el contexto de negocio (CLAUDE.md, AGENTS.md, README, docs/) y cuánto de cada una |
+| `core/finding-rules.ts` | Las reglas que deciden qué es crítico: hallazgos preexistentes y duplicados |
+| `core/ignore-rules.ts` | Archivos generados y `.reviewradarignore`, con sintaxis de gitignore |
+| `core/boundary.ts` | Las marcas con etiqueta alrededor del texto no fiable en los prompts |
 | `core/secrets.ts` | Detección determinista de secretos y su fusión con los hallazgos del modelo |
 | `core/report-view.ts` | Lo que todas las vistas muestran igual: claves de revisado, el titular, el paso del indicador de carga |
 | `core/text-report.ts` | El informe como texto, para `/review-radar` en Claude Code |

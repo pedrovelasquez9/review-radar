@@ -76,6 +76,20 @@ async function readTrackedDiff(
   return (await runGit(engine, ['diff', '--no-color', '--no-ext-diff', ...contextArgs, forkPoint, ...pathspec])) ?? ''
 }
 
+// A file's text by its path from the repository root, or undefined when it
+// cannot be read (missing, or not a repository).
+export async function readRepositoryFile(engine: Engine, rootRelativePath: string): Promise<string | undefined> {
+  const prefix = await runGit(engine, ['rev-parse', '--show-prefix'])
+  return prefix === undefined ? undefined : engine.readTextFile(fromWorkingDirectory(rootRelativePath, prefix))
+}
+
+// git lists paths from the repository root; files are read from the working
+// directory, which `prefix` (as `git rev-parse --show-prefix` prints it) locates.
+export function fromWorkingDirectory(path: string, prefix: string): string {
+  const depth = prefix.split('/').filter(part => part !== '').length
+  return '../'.repeat(depth) + path
+}
+
 // stdout of a successful git command, trimmed; undefined when it fails.
 export async function runGit(engine: Engine, args: string[]): Promise<string | undefined> {
   const result = await engine.runCommand(['git', ...args], GIT_TIMEOUT_MS)

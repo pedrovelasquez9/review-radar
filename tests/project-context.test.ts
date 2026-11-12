@@ -64,3 +64,12 @@ test('without docs the prompt has no project context', async () => {
 
   expect(promptText(engine.modelRequests[0]).includes("project's own docs")).toBe(false)
 })
+
+test('review instructions come before everything else', async () => {
+  const chosen = chooseContextFiles(['CLAUDE.md', 'docs/REVIEW.md', 'REVIEW.md', 'src/billing/REVIEW.md', 'README.md'], [
+    'src/billing/invoice.ts',
+  ]).map(({ path }) => path)
+
+  // docs/REVIEW.md speaks for docs/, which nothing changed: it is read as a doc.
+  expect(chosen).toEqual(['REVIEW.md', 'src/billing/REVIEW.md', 'CLAUDE.md', 'README.md', 'docs/REVIEW.md'])
+})
