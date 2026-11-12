@@ -5,5 +5,5 @@
     "noUnusedParameters": true
   },
   // The OpenCode plugin has its own tsconfig (opencode/tsconfig.json).
-  "exclude": ["opencode", "node_modules"]
+  "exclude": ["opencode", "bench", "node_modules"]
 }

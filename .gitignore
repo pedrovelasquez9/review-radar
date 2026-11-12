@@ -11,3 +11,6 @@ Thumbs.db
 # Written by Claude Code each time it loads the mod: its API types, and the MCP
 # connectors of the machine that loaded it (private, never publish).
 .claude-plugin/types/
+
+# Benchmark reports (bench/results), kept local
+bench/results/

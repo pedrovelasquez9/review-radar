@@ -270,6 +270,8 @@ npx tsc -p opencode
 
 `tsc` reads the Claude Code types from `.claude-plugin/types/`, which Claude Code writes the first time it loads the mod (installed, or with `claude --plugin-dir .`). The folder is not versioned: it holds the MCP connectors of the machine that loaded the mod.
 
+To measure the review itself, `bench/` has 27 cases (17 planted bugs, 10 clean changes) that run review-radar and a plain-prompt baseline with your own Claude Code CLI login; `bun bench/run.ts --dry-run` checks it without calling a model. See [bench/README.md](bench/README.md).
+
 ## License
 
 [MIT](LICENSE) · [github.com/pedrovelasquez9/review-radar](https://github.com/pedrovelasquez9/review-radar)
