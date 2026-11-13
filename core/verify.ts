@@ -16,11 +16,11 @@ import type { Messages } from './messages'
 const CHECKED_CATEGORIES = new Set(['bug', 'suspicious'])
 
 const VERIFY_SYSTEM_PROMPT = `You double-check a code review. Each numbered finding claims a defect in the diff below. For each one, read the code it points at, the rest of the diff and the related code, and decide whether the defect is real.
-Reject it ("keep": false) when the code already handles the case (a guard, a default, a check elsewhere in the diff or its callers), when the input it names cannot reach that code, when it describes code the branch did not change and does not make worse, or when it is only a wish for tests, logs or style.
+Reject it ("keep": false) only when you can quote the code that rules it out: the guard, default or check (in the diff or the related code) that already handles the case, or the code that keeps the input it names from reaching that line. Put that code, copied exactly, in "handled_by". Without such code, keep it.
 Keep it ("keep": true) when the code, as changed, behaves wrongly for an input or situation that can happen, or when the code shown is not enough to rule it out.
 When several findings describe the same defect, judge the clearest one and answer each of the others with "same_as": <the number of that one>.
 ${UNTRUSTED_DATA_RULE}
-Answer ONLY a JSON object: {"verdicts":[{"n":<finding number>,"keep":true|false,"same_as":<number, only for a duplicate>}]}`
+Answer ONLY a JSON object: {"verdicts":[{"n":<finding number>,"keep":true|false,"handled_by":"<code, only when keep is false>","same_as":<number, only for a duplicate>}]}`
 
 export function needsVerification(finding: Finding): boolean {
   return finding.severity === 'critical' && CHECKED_CATEGORIES.has(finding.category)
@@ -50,7 +50,7 @@ export async function verifyFindings(
   let verdicts: Verdicts
   try {
     const answer = await engine.askReviewModel(VERIFY_SYSTEM_PROMPT, context.cachedBlocks, prompt)
-    verdicts = readVerdicts(answer.text, toCheck)
+    verdicts = readVerdicts(answer.text, toCheck, squash(withoutDiffMarks(context.diff.slice(0, context.maxChars)) + context.relatedCode))
   } catch {
     // No verdict: the review's own answer stands.
     return findings
@@ -64,21 +64,41 @@ export async function verifyFindings(
 
 type Verdicts = { rejected: Set<Finding>; duplicates: Set<Finding> }
 
-// Only an explicit `"keep": false` rejects: a finding the answer skips stays. A
-// duplicate is dropped, and takes the verdict of the finding it repeats.
-function readVerdicts(answer: string, checked: Finding[]): Verdicts {
+// Only an explicit `"keep": false` that quotes code found in the diff or the
+// related code rejects: a finding the answer skips, or rejects on a hunch,
+// stays (in the bench, unsupported rejections dropped real bugs). A duplicate
+// is dropped, and takes the verdict of the finding it repeats.
+function readVerdicts(answer: string, checked: Finding[], shownCode: string): Verdicts {
   const parsed = JSON.parse(extractJsonObject(answer)) as { verdicts?: unknown }
   const verdicts: unknown[] = Array.isArray(parsed.verdicts) ? parsed.verdicts : []
   const rejected = new Set<Finding>()
   const sameAs = new Map<Finding, Finding>()
   for (const raw of verdicts) {
-    const verdict = raw as { n?: unknown; keep?: unknown; same_as?: unknown }
+    const verdict = raw as { n?: unknown; keep?: unknown; handled_by?: unknown; same_as?: unknown }
     const finding = typeof verdict.n === 'number' ? checked[verdict.n - 1] : undefined
     const original = typeof verdict.same_as === 'number' ? checked[verdict.same_as - 1] : undefined
     if (finding && original && original !== finding) sameAs.set(finding, original)
-    else if (finding && verdict.keep === false) rejected.add(finding)
+    else if (finding && verdict.keep === false && quotesShownCode(verdict.handled_by, shownCode)) rejected.add(finding)
   }
   // A chain (3 same as 2, 2 same as 1) would drop all three: only links to a finding kept as itself count.
   const duplicates = new Set([...sameAs].filter(([, original]) => !sameAs.has(original)).map(([finding]) => finding))
   return { rejected, duplicates }
+}
+
+// Short quotes (`if (x)`) match too much of any diff to prove anything.
+const MIN_HANDLED_BY_LENGTH = 8
+
+function quotesShownCode(handledBy: unknown, shownCode: string): boolean {
+  if (typeof handledBy !== 'string') return false
+  const quote = squash(handledBy.replace(/^`+|`+$/g, ''))
+  return quote.length >= MIN_HANDLED_BY_LENGTH && shownCode.includes(quote)
+}
+
+// A quote over several lines matches the diff without its +, - and space marks.
+function withoutDiffMarks(diff: string): string {
+  return diff.replace(/^[+ -]/gm, '')
+}
+
+function squash(text: string): string {
+  return text.replace(/\s+/g, '')
 }

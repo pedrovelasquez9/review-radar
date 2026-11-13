@@ -6,7 +6,12 @@ import { messagesFor } from '../core/messages'
 import { verifyFindings } from '../core/verify'
 
 const MESSAGES = messagesFor('en')
-const CONTEXT = { cachedBlocks: [], diff: 'diff --git a/a.ts b/a.ts\n', relatedCode: '', maxChars: 10_000 }
+const CONTEXT = {
+  cachedBlocks: [],
+  diff: 'diff --git a/a.ts b/a.ts\n@@ -1,1 +1,3 @@\n function last(items) {\n+  if (items.length === 0)\n+    return\n',
+  relatedCode: '',
+  maxChars: 10_000,
+}
 
 function finding(overrides: Partial<Finding>): Finding {
   return { severity: 'critical', category: 'bug', file: 'a.ts', line: 3, title: 'Off by one', why: 'Skips the last item.', ...overrides }
@@ -25,7 +30,7 @@ function engineAnswering(text: string | Error, calls: string[] = []): Engine {
 test('defects the second look rejects go to the PR list, marked; decisions are not checked', async () => {
   const calls: string[] = []
   const [rejected, kept, skipped, decision] = await verifyFindings(
-    engineAnswering('{"verdicts":[{"n":1,"keep":false},{"n":2,"keep":true}]}', calls),
+    engineAnswering('{"verdicts":[{"n":1,"keep":false,"handled_by":"if (items.length === 0) return"},{"n":2,"keep":true}]}', calls),
     [
       finding({}),
       finding({ category: 'suspicious', title: 'Sign flipped' }),
@@ -44,6 +49,18 @@ test('defects the second look rejects go to the PR list, marked; decisions are n
   expect(decision?.severity).toBe('critical')
   expect(calls.length).toBe(1)
   expect(calls[0]!.includes('New layer')).toBe(false)
+})
+
+test('a rejection stands only on code the diff shows', async () => {
+  const [noCode, madeUpCode] = await verifyFindings(
+    engineAnswering('{"verdicts":[{"n":1,"keep":false},{"n":2,"keep":false,"handled_by":"if (items == null) return []"}]}'),
+    [finding({}), finding({ title: 'Null items' })],
+    CONTEXT,
+    MESSAGES,
+  )
+
+  expect(noCode?.severity).toBe('critical')
+  expect(madeUpCode?.severity).toBe('critical')
 })
 
 test('no verdict, no change: a failed call keeps the review answer, and nothing to check asks nothing', async () => {

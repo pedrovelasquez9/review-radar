@@ -64,7 +64,7 @@ type FakeEngineOptions = {
 }
 
 export type FakeEngine = Engine & {
-  // Triage and first review calls; the second look on small diffs and the
+  // Triage and review calls; the bug hunt beside the review on small diffs and the
   // verification of defects (verify.ts) go to `extraRequests`.
   modelRequests: ModelCompleteRequest[]
   extraRequests: ModelCompleteRequest[]
@@ -109,7 +109,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
 
   const completeWithModel = async (request: ModelCompleteRequest): Promise<ModelCompleteResult> => {
     const text = JSON.stringify(request)
-    const isExtra = text.includes('Another reviewer already read this diff') || text.includes('You double-check a code review')
+    const isExtra = text.includes('Find the bugs this code diff introduces') || text.includes('You double-check a code review')
     ;(isExtra ? extraRequests : modelRequests).push(request)
     if (options.blockedModels?.includes(request.model)) throw new Error(`model ${request.model} is blocked`)
     return answeredBy(options.reviewAnswer)

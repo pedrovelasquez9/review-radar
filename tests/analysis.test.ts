@@ -281,7 +281,7 @@ test('a re-run with no changed file reads neither the session nor the docs', asy
   expect(engine.modelRequests.length).toBe(1)
 })
 
-test('a small diff gets a second look, and its defects are verified once', async () => {
+test('a small diff gets a bug hunt, and its defects are verified once', async () => {
   const engine = createFakeEngine({
     diff: THREE_FILES_DIFF,
     reviewAnswer: '{"summary":"s","findings":[{"severity":"critical","category":"bug","file":"src/a.ts","title":"Off by one","why":"x"}]}',
@@ -289,7 +289,7 @@ test('a small diff gets a second look, and its defects are verified once', async
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  // One review, its second look, and one verification call for the merged defect.
+  // One review, the bug hunt, and one verification call for the merged defect.
   expect(engine.modelRequests.length).toBe(1)
   expect(engine.extraRequests.length).toBe(2)
   // The fake verifier answers without verdicts: the defect stays critical.

@@ -22,7 +22,7 @@ import { hasIntent, keepRequestsWithinBudget, toRepositoryPaths } from './intent
 import type { SessionIntent } from './intent'
 import { messagesFor } from './messages'
 import type { Messages } from './messages'
-import { buildReviewPrompt, parseReviewAnswer, reviewSystemPrompt } from './review'
+import { bugHuntSystemPrompt, buildReviewPrompt, parseReviewAnswer, reviewSystemPrompt } from './review'
 import { findLiteralSecrets, maskSecrets, mergeSecretFindings } from './secrets'
 import type { Settings } from './settings'
 import { buildTriagePrompt, mustAlwaysInspect, parseTriageAnswer, triageSystemPrompt } from './triage'
@@ -32,12 +32,10 @@ const MAX_TRIAGE_PROMPT_CHARS = 80_000
 // A deep review longer than this many calls is cut: the files left over go to
 // the PR list as not reviewed, and the summary says the diff was truncated.
 const MAX_REVIEW_PARTS = 6
-// A diff this small is reviewed twice, the second time looking for what a first
-// reviewer misses, and the answers joined: cheap, and where single reviews
-// missed the most real bugs (bench/).
+// A diff this small also gets a bug hunt of its own (review.ts), run beside the
+// review and blind to it, and the answers joined: cheap, and in the bench two
+// independent reviews named bugs neither named alone.
 const SMALL_DIFF_LINES = 150
-const SECOND_LOOK_NOTE =
-  'Another reviewer already read this diff and found the obvious problems. Look for the defect they most likely missed: the edge cases of each changed line, and how the code around the change and its callers use it.'
 
 // The report before any analysis has run.
 export const EMPTY_REPORT: Report = {
@@ -454,22 +452,20 @@ async function reviewInDepth(
       maxDiffChars: settings.reviewBudgetChars,
     })
 
-    const answer = await engine.askReviewModel(
-      reviewSystemPrompt(messages.languageNameForModel),
-      review.cachedBlocks,
-      review.prompt,
-    )
+    const isSmall = parts.length === 1 && countChangedLines(partFiles) <= SMALL_DIFF_LINES
+    // Duplicates of the review's findings are merged by the finding rules; a failed hunt adds nothing.
+    const [answer, huntedBugs] = await Promise.all([
+      engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt),
+      isSmall
+        ? engine
+            .askReviewModel(bugHuntSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt)
+            .then(hunt => parseReviewAnswer(hunt.text).findings.map((finding): Finding => ({ ...finding, severity: 'critical', category: 'bug' })))
+            .catch((): Finding[] => [])
+        : [],
+    ])
     const parsed = parseReviewAnswer(answer.text)
     summaries.push(parsed.summary)
-    findings.push(...parsed.findings)
-    if (parts.length === 1 && countChangedLines(partFiles) <= SMALL_DIFF_LINES) {
-      // Duplicates of the first answer are merged by the finding rules.
-      const secondLook = await engine
-        .askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.cachedBlocks, `${SECOND_LOOK_NOTE}\n\n${review.prompt}`)
-        .then(second => parseReviewAnswer(second.text).findings)
-        .catch(() => [])
-      findings.push(...secondLook)
-    }
+    findings.push(...parsed.findings, ...huntedBugs)
     isTruncated ||= review.isTruncated
     if (answer.answeredBy !== settings.reviewModel) answeredBy = answer.answeredBy
   }
