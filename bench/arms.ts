@@ -16,7 +16,8 @@ import { readCaseDiff } from './repo'
 
 export type Arm = 'radar' | 'baseline'
 
-export type FlaggedFinding = { file: string; line?: number; title: string }
+// category: review-radar's (bug, business-logic…); the baseline has none.
+export type FlaggedFinding = { file: string; line?: number; title: string; category?: string }
 
 export type ArmResult = {
   flagged: FlaggedFinding[]
@@ -56,7 +57,7 @@ export async function runRadar(
   await analyzeBranch(engine, readSettings({ reviewModel }), true)
   const report = engine.currentReport()
 
-  const asFlagged = ({ file, line, title, why }: (typeof report.findings)[number]) => ({ file, line, title: `${title} — ${why}` })
+  const asFlagged = ({ file, line, title, why, category }: (typeof report.findings)[number]) => ({ file, line, category, title: `${title} — ${why}` })
   return {
     flagged: report.findings.filter(finding => finding.severity === 'critical').map(asFlagged),
     listedForPr: report.findings.filter(finding => finding.severity !== 'critical').map(asFlagged),

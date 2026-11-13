@@ -26,11 +26,18 @@ import { buildReviewPrompt, parseReviewAnswer, reviewSystemPrompt } from './revi
 import { findLiteralSecrets, maskSecrets, mergeSecretFindings } from './secrets'
 import type { Settings } from './settings'
 import { buildTriagePrompt, mustAlwaysInspect, parseTriageAnswer, triageSystemPrompt } from './triage'
+import { verifyFindings } from './verify'
 
 const MAX_TRIAGE_PROMPT_CHARS = 80_000
 // A deep review longer than this many calls is cut: the files left over go to
 // the PR list as not reviewed, and the summary says the diff was truncated.
 const MAX_REVIEW_PARTS = 6
+// A diff this small is reviewed twice, the second time looking for what a first
+// reviewer misses, and the answers joined: cheap, and where single reviews
+// missed the most real bugs (bench/).
+const SMALL_DIFF_LINES = 150
+const SECOND_LOOK_NOTE =
+  'Another reviewer already read this diff and found the obvious problems. Look for the defect they most likely missed: the edge cases of each changed line, and how the code around the change and its callers use it.'
 
 // The report before any analysis has run.
 export const EMPTY_REPORT: Report = {
@@ -193,8 +200,9 @@ async function runAnalysis(
     filesToReview.length > 0
       ? await readRelatedCode(engine, filesToReview, Math.min(MAX_RELATED_CODE_CHARS, Math.floor(settings.reviewBudgetChars / 6)))
       : NO_RELATED_CODE
+  const reviewedFiles = await widenContext(engine, settings, baseBranch, filesToReview)
   const deepReview = await reviewInDepth(engine, settings, messages, {
-    filesToReview: await widenContext(engine, settings, baseBranch, filesToReview),
+    filesToReview: reviewedFiles,
     relatedCode: relatedCode.text,
     projectContext,
     routineFindings,
@@ -205,7 +213,18 @@ async function runAnalysis(
     previousSummary: previousReport.summary,
   })
 
-  const checkedFindings = applyFindingRules(deepReview.findings, diffByFile, messages, relatedCode.affectedRanges)
+  const ruledFindings = applyFindingRules(deepReview.findings, diffByFile, messages, relatedCode.affectedRanges)
+  const checkedFindings = await verifyFindings(
+    engine,
+    ruledFindings,
+    {
+      cachedBlocks: [describeProjectContext(projectContext)].filter(block => block !== ''),
+      diff: reviewedFiles.map(({ diffText }) => diffText).join(''),
+      relatedCode: relatedCode.text,
+      maxChars: settings.reviewBudgetChars,
+    },
+    messages,
+  )
   const newFindings = await attachDiffExcerpts(mergeSecretFindings(checkedFindings, secretFindings), diffByFile)
   const findings = [...newFindings, ...reusedFindings, ...routineFindings]
 
@@ -443,6 +462,14 @@ async function reviewInDepth(
     const parsed = parseReviewAnswer(answer.text)
     summaries.push(parsed.summary)
     findings.push(...parsed.findings)
+    if (parts.length === 1 && countChangedLines(partFiles) <= SMALL_DIFF_LINES) {
+      // Duplicates of the first answer are merged by the finding rules.
+      const secondLook = await engine
+        .askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.cachedBlocks, `${SECOND_LOOK_NOTE}\n\n${review.prompt}`)
+        .then(second => parseReviewAnswer(second.text).findings)
+        .catch(() => [])
+      findings.push(...secondLook)
+    }
     isTruncated ||= review.isTruncated
     if (answer.answeredBy !== settings.reviewModel) answeredBy = answer.answeredBy
   }

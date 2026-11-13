@@ -1,0 +1,714 @@
+[
+  {
+    "id": "real-bug-undici-bdfe59f",
+    "kind": "bug",
+    "repository": "nodejs/undici",
+    "commit": "bdfe59ff041a4a4e2a017fbfe451fb60c3cfabfc",
+    "request": "fix(h2): validate response content-length (#5816)\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "Fixed later by e1a425c: fix(h2): preserve transport errors and mismatch causes (#6176)",
+    "defectLines": [
+      {
+        "file": "lib/dispatcher/client-h2.js",
+        "line": 1534
+      },
+      {
+        "file": "lib/dispatcher/client-h2.js",
+        "line": 1535
+      }
+    ],
+    "fixCommit": "e1a425cacea07dedfd9accdd525d6c9bb37d765c"
+  },
+  {
+    "id": "real-clean-undici-e1a425c",
+    "kind": "clean",
+    "repository": "nodejs/undici",
+    "commit": "e1a425cacea07dedfd9accdd525d6c9bb37d765c",
+    "request": "fix(h2): preserve transport errors and mismatch causes (#6176)",
+    "summary": "fix(h2): preserve transport errors and mismatch causes (#6176)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-undici-26c42c2",
+    "kind": "bug",
+    "repository": "nodejs/undici",
+    "commit": "26c42c25988767ac78db02aab7a5c490e3441a79",
+    "request": "fix(cache): do not cache credential-bearing same-origin redirects under the alias key\n\nWhen the cache interceptor is the outermost layer and the redirect\ninterceptor is inside it, the cache key and handler are built from the\noriginal request. The redirect handler suppresses the intermediate\nredirect response, so the cache handler only ever receives the final\nhop's response. That response is then evaluated and stored under the\noriginal (alias) path key, even though the two requests target different\nresources.\n\nFor a request that carries a credential (Authorization or Cookie) this is\nunsafe: the redirect target often varies per principal (for example\n`/me` redirecting to `/profile/{user}`), and the cache store keys an\nentry on origin, method, path and Vary only — never the credential. So a\nlater request to the alias URL by a different principal, or by an\nunauthenticated caller, is served the first principal's body from the\nshared cache without contacting the origin. The final hop's permi",
+    "summary": "Fixed later by aa7ccff: fix(cache): treat proxy-authorization as a credential when caching redirects",
+    "defectLines": [
+      {
+        "file": "lib/handler/cache-handler.js",
+        "line": 214
+      }
+    ],
+    "fixCommit": "aa7ccff399e110875732058aec7e78d7bc142517"
+  },
+  {
+    "id": "real-clean-undici-aa7ccff",
+    "kind": "clean",
+    "repository": "nodejs/undici",
+    "commit": "aa7ccff399e110875732058aec7e78d7bc142517",
+    "request": "fix(cache): treat proxy-authorization as a credential when caching redirects\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "fix(cache): treat proxy-authorization as a credential when caching redirects",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-undici-35d066f",
+    "kind": "bug",
+    "repository": "nodejs/undici",
+    "commit": "35d066ffdb363bcf3d94cd0f09bf317a37659631",
+    "request": "fix(cache): converge downstream handler throws during cache replay to per-request errors\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "Fixed later by 700ec7c: fix(cache): never rethrow replay stream errors when onResponseError is missing",
+    "defectLines": [
+      {
+        "file": "lib/interceptor/cache.js",
+        "line": 426
+      },
+      {
+        "file": "lib/interceptor/cache.js",
+        "line": 427
+      },
+      {
+        "file": "lib/interceptor/cache.js",
+        "line": 428
+      }
+    ],
+    "fixCommit": "700ec7c43e819d6113dfed56d31352312f088b55"
+  },
+  {
+    "id": "real-clean-undici-700ec7c",
+    "kind": "clean",
+    "repository": "nodejs/undici",
+    "commit": "700ec7c43e819d6113dfed56d31352312f088b55",
+    "request": "fix(cache): never rethrow replay stream errors when onResponseError is missing\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "fix(cache): never rethrow replay stream errors when onResponseError is missing",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-undici-19901d8",
+    "kind": "bug",
+    "repository": "nodejs/undici",
+    "commit": "19901d8b73cb46a48e817dab4afce790f37fd2c1",
+    "request": "fix: honor backpressure in decompression interceptor (#5829)\n\n* fix: honor decompression backpressure\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>\n\n* fix(decompress): disable size limit by default\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>\n\n---------\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "Fixed later by f851f31: fix(decompress): converge downstream handler throws to per-request errors",
+    "defectLines": [
+      {
+        "file": "lib/interceptor/decompress.js",
+        "line": 223
+      },
+      {
+        "file": "lib/interceptor/decompress.js",
+        "line": 224
+      },
+      {
+        "file": "lib/interceptor/decompress.js",
+        "line": 225
+      },
+      {
+        "file": "lib/interceptor/decompress.js",
+        "line": 242
+      },
+      {
+        "file": "lib/interceptor/decompress.js",
+        "line": 244
+      }
+    ],
+    "fixCommit": "f851f315db1f2acce0ea668f88d9d0fa61c8420c"
+  },
+  {
+    "id": "real-clean-undici-f851f31",
+    "kind": "clean",
+    "repository": "nodejs/undici",
+    "commit": "f851f315db1f2acce0ea668f88d9d0fa61c8420c",
+    "request": "fix(decompress): converge downstream handler throws to per-request errors\n\nCo-authored-by: Ulises Gascon <ulisesgascongonzalez@gmail.com>\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "fix(decompress): converge downstream handler throws to per-request errors",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-undici-a287eff",
+    "kind": "bug",
+    "repository": "nodejs/undici",
+    "commit": "a287effccc5efd84923806a9b2cb23a193dbb1d5",
+    "request": "fix(http1): fix handling of 204/304 responses (#5864)\n\n204/304 responses don't have a payload but they may have\n`Content-Length`. Deliver the response but close the\nconnection (unless it's a `HEAD` request).\n\nSigned-off-by: James M Snell <jasnell@gmail.com>",
+    "summary": "Fixed later by 384ae67: fix(http1): reset connections for no-body transfer encoding (#5941)",
+    "defectLines": [
+      {
+        "file": "lib/dispatcher/client-h1.js",
+        "line": 667
+      }
+    ],
+    "fixCommit": "384ae676aea7444c0d71615b76e9dede91d5151e"
+  },
+  {
+    "id": "real-clean-undici-384ae67",
+    "kind": "clean",
+    "repository": "nodejs/undici",
+    "commit": "384ae676aea7444c0d71615b76e9dede91d5151e",
+    "request": "fix(http1): reset connections for no-body transfer encoding (#5941)\n\nSigned-off-by: Matteo Collina <hello@matteocollina.com>",
+    "summary": "fix(http1): reset connections for no-body transfer encoding (#5941)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-undici-cb7373a",
+    "kind": "bug",
+    "repository": "nodejs/undici",
+    "commit": "cb7373accd9dbb181f8739cf11c8f9c451fb655e",
+    "request": "fix(h2): do not unref a session with open streams (#5782)",
+    "summary": "Fixed later by 164a354: fix(h2): keep the session ref'd while requests are queued (#5839)",
+    "defectLines": [
+      {
+        "file": "lib/dispatcher/client-h2.js",
+        "line": 410
+      }
+    ],
+    "fixCommit": "164a354dbc3901e63451dc59e5b9c5461011f323"
+  },
+  {
+    "id": "real-clean-undici-164a354",
+    "kind": "clean",
+    "repository": "nodejs/undici",
+    "commit": "164a354dbc3901e63451dc59e5b9c5461011f323",
+    "request": "fix(h2): keep the session ref'd while requests are queued (#5839)",
+    "summary": "fix(h2): keep the session ref'd while requests are queued (#5839)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ai-0e869b4",
+    "kind": "bug",
+    "repository": "vercel/ai",
+    "commit": "0e869b40fabd6891ed58030754de6d2e7c0ea68d",
+    "request": "feat(provider/gateway): add variableCost, maxVariableCostUsd and extraBody to takoSearch (#24539)\n\n## Background\n\nThe AI Gateway's Tako Search tool now accepts three developer-only\noptions: variable cost, a per-call variable-cost cap, and an extra\nrequest body. Variable cost is on by default, with a $0.25 per-call cap.\nTako's `/v3/search` response also gained placeholder cards,\n`relevance_score`, premium and variable-cost pricing fields, and\n`usage.variable_cost`.\n\n`export_pricing.free_rows` is deprecated, and Tako always sends 0. Today\nthe SDK marks it as **required**, so once Tako removes it,\n`validateUIMessages` would throw on every stored Tako result that has an\n`export_pricing`. Dropping it is a compatibility fix, not just cleanup.\n\n## Summary\n\n- **Config:** `TakoSearchConfig` gains `variableCost?: boolean`,\n`maxVariableCostUsd?: number | null` and `extraBody?: Record<string,\nunknown>`.\n  - They're developer-only and not in `inputSchema`.\n- They're sent as top-level camelCase `arg",
+    "summary": "Fixed later by 838dd53: fix(provider/gateway): restore deprecated free_rows on takoSearch export_pricing (#24866)",
+    "defectLines": [
+      {
+        "file": "packages/gateway/src/tool/tako-search.test-d.ts",
+        "line": 59
+      }
+    ],
+    "fixCommit": "838dd53c25d6b1731f9d0e6b0d39fae3dda8ab8b"
+  },
+  {
+    "id": "real-clean-ai-838dd53",
+    "kind": "clean",
+    "repository": "vercel/ai",
+    "commit": "838dd53c25d6b1731f9d0e6b0d39fae3dda8ab8b",
+    "request": "fix(provider/gateway): restore deprecated free_rows on takoSearch export_pricing (#24866)\n\n## Background\n\n#24539 removed `export_pricing.free_rows` from the `takoSearch` result\ntypes, and that shipped in `@ai-sdk/gateway` 4.0.141. Code that reads\n`content.export_pricing?.free_rows` compiled against 4.0.140 and\nearlier, but fails with TS2339 on 4.0.141, which is a patch release. The\nv6 backport (#24762) already kept the field as deprecated after review,\nso this brings 4.x in line.\n\n## Summary\n\n- `TakoResultContent.export_pricing` gets `free_rows?: number` back,\nmarked `@deprecated`. Tako always sends 0 and will stop sending it.\n- The Zod schema accepts it as `z.number().optional()`. It stays\noptional rather than required, as it was before #24539, so stored\nresults still validate once Tako stops sending it.\n- The type test now checks that `free_rows` is `number | undefined`,\ninstead of checking that it's absent.\n- Patch changeset for `@ai-sdk/gateway`.\n\n## End-to-End Verification\n\nType-o",
+    "summary": "fix(provider/gateway): restore deprecated free_rows on takoSearch export_pricing (#24866)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ai-9435df8",
+    "kind": "bug",
+    "repository": "vercel/ai",
+    "commit": "9435df86c6ef6feb8e381bff577d837de5e2784c",
+    "request": "feat(provider/moonshotai): normalize tool schemas for Moonshot's MFJS validator (#18921)\n\n## Background\n\nMoonshot's chat completions validates tool `parameters` against MFJS\n(\"Moonshot Flavored JSON Schema\"), and rejects shapes that are legal\nJSON Schema, with a 400 before generation. Anything sent to\n`@ai-sdk/moonshotai` with one of these shapes fails, and on the gateway\nmany of these requests silently retry to another provider, which is why\ncustomers report \"it worked yesterday\" when routing shifts.\n\nFrom customer reports and probing the live validator, the failures fall\ninto three buckets:\n\n- `type` next to `anyOf` (\"type should be defined in anyOf items instead\nof the parent\"), the largest share.\n- Tuple `items` arrays (\"items must be an object\"), a small share.\n- Everything else, which is mostly genuine authoring errors (`required`\nnaming undefined properties, non-local `$ref`, wrong property types)\nthat should keep failing.\n\nSo the first two buckets are addressable by normalizati",
+    "summary": "Fixed later by c480f3f: fix(moonshotai): normalize array schema children once (#24775)",
+    "defectLines": [
+      {
+        "file": "packages/moonshotai/src/normalize-json-schema-for-mfjs.ts",
+        "line": 57
+      },
+      {
+        "file": "packages/moonshotai/src/normalize-json-schema-for-mfjs.ts",
+        "line": 60
+      },
+      {
+        "file": "packages/moonshotai/src/normalize-json-schema-for-mfjs.ts",
+        "line": 61
+      }
+    ],
+    "fixCommit": "c480f3f7266883cbe45fb35dc880c9e09eca591d"
+  },
+  {
+    "id": "real-clean-ai-c480f3f",
+    "kind": "clean",
+    "repository": "vercel/ai",
+    "commit": "c480f3f7266883cbe45fb35dc880c9e09eca591d",
+    "request": "fix(moonshotai): normalize array schema children once (#24775)\n\n## Background\n\nMoonshot's MFJS normalizer visits object-valued array items both in its\ntuple-handling block and in the generic schema traversal. Tuple children\nare also normalized before being traversed again as `prefixItems`.\nNested array schemas therefore repeat work during tool and\nresponse-schema preparation.\n\n## Summary\n\n- Rewrite tuple `items` without visiting children; normalize them once\nthrough `prefixItems`.\n- Let the generic single-schema traversal handle object `items` once.\n- Add shallow regression cases that count leaf visits and preserve tuple\nordering, boolean schemas, nested normalization, and input schemas. No\nAPI or dependency changes.\n- Add a patch changeset for `@ai-sdk/moonshotai`.\n\n## Contributor Credit\n\nReported by Security Review.\n\n## End-to-End Verification\n\nThe real Moonshot public flow was not run because of safe-execution\nverification limits; verification used static inspection and bounded\nbeni",
+    "summary": "fix(moonshotai): normalize array schema children once (#24775)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ai-59116e6",
+    "kind": "bug",
+    "repository": "vercel/ai",
+    "commit": "59116e6952784647bcf50f493319b52fc9463417",
+    "request": "fix(groq,google): use JSON response tool for structured outputs with tool calling (#21989)\n\n## Background\n\nGroq and some Gemini configurations reject requests that combine tools\nwith structured output.\n\n## Summary\n\n- Use an internal JSON tool when the provider cannot combine tool\ncalling with native structured output.\n- This is the same solution that `@ai-sdk/anthropic` uses when a model\ndoesn't support structured outputs.\n- Keep native output support for Gemini 3+ with automatic tool\nselection.\n- Add a shared `provider-utils` helper to convert the internal JSON\ntool’s arguments into structured output.\n\n## End-to-End Verification\n\n- Temporarily removed the fix, rebuilt the packages, and ran the\nunchanged examples against live APIs. Both failed with HTTP 400:\n- Groq GPT-OSS 120B: `json mode cannot be combined with tool/function\ncalling`\n- Gemini 2.5 Flash Lite: `Forced function calling (ANY mode) with a\nresponse mime type: 'application/json' is unsupported`\n- Restored the fix and reran ",
+    "summary": "Fixed later by 32dc1d2: fix(google): omit provider tools when toolChoice is none (#24661)",
+    "defectLines": [
+      {
+        "file": "packages/google/src/google-language-model.ts",
+        "line": 457
+      }
+    ],
+    "fixCommit": "32dc1d2d173f21bc1fda20f750400627fa5abb98"
+  },
+  {
+    "id": "real-clean-ai-32dc1d2",
+    "kind": "clean",
+    "repository": "vercel/ai",
+    "commit": "32dc1d2d173f21bc1fda20f750400627fa5abb98",
+    "request": "fix(google): omit provider tools when toolChoice is none (#24661)\n\n## Background\n\nGoogle's function-calling `NONE` mode only disables function tools.\nConfigured provider tools were still sent when an application selected\n`toolChoice: 'none'`, allowing server-side retrieval despite that\nselection. This affects `main`, `release-v6.0`, and `release-v5.0`,\nincluding the reported v5 backport branch.\n\nAddresses [finding\n01M6RVB49VMB0ZPN07DXNVGJ18](https://vercel.com/vercel/~/security/vulnerabilities/01M6RVB49VMB0ZPN07DXNVGJ18).\n\n## Summary\n\n- Omit provider tools before preparing Google requests when tool choice\nis `none`, including File Search and Vertex RAG Store.\n- Preserve function declarations for conversation history and retain\nfunction-calling mode `NONE`.\n- Keep preparation and outgoing-request regressions in\n`packages/google`, covering Google and Vertex configurations, Gemini\n2.5/3, generation/streaming, provider-only/mixed tools, and `auto`\ncontrols.\n- Add patch changesets for Googl",
+    "summary": "fix(google): omit provider tools when toolChoice is none (#24661)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ai-28e30cd",
+    "kind": "bug",
+    "repository": "vercel/ai",
+    "commit": "28e30cd106dd01feb05268d161484df8dbfe0e8e",
+    "request": "fix(provider/mistral): support low and max reasoning effort for glm-5.3 models (#24062)\n\n## background\n\nmistral serves glm-5.3 as `zai-glm-5-3` (plus `zai-glm-5`,\n`zai-glm-latest` and `zai-glm-5-3-flash`). these models only accept\n`reasoning_effort` `low`, `high` and `max` and cannot disable reasoning\n\nthe provider sent `reasoning: 'none'` as `\"none\"`, which the api rejects\nwith a 400, mapped every other level to `high`, and the\n`reasoningEffort` provider option only allowed `high` and `none`, so\n`low` and `max` could not be sent at all\n\n## summary\n\n- map `reasoning` for glm-5.3 models: `minimal`/`low` to `low`,\n`medium`/`high` to `high`, `xhigh`/`max` to `max`, and `none` to `low`\nwith a warning\n- add `low` and `max` to the `reasoningEffort` provider option\n- add the glm-5.3 model ids\n- keep the existing mapping for all other models, including glm-5.2\nwhich accepts `none`\n\n`none` maps to `low` instead of omitting `reasoning_effort` since\nglm-5.3 defaults to `max`\n\n## verification\n\n<de",
+    "summary": "Fixed later by 9ab42ea: fix(mistral): preserve Large 4 supported reasoning levels (#24352)",
+    "defectLines": [
+      {
+        "file": "packages/mistral/src/mistral-chat-language-model-options.ts",
+        "line": 94
+      }
+    ],
+    "fixCommit": "9ab42ea99a11e8ba8659e499a15dc82aef8dc8ce"
+  },
+  {
+    "id": "real-clean-ai-9ab42ea",
+    "kind": "clean",
+    "repository": "vercel/ai",
+    "commit": "9ab42ea99a11e8ba8659e499a15dc82aef8dc8ce",
+    "request": "fix(mistral): preserve Large 4 supported reasoning levels (#24352)\n\n## Background\n\nMistral Large 4 Chat rejects `reasoning_effort: \"none\"`; its error lists\n`low`, `medium`, and `high` as supported values. The SDK sent `none`,\nmapped common `medium` to a different level, and rejected native\n`reasoningEffort: 'medium'` during provider-options validation.\n\n## Summary\n\nDeclare the Large 4 Chat effort set as low/medium/high for both model\naliases. Map `reasoning: 'none'` to low with a compatibility warning,\npreserve medium, and accept medium through provider options. Keep the\nGLM effort set and Conversations capability mapping unchanged. Update\nreasoning documentation and add a patch changeset. Rebased and signed\nthe contributor implementation while retaining its author.\n\nValidation: all 285 Mistral tests pass in both Node and Edge, including\nthe effort matrix and native-medium option regression. Full workspace\ntypes, lint, and generated capability-document checks pass. Claude Code\nOpus fou",
+    "summary": "fix(mistral): preserve Large 4 supported reasoning levels (#24352)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ai-9921a2f",
+    "kind": "bug",
+    "repository": "vercel/ai",
+    "commit": "9921a2fde210eb25c9a7f3d200f4646f77724c0f",
+    "request": "fix: honor Anthropic disableParallelToolUse for Amazon Bedrock models (#19560)\n\n## Background\n\nAmazon Bedrock silently ignored\nproviderOptions.anthropic.disableParallelToolUse, allowing Anthropic\nmodels to emit multiple tool calls despite callers requesting serialized\ntool use.\n\n## Root Cause\n\nThe Bedrock chat model parsed only amazonBedrock and legacy bedrock\nprovider options, so disableParallelToolUse under anthropic never\nreached request construction; captured requests confirmed the field was\nabsent while the control request serialized tool calls.\n\n## Summary\n\nParsed disableParallelToolUse from Anthropic provider options and\nemitted the Anthropic tool_choice field through\nadditionalModelRequestFields while suppressing the conflicting\nBedrock-native tool choice. Added a patch changeset.\n\n## Testing\n\nAdded tool-preparation and request-level regression coverage for\ndefault, auto, required, and named tool choices, including conflict\nprevention.\n\n## End-to-end Validation\n\n- `pnpm -C exam",
+    "summary": "Fixed later by 62a4dcd: fix(amazon-bedrock): keep every function tool on a named tool choice for Anthropic models (#23850)",
+    "defectLines": [
+      {
+        "file": "packages/amazon-bedrock/src/amazon-bedrock-prepare-tools.ts",
+        "line": 90
+      },
+      {
+        "file": "packages/amazon-bedrock/src/amazon-bedrock-prepare-tools.ts",
+        "line": 170
+      }
+    ],
+    "fixCommit": "62a4dcd641895b3aca4698015c0378b2bd558c4e"
+  },
+  {
+    "id": "real-clean-ai-62a4dcd",
+    "kind": "clean",
+    "repository": "vercel/ai",
+    "commit": "62a4dcd641895b3aca4698015c0378b2bd558c4e",
+    "request": "fix(amazon-bedrock): keep every function tool on a named tool choice for Anthropic models (#23850)\n\n## Background\n\nSince #12854 (for #12786), a named tool choice makes\n`@ai-sdk/amazon-bedrock` send only the named function tool, for every\nmodel. That fixed `openai.gpt-oss-20b-1:0`, which ignored the named\nchoice and called a different tool.\n\nAnthropic models that accept forced tool use do not need the filter. The\nConverse `ToolChoice.tool` member means \"The Model must request the\nspecified tool\", and AWS lists Anthropic and Amazon Nova models as\nsupporting it ([API\nreference](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html)).\nFor these models the filter only changes the tool definitions on the\nforced step, which costs:\n\n- Prompt caching. Changing tool definitions invalidates the whole cache\n(tools, system and messages), while changing `tool_choice` only\ninvalidates message blocks ([prompt\ncaching](https://platform.claude.com/docs/en/build-with-claude/",
+    "summary": "fix(amazon-bedrock): keep every function tool on a named tool choice for Anthropic models (#23850)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ai-d5e3024",
+    "kind": "bug",
+    "repository": "vercel/ai",
+    "commit": "d5e30246540adcc334aab700e9262c038c4cce13",
+    "request": "fix(openai): remove propertyNames from JSON Schema (#20621)",
+    "summary": "Fixed later by 7eac057: fix(openai): strip propertyNames schemas that omit type (#24115)",
+    "defectLines": [
+      {
+        "file": "packages/openai/src/normalize-openai-json-schema.ts",
+        "line": 44
+      }
+    ],
+    "fixCommit": "7eac05724161fb624fa2ec52c8ed1f4c670bb530"
+  },
+  {
+    "id": "real-clean-ai-7eac057",
+    "kind": "clean",
+    "repository": "vercel/ai",
+    "commit": "7eac05724161fb624fa2ec52c8ed1f4c670bb530",
+    "request": "fix(openai): strip propertyNames schemas that omit type (#24115)",
+    "summary": "fix(openai): strip propertyNames schemas that omit type (#24115)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-router-3f22686",
+    "kind": "bug",
+    "repository": "TanStack/router",
+    "commit": "3f226869e0af211ff7f1de5d7343e43462dbb101",
+    "request": "fix(start-plugin-core): include CSS in Rsbuild dev SSR when the server runs in workerd (#8889)\n\nfix(start-plugin-core): write Rsbuild dev manifest into the server module\n\nIn Rsbuild dev, the start manifest was stored on the build process's\nglobalThis and read from there by the SSR manifest module. When the server\nenvironment runs in another runtime, such as workerd with\nrsbuild-plugin-cloudflare, that global is invisible, so SSR fell back to a\nmanifest without CSS and pages rendered unstyled.\n\nWrite the dev manifest into the server's manifest virtual module instead,\nonly when its content changes. Add rsbuild dev variants (Node and workerd)\nto the css-modules e2e app to cover it.\n\nFixes #8886\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "Fixed later by 70bbd11: fix(start-plugin-core): restore the build of the Rsbuild virtual modules (#8907)",
+    "defectLines": [
+      {
+        "file": "packages/start-plugin-core/src/rsbuild/virtual-modules.ts",
+        "line": 578
+      }
+    ],
+    "fixCommit": "70bbd11025143665ab5a391ddb44cb3917e4d2e3"
+  },
+  {
+    "id": "real-clean-router-70bbd11",
+    "kind": "clean",
+    "repository": "TanStack/router",
+    "commit": "70bbd11025143665ab5a391ddb44cb3917e4d2e3",
+    "request": "fix(start-plugin-core): restore the build of the Rsbuild virtual modules (#8907)\n\n#8889 wrote the Rsbuild dev manifest with the eager `paths.manifest`.\n#8868, merged after it, replaced `paths` with the lazy `pathsOf()`, which\nbuilds the virtual paths from the resolved root on first use. Neither PR\nsaw the other, so main fails to type-check with \"Cannot find name 'paths'\".\n\nRead the manifest path through `pathsOf()`, like every other use.\n`updateManifest` runs after a client compile, so the root is resolved by\nthen, and the path is the same one `manifestPath` returns for the RSC\nmanifest rebuild.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "fix(start-plugin-core): restore the build of the Rsbuild virtual modules (#8907)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-router-ea3a665",
+    "kind": "bug",
+    "repository": "TanStack/router",
+    "commit": "ea3a665d81cbb5074c2d77ec953255ab534e7db9",
+    "request": "fix(router): retain mounted UI during revalidation (#7992)\n\n* fix(router): retain mounted UI during revalidation\n\n* fix(router): preserve initial pending presentation\n\n* changeset\n\n* test(router): make retained pending tests deterministic\n\n* complete solid/vue suite",
+    "summary": "Fixed later by f0b5eda: fix(router-core): retain not-found boundary during navigation (#8161)",
+    "defectLines": [
+      {
+        "file": "packages/router-core/src/load-client.ts",
+        "line": 1266
+      },
+      {
+        "file": "packages/router-core/src/load-client.ts",
+        "line": 1269
+      },
+      {
+        "file": "packages/router-core/src/load-client.ts",
+        "line": 1270
+      }
+    ],
+    "fixCommit": "f0b5eda544606686a8a8d675a686ca1366428b96"
+  },
+  {
+    "id": "real-clean-router-f0b5eda",
+    "kind": "clean",
+    "repository": "TanStack/router",
+    "commit": "f0b5eda544606686a8a8d675a686ca1366428b96",
+    "request": "fix(router-core): retain not-found boundary during navigation (#8161)\n\n* fix(router-core): retain not-found boundary during navigation\n\n* chore: add changeset for not-found boundary fix\n\n* test(react-router): cover overlapping not-found retention boundaries",
+    "summary": "fix(router-core): retain not-found boundary during navigation (#8161)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-hook-form-6d2122d",
+    "kind": "bug",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "6d2122d61e381b94c851069009605b7d21729cca",
+    "request": "🐞 fix(handleSubmit): accept nullish outputs with disabled fields (#13999)\n\n* fix(handleSubmit): accept nullish outputs with disabled fields\n\nSkip disabled-field cleanup when a resolver returns null or undefined so the submit callback and form state complete normally. Preserve disabled-field removal for object outputs.\n\n* test(handleSubmit): cover nullish outputs with disabled fields\n\nVerify null and undefined transformed data reaches onValid, callback return values and submit state complete, and disabled object fields are still omitted without mutating the resolver output.\n\n---------\n\nCo-authored-by: Bill <bluebill1049@hotmail.com>",
+    "summary": "Fixed later by f44d083: 🐞 fix(handleSubmit): support transformed primitive values with disabled fields (#14011)",
+    "defectLines": [
+      {
+        "file": "src/logic/createFormControl.ts",
+        "line": 2176
+      }
+    ],
+    "fixCommit": "f44d083c1da5dab605f0bcb47069fac572f17e45"
+  },
+  {
+    "id": "real-clean-react-hook-form-f44d083",
+    "kind": "clean",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "f44d083c1da5dab605f0bcb47069fac572f17e45",
+    "request": "🐞 fix(handleSubmit): support transformed primitive values with disabled fields (#14011)\n\nCo-authored-by: Bill <bluebill1049@hotmail.com>",
+    "summary": "🐞 fix(handleSubmit): support transformed primitive values with disabled fields (#14011)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-hook-form-5d963c6",
+    "kind": "bug",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "5d963c6b18abf4e5c14fae30b02cedec9abce3c6",
+    "request": "🐞 fix(useController): preserve values when shouldUnregister changes (#13996)\n\n* fix(useController): preserve values when shouldUnregister changes\n\nKeep the field-level unregistration option in a committed ref so changing it does not tear down an input that is still mounted. Preserve the previous field policy when the name or control changes.\n\n* fix(useController): retain inline defaults when enabling unregister\n\nUpdate default-value initialization with the option without unregistering a mounted input. Keep cleanup tied to the previous field identity.\n\n* test(useController): cover unregistration option transitions\n\nCover mounted option changes, name and control transitions, and inline default values after reset. Preserve form-level overrides and unmount behavior.\n\n---------\n\nCo-authored-by: Bill <bluebill1049@hotmail.com>",
+    "summary": "Fixed later by 3f788fb: 🐞 fix(useController): use controller defaultValue as dirty baseline (#14001)",
+    "defectLines": [
+      {
+        "file": "src/useController.ts",
+        "line": 239
+      }
+    ],
+    "fixCommit": "3f788fb2939b28eae7e6308e1cae492d71fba8bf"
+  },
+  {
+    "id": "real-clean-react-hook-form-3f788fb",
+    "kind": "clean",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "3f788fb2939b28eae7e6308e1cae492d71fba8bf",
+    "request": "🐞 fix(useController): use controller defaultValue as dirty baseline (#14001)\n\n* fix(useController): use controller defaultValue as dirty baseline\n\n* test(useController): cover reset, conditional mount and async defaults\n\n* fix: linting issue\n\n* fix(useController): notify subscribers when controller defaultValue is applied",
+    "summary": "🐞 fix(useController): use controller defaultValue as dirty baseline (#14001)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-hook-form-2791e4f",
+    "kind": "bug",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "2791e4f6bb1ecfc2de02a0bf37d4e5a3225fb01c",
+    "request": "🐞 fix: prevent stale _setValid() calls from overwriting isValid/isValidating (#13599)\n\n* fix: prevent a stale _setValid() call from overwriting a newer isValid result\n\n_setValid() is fired-and-forget from 9 call sites and never awaited by its\ncaller, with no guard against out-of-order completion. If an earlier call\nis still awaiting async validation when a later one starts and finishes\nfirst, the earlier one can still commit its now-stale isValid result\nafterward, silently overwriting the correct, current one.\n\nGive each call a monotonic id and skip the commit if a newer call has\nstarted since, mirroring the staleness check onChange already does\nper-field via _updateIsFieldValueUpdated.\n\n* fix: also guard the isValidating commit inside _setValid's resolver branch\n\nFound while reviewing the isValid fix: _updateIsValidating() has the exact\nsame staleness exposure. It unconditionally clears validatingFields and\nreports isValidating: false, so a superseded _setValid() call finishing\nafter",
+    "summary": "Fixed later by 5533d00: 🐞 fix(reset): update isValid when reset drops a pending validation (#13994)",
+    "defectLines": [
+      {
+        "file": "src/logic/createFormControl.ts",
+        "line": 239
+      }
+    ],
+    "fixCommit": "5533d007ace1839758156ad81256f322fa311770"
+  },
+  {
+    "id": "real-clean-react-hook-form-5533d00",
+    "kind": "clean",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "5533d007ace1839758156ad81256f322fa311770",
+    "request": "🐞 fix(reset): update isValid when reset drops a pending validation (#13994)\n\nSince #13908, reset() advances the _setValid call id so an isValid pass\nstill in flight is dropped: it validated the values from before the\nreset. Nothing then validates the reset values. reset() does not start a\npass, and with non-empty values it marks the form mounted, so useForm's\neffect skips one too. A field that re-renders re-registers and starts a\npass, which hides this; a memoised field does not, and isValid stays\nfalse for a valid record until a field changes.\n\nKeep the reset check inside _setValid instead: a pass that settles after\na reset, with no newer pass started, runs again for the current values.\nkeepIsValid still returns before any pass runs.\n\nFixes #13993\n\nCo-authored-by: Bill <bluebill1049@hotmail.com>",
+    "summary": "🐞 fix(reset): update isValid when reset drops a pending validation (#13994)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-hook-form-916c7f0",
+    "kind": "bug",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "916c7f0c21edbff31a6a70d379915b09cf0cd8c0",
+    "request": "🪅 feat: add `shouldTouch` option to `trigger()` (#13671)\n\n* feat: add shouldTouch option to trigger()\n\nsetValue already supports shouldTouch to mark a field as touched, but\ntrigger() had no equivalent, forcing users who want to mark fields as\ntouched after manual/programmatic validation (e.g. validate-on-mount,\nmulti-step form navigation) to write their own setValue-based\nworkarounds (see react-hook-form/react-hook-form#9830).\n\ntrigger(name, { shouldTouch: true }) now marks the targeted field(s) as\ntouched -- the triggered name(s), or every mounted field when no name\nis given -- consistent with how shouldFocus already scopes to the same\nname/no-name cases.\n\n* test: cover shouldTouch on trigger() with schema validation\n\nThe 4 existing shouldTouch tests only exercised the built-in\nvalidation path; trigger() also has a separate resolver-based\n(schema validation) branch that reaches the same shouldTouch block\nbut wasn't verified independently.\n\n* chore: update API report for shouldTouch o",
+    "summary": "Fixed later by 0079ea6: 🐞 fix(trigger): touch nested fields when shouldTouch targets a parent (#13978)",
+    "defectLines": [
+      {
+        "file": "src/logic/createFormControl.ts",
+        "line": 1341
+      }
+    ],
+    "fixCommit": "0079ea69bba594d0cd7b9b64352f7daba7505ddd"
+  },
+  {
+    "id": "real-clean-react-hook-form-0079ea6",
+    "kind": "clean",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "0079ea69bba594d0cd7b9b64352f7daba7505ddd",
+    "request": "🐞 fix(trigger): touch nested fields when shouldTouch targets a parent (#13978)\n\n* fix(trigger): touch nested fields when shouldTouch targets a parent\n\ntrigger('address', { shouldTouch: true }) wrote `true` at\ntouchedFields.address instead of marking address.street and\naddress.city, so getFieldState reported those fields as untouched and\nonTouched forms kept their errors until each field was blurred.\n\nTouch the registered fields under each requested name, the same way\nsetValue's shouldTouch does for an object. A field array name now\ntouches the fields of its rows, and a row name touches the row's fields\ninstead of writing true. Leaf names keep their current handling, and a\nfield array root itself is still never set to true.\n\n* fix(trigger): keep touching unregistered Object.prototype member names\n\nget(_fields, 'valueOf') returns the inherited function, so an\nunregistered name such as valueOf or hasOwnProperty took the subtree\nwalk and was no longer marked touched. Walk only when the en",
+    "summary": "🐞 fix(trigger): touch nested fields when shouldTouch targets a parent (#13978)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-hook-form-73e42fe",
+    "kind": "bug",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "73e42fe8c4e8c08e6783a860ed6c91071fffd6ae",
+    "request": "🐞 fix(formState): produce a new validatingFields reference when it changes (#13877)\n\n* 🐞 fix(formState): produce a new validatingFields reference when it changes\n\nClone validatingFields before mutating it so memoized children see\nchanges after validation, resetField, and unregister.\n\nWhen a subscriber starts another validation during notification, later\nsubscribers now get validatingFields and isValidating from the current\nform state instead of the outer event's older copy.\n\n* 🔧 chore: raise bundlewatch maxSize to 15.1 kB\n\n* 🐞 fix(formState): keep the validatingFields reference when nothing changes\n\nSkip the copy when no listed field changes, and keep the current object\nwhen the update ends with the same contents.\n\n---------\n\nCo-authored-by: Bill <bluebill1049@hotmail.com>",
+    "summary": "Fixed later by c75b842: 🐞 fix(unregister): clear descendant registrations when removing a parent (#13976)",
+    "defectLines": [
+      {
+        "file": "src/logic/createFormControl.ts",
+        "line": 1808
+      },
+      {
+        "file": "src/logic/createFormControl.ts",
+        "line": 1810
+      }
+    ],
+    "fixCommit": "c75b8425099e2d80cbbd52d959eef94e78eafd16"
+  },
+  {
+    "id": "real-clean-react-hook-form-c75b842",
+    "kind": "clean",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "c75b8425099e2d80cbbd52d959eef94e78eafd16",
+    "request": "🐞 fix(unregister): clear descendant registrations when removing a parent (#13976)",
+    "summary": "🐞 fix(unregister): clear descendant registrations when removing a parent (#13976)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-hook-form-1ca83d2",
+    "kind": "bug",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "1ca83d272e7d2126212975a9ef866ee3fc500513",
+    "request": "🪖 close #13664 notify a Controller registered on a field array item root when setValue targets a nested leaf (#13665)",
+    "summary": "Fixed later by 3f1257c: 🐞 fix(setValue): send the field array row notification with the current values (#13965)",
+    "defectLines": [
+      {
+        "file": "src/logic/createFormControl.ts",
+        "line": 1069
+      }
+    ],
+    "fixCommit": "3f1257cee7a13c7e29df74094659c990a0f96990"
+  },
+  {
+    "id": "real-clean-react-hook-form-3f1257c",
+    "kind": "clean",
+    "repository": "react-hook-form/react-hook-form",
+    "commit": "3f1257cee7a13c7e29df74094659c990a0f96990",
+    "request": "🐞 fix(setValue): send the field array row notification with the current values (#13965)\n\nSince #13665, setValue on a field inside a field array row sends one more\nnotification per row after the field's own, and reused the values snapshot\ntaken before the first one went out. A subscribe callback that sets a\nsibling field during the first notification wrote _formValues, and the row\nnotification then put the old value back on the sibling's Controller and\non a whole-array useWatch, while getValues() returned the new one.\n\nEach row notification now clones the values as they are when it is sent.\nIt still sends undefined when no values subscriber matched.\n\nFixes #13964",
+    "summary": "🐞 fix(setValue): send the field array row notification with the current values (#13965)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-excalidraw-aaa14e9",
+    "kind": "bug",
+    "repository": "excalidraw/excalidraw",
+    "commit": "aaa14e9df6ba85a19baa52e8378d7b54f9a542f3",
+    "request": "feat(editor): show cursor hint when switching arrow types (#11608)",
+    "summary": "Fixed later by c12a8cd: fix(editor): reduce cursor hint cooldown to 30s (#12174)",
+    "defectLines": [
+      {
+        "file": "packages/excalidraw/components/CursorHint.tsx",
+        "line": 32
+      }
+    ],
+    "fixCommit": "c12a8cd037f562d07c96d1df8a6b74bd06d3069b"
+  },
+  {
+    "id": "real-clean-excalidraw-c12a8cd",
+    "kind": "clean",
+    "repository": "excalidraw/excalidraw",
+    "commit": "c12a8cd037f562d07c96d1df8a6b74bd06d3069b",
+    "request": "fix(editor): reduce cursor hint cooldown to 30s (#12174)",
+    "summary": "fix(editor): reduce cursor hint cooldown to 30s (#12174)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-payload-9e2681b",
+    "kind": "bug",
+    "repository": "payloadcms/payload",
+    "commit": "9e2681b5a67d87e8c942cb98d8e4f0693c26a751",
+    "request": "perf: keep zod out of the browser (#18576)\n\n> Written by AI (Claude Code). The measurements were also run by AI.\n\n## What\n\nThe `json` validator checks values against a field's `jsonSchema` with\nzod. The admin's login and account forms import validators like `email`\nand `password` from `payload/shared`, which brings in the whole\nvalidations module, including its `await import('zod')`. Bundlers\ncompile every `import()` target, so every app compiled all of zod for\nthe browser. But `jsonSchema` is a server-only field property: Payload\nremoves it from the client config, so this check never runs in the\nbrowser.\n\nThe JSON Schema check moves into `#validateJSONSchema`. That's a\npackage-private import defined in the `imports` field of `package.json`:\nbrowsers get a version that does nothing, and everything else gets the\nzod version. `json()` behaves exactly as before on the server, including\nwhen your own code calls it.\n\n`imports` works like `exports`, but for paths a package only uses\ninternal",
+    "summary": "Fixed later by 475bbb5: fix: await a remote JSON schema before validating (#19438)",
+    "defectLines": [
+      {
+        "file": "packages/payload/src/fields/validateJSONSchema.ts",
+        "line": 19
+      },
+      {
+        "file": "packages/payload/src/fields/validateJSONSchema.ts",
+        "line": 45
+      }
+    ],
+    "fixCommit": "475bbb5407044ecaa7df17cc5bce5f5ce1caff06"
+  },
+  {
+    "id": "real-clean-payload-475bbb5",
+    "kind": "clean",
+    "repository": "payloadcms/payload",
+    "commit": "475bbb5407044ecaa7df17cc5bce5f5ce1caff06",
+    "request": "fix: await a remote JSON schema before validating (#19438)\n\nFixes #19399\n\nA JSON field configured with only a remote `jsonSchema` (`uri` and\n`fileMatch`, no inline `schema`) accepts every value.\n`validateJSONSchema` assigned the result of `fetchSchema` without\nawaiting it. When `schema` is omitted, that result is a Promise. Zod's\n`fromJSONSchema` treats the Promise as an empty schema and `safeParse`\nsucceeds for any value. The Promise was also written onto the field\nconfig, so the next validation saw a truthy `schema`, skipped the fetch,\nand kept accepting everything. The same missing `await` dropped a\nrejected `fetch(undefined)` when `uri` was absent, so that\nmisconfiguration saved the value too, with an unhandled rejection.\n\n`fetchSchema` is now awaited before the schema is compiled, and the\nresolved document is what gets cached on the field.\n`JSONField['jsonSchema']['schema']` is optional, so the documented\nremote config type-checks. An inline schema passed together with `uri`\nis st",
+    "summary": "fix: await a remote JSON schema before validating (#19438)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-payload-8d20877",
+    "kind": "bug",
+    "repository": "payloadcms/payload",
+    "commit": "8d2087700c1eccb0998af4edcbc75f5e47ea470c",
+    "request": "fix: \"No client field found for ...\" 500 error in version diff (#17952)\n\n## Which branch should this PR target?\n\n- **`main`** — It was fixed for main but the issue was first noticed on\n3.88.0\n\n### What?\n\nFixes a 500 in the version diff view\n(`/admin/collections/:slug/:id/versions/:versionId`) when a row in a\n`blocks` field has a **different `blockType`** in the two compared\nversions and either block contains an unnamed presentational field\n(`row`, `collapsible`, `tabs`).\n\n## The error:\n\n```\nERROR: No client field found for pages._index-3-0.sections.hero.ctas.link-button._index-1.eventTag\n    clientFieldKey: \"pages._index-3-0.sections.hero.ctas.link-button._index-1.eventTag\"\n    parentPath: \"sections.0.ctas.0\"\n    parentSchemaPath: \"_index-3-0.sections.hero.ctas.link-button._index-1\"\n    path: \"sections.0.ctas.0.eventTag\"\n    schemaPath: \"_index-3-0.sections.hero.ctas.link-button._index-1.eventTag\"\n ⨯ Error: No client field found for pages._index-3-0.sections.hero.ctas.link-button._inde",
+    "summary": "Fixed later by f4f5c5c: fix(ui): omit hidden fields from version diffs (#19163)",
+    "defectLines": [
+      {
+        "file": "packages/ui/src/views/Version/RenderFieldsToDiff/buildVersionFields.tsx",
+        "line": 20
+      }
+    ],
+    "fixCommit": "f4f5c5c1891dc19f33c17ff3ed09e71d479ebfa7"
+  },
+  {
+    "id": "real-clean-payload-f4f5c5c",
+    "kind": "clean",
+    "repository": "payloadcms/payload",
+    "commit": "f4f5c5c1891dc19f33c17ff3ed09e71d479ebfa7",
+    "request": "fix(ui): omit hidden fields from version diffs (#19163)\n\nWritten with AI\n\n## Description\nOmit API-hidden fields from version diffs, avoiding permanently empty\nrows. Keep fields hidden only in the admin edit form eligible for\ncomparison.\n\nExtracted from\n[#19111](https://github.com/payloadcms/payload/pull/19111). This PR\ntargets `main` and can merge independently of the content branching\nstack and the other extracted PRs.\n\n## Changes\nThis PR contains only the standalone behavior and its focused regression\ncoverage. The content branching stack inherits this change through its\nprerequisite branch instead of duplicating the implementation.\n\n## Test Plan\n- Version-field builder suite: **3 passed**, preserving the existing\nblock regressions and covering both `hidden` and `admin.hidden`.\n- `pnpm lint` passed with existing repository warnings.\n- Changed files formatted with `pnpm exec oxfmt --write`.\n\n### Accessibility assessment\nStatic and builder-test assessment covers version diff content/st",
+    "summary": "fix(ui): omit hidden fields from version diffs (#19163)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-payload-9daea2f",
+    "kind": "bug",
+    "repository": "payloadcms/payload",
+    "commit": "9daea2fa0c0ff77258c799352576d5d400929e6a",
+    "request": "refactor(ui): normalize form state before request serialization (#18801)\n\nRequires [#18793](https://github.com/payloadcms/payload/pull/18793)\n\nRemoves the TanStack adapter's recursive `stripUnserializable` pass over\nevery argument.\n\nCentralizes outgoing form-state normalization in the shared\nserver-function hooks, before Next.js or TanStack Start serializes the\nrequest. Callers can now pass their existing state directly. This moves\ncustom component and validator stripping and upload metadata conversion\nto the shared request boundary, replacing ad hoc cleanup at individual\ncall sites.\n\nForm state includes rendered React elements alongside its data. Next.js\nServer Actions can carry these elements as temporary references through\nFlight, but TanStack's Seroval request encoder cannot serialize them.\nThe server already has the component configuration, so those component\ntrees do not need to travel back.",
+    "summary": "Fixed later by 5bc6c58: fix(richtext-lexical): preserve link drawer form state (#18858)",
+    "defectLines": [
+      {
+        "file": "packages/richtext-lexical/src/utilities/fieldsDrawer/DrawerContent.tsx",
+        "line": 68
+      }
+    ],
+    "fixCommit": "5bc6c58e11e61e4fe36bbb65e13f0cb1ea86b8e4"
+  },
+  {
+    "id": "real-clean-payload-5bc6c58",
+    "kind": "clean",
+    "repository": "payloadcms/payload",
+    "commit": "5bc6c58e11e61e4fe36bbb65e13f0cb1ea86b8e4",
+    "request": "fix(richtext-lexical): preserve link drawer form state (#18858)\n\nPreserves unsaved custom link fields and nested upload drawers through\nparent autosave and editor selection refreshes. The open link drawer\nowns its edit until it closes, and parent form updates no longer\nreinitialize its fields.\n\nPorts the behavior fixed in #17586 to `main`'s current drawer\nimplementation.\n\n\n## Preview\n\n### Before\n\n\nhttps://github.com/user-attachments/assets/b6b95f20-0436-48e1-9218-d0b8574d01bf\n\n### After\n\n\nhttps://github.com/user-attachments/assets/147d3e5e-4ba6-4393-9c0a-68cc5bf990b0",
+    "summary": "fix(richtext-lexical): preserve link drawer form state (#18858)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-payload-eee48a6",
+    "kind": "bug",
+    "repository": "payloadcms/payload",
+    "commit": "eee48a65f217c06259434444b48afb0d56e945e2",
+    "request": "fix(ui): add accessible names to row-select checkboxes (#17432)\n\nAdds accessible names to admin list-view row-selection checkboxes.\n\n1. `CheckboxInput` forced `aria-label=\"\"` and fell back to\n`aria-labelledby={name}`, but row-select checkboxes do not provide a\nmatching label target.\n2. `SelectRow` did not pass a row-specific accessible name, so assistive\ntechnology exposed unlabeled controls in the list view.\n\nThis change lets `CheckboxInput` accept explicit `aria-label` and\n`aria-labelledby` props, generates localized row labels from\n`useAsTitle` with an `id` fallback, and adds an e2e regression that\nchecks for `Select post1` and `Select post2`.\n\nFixes #17376",
+    "summary": "Fixed later by 6cfee9c: fix(ui): accessibility improvements related to checkbox-radio (#18546)",
+    "defectLines": [
+      {
+        "file": "packages/ui/src/fields/Checkbox/Input.tsx",
+        "line": 67
+      }
+    ],
+    "fixCommit": "6cfee9c53d4df860c970e9f0006c0ddbe64a55c9"
+  },
+  {
+    "id": "real-clean-payload-6cfee9c",
+    "kind": "clean",
+    "repository": "payloadcms/payload",
+    "commit": "6cfee9c53d4df860c970e9f0006c0ddbe64a55c9",
+    "request": "fix(ui): accessibility improvements related to checkbox-radio (#18546)\n\n## Summary\n\nPreserves native checkbox labels by removing the inferred\n`aria-labelledby` fallback and adds regression coverage for 2 already\nresolved items.\n\n## Testing\n\nScreen-reader tests use Guidepup, which is not set up for CI yet; CI\nsupport will come in a follow-up.\n\n<details>\n<summary>Related tickets (3)</summary>\n\nCloses PYLD-3817\nCloses PYLD-3671\nCloses PYLD-3678\n\n</details>",
+    "summary": "fix(ui): accessibility improvements related to checkbox-radio (#18546)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-payload-e710608",
+    "kind": "bug",
+    "repository": "payloadcms/payload",
+    "commit": "e710608ca9ca7697b5d6a62f2f9649260948a265",
+    "request": "fix: connect to the correct Next.js dev HMR endpoint per version (#17632)\n\n### What?\n\nPayload's config hot reload in development stopped working on Next.js\n16.3. Adding a collection or a field had no effect until the dev server\nwas restarted.\n\nNext.js 16.3 renamed the dev HMR WebSocket endpoint:\n\n- Old: `/_next/webpack-hmr` — [`router-server.ts#L859-L860` on\n`v16.2.7`](https://github.com/vercel/next.js/blob/v16.2.7/packages/next/src/server/lib/router-server.ts#L859-L860)\n- New: `/_next/hmr` — [`router-server.ts#L946-L947` on\n`v16.3.0`](https://github.com/vercel/next.js/blob/v16.3.0/packages/next/src/server/lib/router-server.ts#L946-L947)\n\nThe client moved with it, in\n[`client/dev/hot-reloader/app/web-socket.ts`](https://github.com/vercel/next.js/blob/v16.3.0/packages/next/src/client/dev/hot-reloader/app/web-socket.ts).\nThere is no alias in either direction: `/_next/webpack-hmr` does not\nappear anywhere in the 16.3.0 build, and `/_next/hmr` does not appear\nanywhere in 16.2.7.\n\n### Why?\n",
+    "summary": "Fixed later by 63315aa: fix: dev HMR reload not working when Next.js basePath is set (#18484)",
+    "defectLines": [
+      {
+        "file": "packages/payload/src/utilities/nextJsDevReloadStrategy.ts",
+        "line": 62
+      }
+    ],
+    "fixCommit": "63315aa3ec86e15a87b8c9b323c3a96f428e68eb"
+  },
+  {
+    "id": "real-clean-payload-63315aa",
+    "kind": "clean",
+    "repository": "payloadcms/payload",
+    "commit": "63315aa3ec86e15a87b8c9b323c3a96f428e68eb",
+    "request": "fix: dev HMR reload not working when Next.js basePath is set (#18484)\n\n## Summary\n\nWith a Next.js `basePath` such as `/cms`, Payload did not reload config\nchanges in the dev server. A hard refresh also did not show the changes.\nThis PR makes Payload connect to the correct HMR WebSocket URL when\n`basePath` is set. Config changes now show again in dev.\n\n```\nNext.js listens on:   ws://localhost:3000/cms/_next/hmr\nPayload connected to: ws://localhost:3000/_next/hmr     ← no prefix, no reload messages\n```\n\n`PAYLOAD_HMR_URL_OVERRIDE` continues to work as before.\n\n## Related work\n\nFixes #16317",
+    "summary": "fix: dev HMR reload not working when Next.js basePath is set (#18484)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-payload-26f61bc",
+    "kind": "bug",
+    "repository": "payloadcms/payload",
+    "commit": "26f61bc398be28f1dde6f6fdb0270fecffa58b03",
+    "request": "chore: re-enable dev indicator (#17339)\n\nRe-enables the nextjs devindicator, places it to the bottom right by\ndefault.\n\nThis is so we have some kind of compilation indicator until we can build\nthis into Payload",
+    "summary": "Fixed later by 15d051b: fix(next): disable dev indicators by default (#18466)",
+    "defectLines": [
+      {
+        "file": "packages/next/src/withPayload/withPayload.js",
+        "line": 54
+      },
+      {
+        "file": "packages/next/src/withPayload/withPayload.js",
+        "line": 55
+      },
+      {
+        "file": "packages/next/src/withPayload/withPayload.js",
+        "line": 56
+      }
+    ],
+    "fixCommit": "15d051b5613d79293f607eab4b1a7e535b75b138"
+  },
+  {
+    "id": "real-clean-payload-15d051b",
+    "kind": "clean",
+    "repository": "payloadcms/payload",
+    "commit": "15d051b5613d79293f607eab4b1a7e535b75b138",
+    "request": "fix(next): disable dev indicators by default (#18466)",
+    "summary": "fix(next): disable dev indicators by default (#18466)",
+    "defectLines": []
+  }
+]

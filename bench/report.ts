@@ -9,6 +9,9 @@ import type { BenchCase } from './cases'
 import type { BenchOptions, RunRecord } from './run'
 import { LINE_TOLERANCE } from './score'
 
+// review-radar categories that say the code is wrong; the others flag a decision.
+const DEFECT_CATEGORIES = new Set(['bug', 'suspicious', 'security', 'secrets'])
+
 export function writeReport(directory: string, options: BenchOptions, cases: BenchCase[], records: RunRecord[]): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const name = `${stamp}-${options.model}${options.isDryRun ? '-dry-run' : ''}`
@@ -62,6 +65,10 @@ function summaryRows(arms: Arm[], records: RunRecord[]): string[] {
       percent(of(arm, 'clean').filter(record => record.score.alarms === 0).length, of(arm, 'clean').length),
     ),
     row('False alarms per clean change', arm => average(of(arm, 'clean').map(record => record.score.alarms)).toFixed(2)),
+    // What claims the code is wrong: review-radar also flags correct changes that need a decision.
+    row('  of them, claiming a defect', arm =>
+      average(of(arm, 'clean').map(record => record.result.flagged.filter(finding => finding.category === undefined || DEFECT_CATEGORIES.has(finding.category)).length)).toFixed(2),
+    ),
     row('Extra alarms per bug change', arm => average(of(arm, 'bug').map(record => record.score.alarms)).toFixed(2)),
     row('Cost per review (USD, estimate)', arm => average(of(arm).map(record => record.result.costUsd)).toFixed(3)),
     row('Time per review (s)', arm => (average(of(arm).map(record => record.result.durationMs)) / 1000).toFixed(1)),

@@ -48,6 +48,8 @@ export type Messages = {
   notReviewedTitle: string
   // Opens the reason of a finding in code the branch did not change.
   preExistingNote: string
+  // Prefixed to a defect the verification (verify.ts) did not confirm.
+  notConfirmedNote: string
   // An automatic analysis skipped because the changes are larger than the limit.
   tooLargeForAutoSummary: (changedLines: number, limit: number) => string
   tooLargeForAutoTitle: string
@@ -114,6 +116,7 @@ const ENGLISH: Messages = {
   routineChangeTitle: 'Routine change',
   notReviewedTitle: 'Not reviewed: too many changes for one analysis',
   preExistingNote: '(Already there before this branch.)',
+  notConfirmedNote: '(Not confirmed on a second look.)',
   tooLargeForAutoSummary: (changedLines, limit) =>
     `${changedLines} changed lines, over the ${limit} reviewed automatically: run /review-radar or Re-analyze to review them.`,
   tooLargeForAutoTitle: 'Not reviewed yet: too many changes for an automatic analysis',
@@ -180,6 +183,7 @@ const SPANISH: Messages = {
   routineChangeTitle: 'Cambio rutinario',
   notReviewedTitle: 'Sin revisar: demasiados cambios para un análisis',
   preExistingNote: '(Ya estaba antes de esta rama.)',
+  notConfirmedNote: '(No confirmado en una segunda revisión.)',
   tooLargeForAutoSummary: (changedLines, limit) =>
     `${changedLines} líneas cambiadas, más de las ${limit} que se revisan automáticamente: ejecuta /review-radar o Re-analizar para revisarlas.`,
   tooLargeForAutoTitle: 'Sin revisar todavía: demasiados cambios para un análisis automático',

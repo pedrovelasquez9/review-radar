@@ -162,3 +162,12 @@ test('a finding on code that uses a name the diff changed is caused by the branc
   expect(withoutContext?.severity).toBe('pr')
   expect(withContext?.severity).toBe('critical')
 })
+
+test('two categories quoting the same code are one defect', async () => {
+  const merged = mergeDuplicates([
+    critical({ category: 'bug', title: 'Wrong limit in `const limit = 100`' }),
+    critical({ line: 22, category: 'business-logic', title: 'Cart cap changed', why: 'Now `const limit = 100`.' }),
+  ])
+
+  expect(merged.length).toBe(1)
+})

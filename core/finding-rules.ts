@@ -1,7 +1,8 @@
 // What the review model answers is a proposal; these rules decide what the
 // person sees. They run without a model, so the same answer always ends the
 // same way:
-// - one defect reported twice (within a part, or across parts) is shown once;
+// - one defect reported twice (within a part, across parts, or by the second
+//   look) is shown once, also under two categories when both quote the same code;
 // - a finding is critical only when the branch caused it: its file is in the
 //   diff, and its line, when given, sits at a change. A problem in code the
 //   branch did not touch is listed for the PR, marked as pre-existing;
@@ -50,9 +51,13 @@ export function mergeDuplicates(findings: Finding[]): Finding[] {
 }
 
 function isSameDefect(a: Finding, b: Finding): boolean {
-  if (a.file !== b.file || a.category !== b.category) return false
+  if (a.file !== b.file) return false
   const isNear = a.line === undefined || b.line === undefined || Math.abs(a.line - b.line) <= DUPLICATE_LINE_DISTANCE
-  return isNear && titleOverlap(a.title, b.title) >= DUPLICATE_TITLE_OVERLAP
+  if (!isNear) return false
+  // Under two categories, the same code quoted is the same defect.
+  const quotesOfB = quotedCode(b)
+  if (quotedCode(a).some(quote => quotesOfB.includes(quote))) return true
+  return a.category === b.category && titleOverlap(a.title, b.title) >= DUPLICATE_TITLE_OVERLAP
 }
 
 function titleOverlap(a: string, b: string): number {
@@ -90,15 +95,23 @@ function markPreExisting(
 function lineOfQuotedChange(finding: Finding, diffByFile: Map<string, string>): number | undefined {
   const fileDiffText = diffByFile.get(finding.file)
   if (fileDiffText === undefined) return undefined
-  const squash = (text: string) => text.replace(/\s+/g, '')
-  const quotes = [...`${finding.title} ${finding.why}`.matchAll(/`([^`\n]+)`/g)]
-    .map(match => squash(match[1]!))
-    .filter(quote => quote.length >= MIN_QUOTE_LENGTH)
+  const quotes = quotedCode(finding)
   const lines = addedLines(fileDiffText)
     .filter(added => quotes.some(quote => squash(added.text).includes(quote)))
     .map(added => added.line)
   const given = finding.line ?? 0
   return lines.sort((a, b) => Math.abs(a - given) - Math.abs(b - given))[0]
+}
+
+// The code a finding quotes in backticks, whitespace removed; short quotes left out.
+function quotedCode(finding: Finding): string[] {
+  return [...`${finding.title} ${finding.why}`.matchAll(/`([^`\n]+)`/g)]
+    .map(match => squash(match[1]!))
+    .filter(quote => quote.length >= MIN_QUOTE_LENGTH)
+}
+
+function squash(text: string): string {
+  return text.replace(/\s+/g, '')
 }
 
 function isInAffectedCode(finding: Finding, affectedRanges: readonly LineRange[]): boolean {

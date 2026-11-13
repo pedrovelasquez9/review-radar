@@ -64,7 +64,10 @@ type FakeEngineOptions = {
 }
 
 export type FakeEngine = Engine & {
+  // Triage and first review calls; the second look on small diffs and the
+  // verification of defects (verify.ts) go to `extraRequests`.
   modelRequests: ModelCompleteRequest[]
+  extraRequests: ModelCompleteRequest[]
   // How many times the analysis asked to open the pane.
   revealPaneCount: () => number
   // Each loader step the report went through, in order.
@@ -77,6 +80,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
   let diff = options.diff
   let report: Report = EMPTY_REPORT
   const modelRequests: ModelCompleteRequest[] = []
+  const extraRequests: ModelCompleteRequest[] = []
   const progressSteps: string[] = []
   let revealPaneCount = 0
 
@@ -104,7 +108,9 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
   })
 
   const completeWithModel = async (request: ModelCompleteRequest): Promise<ModelCompleteResult> => {
-    modelRequests.push(request)
+    const text = JSON.stringify(request)
+    const isExtra = text.includes('Another reviewer already read this diff') || text.includes('You double-check a code review')
+    ;(isExtra ? extraRequests : modelRequests).push(request)
     if (options.blockedModels?.includes(request.model)) throw new Error(`model ${request.model} is blocked`)
     return answeredBy(options.reviewAnswer)
   }
@@ -134,6 +140,7 @@ export function createFakeEngine(options: FakeEngineOptions): FakeEngine {
     showToast: () => {},
 
     modelRequests,
+    extraRequests,
     progressSteps,
     revealPaneCount: () => revealPaneCount,
     currentReport: () => report,
