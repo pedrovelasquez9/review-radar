@@ -1,0 +1,1027 @@
+[
+  {
+    "id": "real-bug-hono-6cbe361",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "6cbe361b7ad2947fd672f23ed689eef81c2f0615",
+    "request": "fix(jsx): escape element and object attribute values (#5512)\n\n* fix(jsx): escape element and object attribute values\n\nRender JSX nodes and other objects as escaped attribute text, including\npromised values and asynchronous toString results. Mark precompiled JSX\ntemplates so their child-content escaping is not trusted inside attributes.\n\nKeep raw() and html values explicitly trusted, and prevent callbacks from\nescaped nodes from propagating into the outer stream. Cover both runtimes\nand the Deno precompile transform.\n\nCo-authored-by: Taku Amano <taku@taaas.jp>\n\n* perf(jsx): use a set for boolean attribute lookup\n\nUse Set.has for boolean attribute membership without changing the accepted\nattribute names or their rendering.\n\n* fix(jsx): serialize boolean attributes in precompiled JSX\n\nOmit false boolean attributes and emit an empty value for true ones in\njsxAttr, matching JSXNode. Preserve true/false text for non-boolean names.\n\n* feat(jsx): support declarative Shadow DOM boolean attribut",
+    "summary": "Fixed later by eb754bd: fix(jsx): do not render ref objects as attributes (#5615)",
+    "defectLines": [
+      {
+        "file": "src/jsx/base.ts",
+        "line": 168
+      },
+      {
+        "file": "src/jsx/base.ts",
+        "line": 178
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-eb754bd",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "eb754bd5ef22c63f1634a4c374a86be086f85710",
+    "request": "fix(jsx): do not render ref objects as attributes (#5615)\n\nCo-authored-by: Ashunar0 <asahi.gaia1530@gmail.com>",
+    "summary": "fix(jsx): do not render ref objects as attributes (#5615)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-28a9c12",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "28a9c128912de19f3fb28b00ae289c9b93f6f392",
+    "request": "fix(accepts): support wildcard media types and specificity ordering in defaultMatch (#5255)\n\n* fix(accepts): support wildcard media types and specificity ordering in defaultMatch\n\n* fix(accepts): support single asterisk wildcard * alongside */* and type/*\n\n* test(accepts): add test for subtype wildcard specificity ordering\n\n* fix(accepts): keep `*/*` falling through to default support\n\n---------\n\nCo-authored-by: Yusuke Wada <yusuke@kamawada.com>",
+    "summary": "Fixed later by 98b35af: fix(accepts): preserve exact media type quality over subtype wildcards (#5427)",
+    "defectLines": [
+      {
+        "file": "src/helper/accepts/accepts.ts",
+        "line": 56
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-98b35af",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "98b35afc0e8d70dc07bf59c3b796c9cbfdd4c7a7",
+    "request": "fix(accepts): preserve exact media type quality over subtype wildcards (#5427)",
+    "summary": "fix(accepts): preserve exact media type quality over subtype wildcards (#5427)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-62edfe2",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "62edfe2cb9cc3e347a1cbc258c1be4e7846195b6",
+    "request": "perf(url): replace regex tests with indexOf (#5121)",
+    "summary": "Fixed later by 846e952: fix(utils/url): do not match a query key across separators (#5607)",
+    "defectLines": [
+      {
+        "file": "src/utils/url.ts",
+        "line": 223
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-846e952",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "846e95259bd452fd07286898658897d0fef436dd",
+    "request": "fix(utils/url): do not match a query key across separators (#5607)\n\n* fix(utils/url): do not match a query key across separators\n\n* chore: remove comments",
+    "summary": "fix(utils/url): do not match a query key across separators (#5607)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-3feb355",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "3feb3551d46de1f633e82253f12cf1117316be93",
+    "request": "fix(jsx): allow a function component to return an array (#5179)\n\n* fix(jsx): allow a function component to return an array\n\nA function component returning an array threw \"str.search is not a\nfunction\" during server-side rendering. The return value did not match\nany branch in JSXFunctionNode.toStringToBuffer() and fell through to\nescapeToBuffer(), which expects a string.\n\nHandle arrays with childrenToStringToBuffer(), the same path already\nused for array children. JSX.ElementType is also added so that the\ntype layer accepts components returning any renderable value, matching\nwhat hono/jsx/dom already supports at runtime.\n\n* fix(jsx): accept an array return in the type layer\n\nThe runtime already renders a function component that returns an array,\nbut the type layer still rejected it. Add `Child[]` to the call\nsignature of `FC`, and define `JSX.ElementType` with the same return\ntype.\n\nWithout `JSX.ElementType`, TypeScript checks the return type against\n`JSX.Element` and reports TS2786. Bo",
+    "summary": "Fixed later by f23b146: fix(jsx): allow JSXNode function component results (#5476)",
+    "defectLines": [
+      {
+        "file": "src/jsx/base.ts",
+        "line": 31
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-f23b146",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "f23b146afcec63606144cde50b5fbd360dd60238",
+    "request": "fix(jsx): allow JSXNode function component results (#5476)",
+    "summary": "fix(jsx): allow JSXNode function component results (#5476)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-1096d66",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "1096d66e03a3fd16a5cc5f912c2d5e8fd6d990b0",
+    "request": "fix(client): support custom buildSearchParams and filter undefined query in $ws() (#5256)\n\n* fix(client): support custom buildSearchParams and filter undefined query in ()\n\n* test(client): restore default buildSearchParams  test",
+    "summary": "Fixed later by 499c35e: fix(client): normalize root WebSocket URLs (#5291)",
+    "defectLines": [
+      {
+        "file": "src/client/client.ts",
+        "line": 202
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-499c35e",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "499c35ebda35777fd35a7dd1906dd4f2687da61e",
+    "request": "fix(client): normalize root WebSocket URLs (#5291)\n\nThe index segment is a client-side alias for root routes. Apply the existing normalization before path parameter substitution so $ws() targets the declared endpoint while preserving dynamic values named index.",
+    "summary": "fix(client): normalize root WebSocket URLs (#5291)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-d796450",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "d7964503c956ae4af78597b7b11a05f9e5e73d2d",
+    "request": "fix(request): fix multipart boundary mismatch in `cloneRawRequest` (#5133)",
+    "summary": "Fixed later by c409d85: fix(request): serialize cached JSON body in cloneRawRequest (#5288)",
+    "defectLines": [
+      {
+        "file": "src/request.ts",
+        "line": 489
+      },
+      {
+        "file": "src/request.ts",
+        "line": 491
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-c409d85",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "c409d855d91d1f0904d19439692216fcf789e6cb",
+    "request": "fix(request): serialize cached JSON body in cloneRawRequest (#5288)",
+    "summary": "fix(request): serialize cached JSON body in cloneRawRequest (#5288)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-26de731",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "26de73133b8552f56ba72e025ecd82b08900d796",
+    "request": "fix(etag): stabilize digest across stream chunks (#5205)\n\n* fix(etag): stabilize digest across stream chunks\n\n* perf(etag): optimize fixed-size digest chunks",
+    "summary": "Fixed later by 7195c24: fix(etag): copy pending stream bytes (#5239)",
+    "defectLines": [
+      {
+        "file": "src/middleware/etag/digest.ts",
+        "line": 54
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-7195c24",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "7195c2486037a2caa51355a33f2ff31f6d1279c9",
+    "request": "fix(etag): copy pending stream bytes (#5239)",
+    "summary": "fix(etag): copy pending stream bytes (#5239)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-hono-2126289",
+    "kind": "bug",
+    "repository": "honojs/hono",
+    "commit": "2126289c15b0f87fb928645c4ed92d0f81d21cd4",
+    "request": "fix(etag): treat If-None-Match: `*` as a match (#5084)\n\n* fix(etag): treat If-None-Match: `*` as a match\n\n* support HEAD and !ok patterns",
+    "summary": "Fixed later by f6aa913: fix(etag): skip unsafe methods or error responses on non-* case (#5196)",
+    "defectLines": [
+      {
+        "file": "src/middleware/etag/index.ts",
+        "line": 107
+      },
+      {
+        "file": "src/middleware/etag/index.ts",
+        "line": 108
+      },
+      {
+        "file": "src/middleware/etag/index.ts",
+        "line": 110
+      }
+    ]
+  },
+  {
+    "id": "real-clean-hono-f6aa913",
+    "kind": "clean",
+    "repository": "honojs/hono",
+    "commit": "f6aa913c3f8915d0695b77ca3f78f6b8ecb248a0",
+    "request": "fix(etag): skip unsafe methods or error responses on non-* case (#5196)",
+    "summary": "fix(etag): skip unsafe methods or error responses on non-* case (#5196)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-9f766d9",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "9f766d92119ed76dfb02ccddfd90ec65dffe9a06",
+    "request": "fix(response): keep prepared headers from accumulating on reused Responses",
+    "summary": "Fixed later by ccd127b: fix(response): skip prepared headers merge for 101 upgrade responses (#1629)",
+    "defectLines": [
+      {
+        "file": "src/response.ts",
+        "line": 197
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-ccd127b",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "ccd127b48e21a8be1439406932372aaa20a0b0fd",
+    "request": "fix(response): skip prepared headers merge for 101 upgrade responses (#1629)",
+    "summary": "fix(response): skip prepared headers merge for 101 upgrade responses (#1629)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-71295c6",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "71295c6049a3e07fcd7f85c345ea1d76ce0cc9f9",
+    "request": "feat: add `requireContentType` and `appendAcceptQuery` utils (#1446)",
+    "summary": "Fixed later by e379a32: fix(query): reject malformed Content-Type tokens (#1634)",
+    "defectLines": [
+      {
+        "file": "src/utils/query.ts",
+        "line": 73
+      },
+      {
+        "file": "src/utils/query.ts",
+        "line": 74
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-e379a32",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "e379a329df994022f2a9924ae55bb8a8c485f91f",
+    "request": "fix(query): reject malformed Content-Type tokens (#1634)",
+    "summary": "fix(query): reject malformed Content-Type tokens (#1634)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-1828665",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "18286650d7fce11e8317ef14a4a664f5b7c8a17d",
+    "request": "feat(session): add opt-in `idleTimeout` for sliding expiration (#1513)",
+    "summary": "Fixed later by 4ab19f7: fix(response): omit HEAD body for default errors (#1595)",
+    "defectLines": [
+      {
+        "file": "src/response.ts",
+        "line": 159
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-4ab19f7",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "4ab19f7d033028a1d24a534c3a23011223f454b3",
+    "request": "fix(response): omit HEAD body for default errors (#1595)",
+    "summary": "fix(response): omit HEAD body for default errors (#1595)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-e12c0e8",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "e12c0e8eb44c1bdec1df469ddcce187380b9b75a",
+    "request": "feat(readBody): support formdata type (#1164)\n\nCo-authored-by: Pooya Parsa <pooya@pi0.io>",
+    "summary": "Fixed later by e51dded: fix(body): match form content type case-insensitively in `readBody` (#1601)",
+    "defectLines": [
+      {
+        "file": "src/utils/body.ts",
+        "line": 50
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-e51dded",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "e51dded932e744db7e3e4cc4ce0ec285e74f4187",
+    "request": "fix(body): match form content type case-insensitively in `readBody` (#1601)",
+    "summary": "fix(body): match form content type case-insensitively in `readBody` (#1601)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-283164c",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "283164c165b96e9b7f86808657e18506c9ed8786",
+    "request": "fix(response): route synchronous prepareResponse throws through the error pipeline (#1503)",
+    "summary": "Fixed later by 2d6a10a: fix(response): normalize values thrown from the onError hook",
+    "defectLines": [
+      {
+        "file": "src/response.ts",
+        "line": 140
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-2d6a10a",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "2d6a10ac7f79870f89e2afb57135e23d829a694b",
+    "request": "fix(response): normalize values thrown from the onError hook",
+    "summary": "fix(response): normalize values thrown from the onError hook",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-07d22ec",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "07d22ecdb175416231242f7ea1ae8553ca0cc1fe",
+    "request": "fix(proxy): keep internal targets on the app origin",
+    "summary": "Fixed later by ffd9620: fix(proxy): strip tab/LF/CR from internal proxy targets",
+    "defectLines": [
+      {
+        "file": "src/utils/proxy.ts",
+        "line": 573
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-ffd9620",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "ffd96209f9a511d7614640c567e31c85ae5a7096",
+    "request": "fix(proxy): strip tab/LF/CR from internal proxy targets",
+    "summary": "fix(proxy): strip tab/LF/CR from internal proxy targets",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-h3-8ed97e4",
+    "kind": "bug",
+    "repository": "unjs/h3",
+    "commit": "8ed97e44f7bdf2183b822367daa49be8838d643d",
+    "request": "feat!: escape interpolated values in `html` tagged template (#1459)",
+    "summary": "Fixed later by 17e0cbd: fix(html): make raw() trust marker unforgeable and hoist escape map (#1473)",
+    "defectLines": [
+      {
+        "file": "src/utils/response.ts",
+        "line": 295
+      },
+      {
+        "file": "src/utils/response.ts",
+        "line": 307
+      },
+      {
+        "file": "src/utils/response.ts",
+        "line": 308
+      },
+      {
+        "file": "src/utils/response.ts",
+        "line": 309
+      },
+      {
+        "file": "src/utils/response.ts",
+        "line": 310
+      }
+    ]
+  },
+  {
+    "id": "real-clean-h3-17e0cbd",
+    "kind": "clean",
+    "repository": "unjs/h3",
+    "commit": "17e0cbd0db229fc086a036e020aac2b90dedc819",
+    "request": "fix(html): make raw() trust marker unforgeable and hoist escape map (#1473)",
+    "summary": "fix(html): make raw() trust marker unforgeable and hoist escape map (#1473)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ky-e06d351",
+    "kind": "bug",
+    "repository": "sindresorhus/ky",
+    "commit": "e06d351070314670526711e79d1a66ce0b932a50",
+    "request": "Fix option merging rewriting nested user data and flattening class instances\n\nDeep merging recursed into any object value. Nested user data whose keys matched option names was rewritten as if it were options, and a class instance provided both as an instance default and again per request or via `.extend()` was merged into a plain object and lost its prototype. For example, an undici `Agent` passed as `dispatcher` ended up without `dispatch()`, and a `Date` inside `json` was sent as `{}`.\n\nOnly plain objects and arrays are merged now. Anything else replaces the parent value.",
+    "summary": "Fixed later by 8cf26e0: Fix stale array entries when merging JSON objects",
+    "defectLines": [
+      {
+        "file": "source/utils/merge.ts",
+        "line": 288
+      }
+    ]
+  },
+  {
+    "id": "real-clean-ky-8cf26e0",
+    "kind": "clean",
+    "repository": "sindresorhus/ky",
+    "commit": "8cf26e0e78d7a734f5e2846bdd65b66a936c13b3",
+    "request": "Fix stale array entries when merging JSON objects",
+    "summary": "Fix stale array entries when merging JSON objects",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ky-06375ef",
+    "kind": "bug",
+    "repository": "sindresorhus/ky",
+    "commit": "06375efbacfc1bdc96f7a4de7560684b765e1274",
+    "request": "Fix `extend()` dropping numeric `retry` limit when merging with an object (#867)",
+    "summary": "Fixed later by ee3dec1: Fix extending an object `retry` with a number dropping the other retry options",
+    "defectLines": [
+      {
+        "file": "source/utils/merge.ts",
+        "line": 272
+      },
+      {
+        "file": "source/utils/merge.ts",
+        "line": 273
+      }
+    ]
+  },
+  {
+    "id": "real-clean-ky-ee3dec1",
+    "kind": "clean",
+    "repository": "sindresorhus/ky",
+    "commit": "ee3dec1ac01db18a6ea245109d2f616433b25660",
+    "request": "Fix extending an object `retry` with a number dropping the other retry options",
+    "summary": "Fix extending an object `retry` with a number dropping the other retry options",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ky-0f2de47",
+    "kind": "bug",
+    "repository": "sindresorhus/ky",
+    "commit": "0f2de4755c2c688dff05bf595a549e1385f33c75",
+    "request": "Fix `json` option keeping the content-type inherited from a `Request` input body\n\nA `Request` input constructed with a body gets an automatic `text/plain;charset=UTF-8` content-type. That header was merged in before the `json` option set its own, so the JSON body was sent with the wrong content-type. Only a content-type explicitly passed via `options.headers` now takes precedence over `application/json`.",
+    "summary": "Fixed later by 224034d: Fix headers set to `undefined` in `init` hooks being sent as the string `\"undefined\"`",
+    "defectLines": [
+      {
+        "file": "source/core/Ky.ts",
+        "line": 431
+      }
+    ]
+  },
+  {
+    "id": "real-clean-ky-224034d",
+    "kind": "clean",
+    "repository": "sindresorhus/ky",
+    "commit": "224034d10df5cd47db23adb3aa78efe26274fc1f",
+    "request": "Fix headers set to `undefined` in `init` hooks being sent as the string `\"undefined\"`\n\nHeaders modified by `init` hooks skip the option merging that filters `undefined` values, and the `Headers` constructor turns `undefined` into the string `'undefined'`, so `options.headers.foo = undefined` in an `init` hook sent `foo: undefined` instead of removing the header. Plain header objects are now applied entry by entry so `undefined` deletes the header, matching the documented behavior for `.extend()`.\n\nThe check for a user-provided `Content-Type` had the same problem: it built a `Headers` instance from the raw header object, so removing the header in an `init` hook counted as providing one and the JSON body was sent without `application/json`. The check now uses the same header merging as the request.",
+    "summary": "Fix headers set to `undefined` in `init` hooks being sent as the string `\"undefined\"`",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-ky-b4bdecc",
+    "kind": "bug",
+    "repository": "sindresorhus/ky",
+    "commit": "b4bdeccfc3fd349d7055c646913078e6bded1a2e",
+    "request": "Fix `Request` input body being dropped when using `searchParams`\n\nThe request was recreated from the normalized options to apply the new URL, but those options carry no body for a `Request` input, so the body was silently lost and the server received an empty request.\n\nThe input body is now carried over as a stream, which requires request stream support.",
+    "summary": "Fixed later by 4e0bf0b: Fix `searchParams` dropping request options inherited from a `Request` input",
+    "defectLines": [
+      {
+        "file": "source/core/Ky.ts",
+        "line": 486
+      }
+    ]
+  },
+  {
+    "id": "real-clean-ky-4e0bf0b",
+    "kind": "clean",
+    "repository": "sindresorhus/ky",
+    "commit": "4e0bf0bdbe373f0158b51ebb5113cf5279c54b8a",
+    "request": "Fix `searchParams` dropping request options inherited from a `Request` input\n\nWhen `searchParams` is set, the request is rebuilt with the new URL from the options alone, so `credentials`, `cache`, `redirect`, `integrity`, `referrer`, and `referrerPolicy` set on a `Request` input were reset to their defaults. In browsers this silently stopped sending cookies for `credentials: 'include'` requests. The rebuilt request now reads those options back from the request that was already constructed, so inherited values survive and explicit options still win.",
+    "summary": "Fix `searchParams` dropping request options inherited from a `Request` input",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-query-03e8c39",
+    "kind": "bug",
+    "repository": "TanStack/query",
+    "commit": "03e8c3955ddbf20f0a07b79982b52dfad8df5323",
+    "request": "fix(query-core): start queued scoped mutations while the window is not focused 🤖🤖🤖 (#11679)\n\nfix(query-core): start queued scoped mutations while the window is not focused\n\nA mutation queued behind another one in the same scope is started later\nthrough retryer.continue(), which only resumes when canContinue() is true.\ncanContinue() requires the window to be focused, so with an unfocused tab\nthe next mutation stayed paused until the window got focus again.\n\nResume the initial start pause with canStart() instead, which is the same\ncheck used to start the retryer right away. Retry pauses still use\ncanContinue().\n\nFixes #11642\n\nCo-authored-by: Dominik Dorfmeister 🔮 <office@dorfmeister.cc>",
+    "summary": "Fixed later by 3f4de1b: fix(query-core): skip pausing cancelled retries (#11537)",
+    "defectLines": [
+      {
+        "file": "packages/query-core/src/retryer.ts",
+        "line": 247
+      }
+    ]
+  },
+  {
+    "id": "real-clean-query-3f4de1b",
+    "kind": "clean",
+    "repository": "TanStack/query",
+    "commit": "3f4de1b40cce4314f7572b515ad8fd26dd85fe04",
+    "request": "fix(query-core): skip pausing cancelled retries (#11537)\n\nSkip pausing retries after cancellation\n\nCheck whether the retryer settled before its delayed continuation can\nnotify a pause. A cancelled retry must not overwrite a replacement\nfetch status or prevent an inactive query from being collected.\n\nCover offline and unfocused retries, replacement fetches, garbage\ncollection, and React cancellation with and without Strict Mode.\n\nCo-authored-by: TkDodo <office@dorfmeister.cc>",
+    "summary": "fix(query-core): skip pausing cancelled retries (#11537)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-query-bef4bc7",
+    "kind": "bug",
+    "repository": "TanStack/query",
+    "commit": "bef4bc780ce7cca32b7e3dea85f77d92f82a62a2",
+    "request": "fix(query-core): resolve suspense when query data is set programmatically (#11036)\n\n* fix(query-core): resolve suspense when query data is set programmatically\n\nWhen useSuspenseQuery is used and setQueryData populates the cache\nwhile a fetch is in-flight, the suspense boundary stays stuck on the\noriginal fetch promise. This prevents streamedQuery and manual cache\nupdates from releasing suspense.\n\nModify fetchOptimistic in queryObserver to use Promise.race between\nthe fetch promise and a cache subscriber that listens for 'updated'\nevents. When data appears in the cache via setQueryData or a streamed\nchunk, the race resolves immediately without aborting the fetch.\nThis allows the suspense boundary to release and show the available\ndata while the fetch continues in the background.\n\nCloses #10924\n\nCo-authored-by: atlarix-agent <agent@atlarix.dev>\n\n* chore: add changeset for suspense setQueryData fix\n\nCo-authored-by: atlarix-agent <agent@atlarix.dev>\n\n* fix(query-core): prevent subscription",
+    "summary": "Fixed later by f608f93: fix(query-core): use supplied options for optimistic fetches (#12131)",
+    "defectLines": [
+      {
+        "file": "packages/query-core/src/queryObserver.ts",
+        "line": 343
+      }
+    ]
+  },
+  {
+    "id": "real-clean-query-f608f93",
+    "kind": "clean",
+    "repository": "TanStack/query",
+    "commit": "f608f933a36da30670082e90d0a56b2569290563",
+    "request": "fix(query-core): use supplied options for optimistic fetches (#12131)",
+    "summary": "fix(query-core): use supplied options for optimistic fetches (#12131)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-query-4913802",
+    "kind": "bug",
+    "repository": "TanStack/query",
+    "commit": "49138028953f38097cfac4a6e9843c987705325f",
+    "request": "fix(preact-query): allow retryOnMount when throwOnError is function (#11166)\n\nPorts #9338 to preact-query: ensurePreventErrorBoundaryRetry now\nreceives the cached query and evaluates a function-form throwOnError\nagainst the actual error before setting retryOnMount = false, instead\nof treating any function as truthy. Includes the regression tests\nfrom #9338, two of which fail on current main.\n\nFixes #11165\n\nCo-authored-by: Claude Fable 5 <noreply@anthropic.com>\nCo-authored-by: Dominik Dorfmeister 🔮 <office@dorfmeister.cc>",
+    "summary": "Fixed later by 0addcd2: fix(preact-query): retry on mount for falsy errors when throwOnError returns false (#11375)",
+    "defectLines": [
+      {
+        "file": "packages/preact-query/src/errorBoundaryUtils.ts",
+        "line": 31
+      },
+      {
+        "file": "packages/preact-query/src/errorBoundaryUtils.ts",
+        "line": 32
+      }
+    ]
+  },
+  {
+    "id": "real-clean-query-0addcd2",
+    "kind": "clean",
+    "repository": "TanStack/query",
+    "commit": "0addcd2a9ae7371dbb7a860277b08ad4c2444975",
+    "request": "fix(preact-query): retry on mount for falsy errors when throwOnError returns false (#11375)\n\n* fix(preact-query): retry on mount for falsy errors when throwOnError returns false\n\n`ensurePreventErrorBoundaryRetry` only evaluated a function-valued\n`throwOnError` when `query.state.error` was truthy. For a query that\nrejected with a falsy value (e.g. `undefined`), the callback was skipped\nand the function itself was treated as truthy, so `retryOnMount` was\ndisabled even though `throwOnError` would have returned `false`.\n\nCheck `query.state.status === 'error'` instead so the callback runs for\nevery failed query. Ports #11328 to preact-query.\n\n* refactor(preact-query): keep throwOnError constant\n\n---------\n\nCo-authored-by: TkDodo <office@dorfmeister.cc>",
+    "summary": "fix(preact-query): retry on mount for falsy errors when throwOnError returns false (#11375)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-query-4e48c58",
+    "kind": "bug",
+    "repository": "TanStack/query",
+    "commit": "4e48c581b70216e9c66a72cc328b61789194db4f",
+    "request": "Preact: update usePrefetchQuery to use new methods with docs (#10669)\n\n* feat(preact-query): use new methods for usePrefetchQuery plus tests\n\n* docs(preact-query): updated docs for usePrefetchQuery\n\n* Update docs/framework/preact/reference/interfaces/UsePrefetchInfiniteQueryOptions.md\n\nCo-authored-by: coderabbitai[bot] <136622811+coderabbitai[bot]@users.noreply.github.com>\n\n* Update packages/preact-query/src/usePrefetchInfiniteQuery.tsx\n\nCo-authored-by: Dominik Dorfmeister 🔮 <office@dorfmeister.cc>\n\n* Update packages/preact-query/src/usePrefetchQuery.tsx\n\nCo-authored-by: Dominik Dorfmeister 🔮 <office@dorfmeister.cc>\n\n---------\n\nCo-authored-by: coderabbitai[bot] <136622811+coderabbitai[bot]@users.noreply.github.com>\nCo-authored-by: Dominik Dorfmeister 🔮 <office@dorfmeister.cc>",
+    "summary": "Fixed later by 714c285: fix(preact-query/usePrefetchQuery): replace deprecated 'queryClient.fetchQuery' with 'queryClient.query' (#11274)",
+    "defectLines": [
+      {
+        "file": "packages/preact-query/src/usePrefetchQuery.tsx",
+        "line": 26
+      }
+    ]
+  },
+  {
+    "id": "real-clean-query-714c285",
+    "kind": "clean",
+    "repository": "TanStack/query",
+    "commit": "714c2856e09bbaf7448ccc02364887e36c18b37c",
+    "request": "fix(preact-query/usePrefetchQuery): replace deprecated 'queryClient.fetchQuery' with 'queryClient.query' (#11274)\n\n* fix(preact-query/usePrefetchQuery): replace deprecated 'queryClient.fetchQuery' with 'queryClient.query'\n\n* chore(.changeset): use conventional-commits style wording for changeset entry",
+    "summary": "fix(preact-query/usePrefetchQuery): replace deprecated 'queryClient.fetchQuery' with 'queryClient.query' (#11274)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-0cf91e8",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "0cf91e8435df9e984121893963af09965088e6d4",
+    "request": "feat(create-vite): use typescript v7 where possible (#23910)",
+    "summary": "Fixed later by 28e1710: fix(create-vite): keep TypeScript 6 when using ESLint (#23931)",
+    "defectLines": [
+      {
+        "file": "packages/create-vite/src/index.ts",
+        "line": 960
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-28e1710",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "28e1710790ac5ef65ed5e84cbb20438bc3218f01",
+    "request": "fix(create-vite): keep TypeScript 6 when using ESLint (#23931)\n\nCo-authored-by: sapphi-red <green@sapphi.red>",
+    "summary": "fix(create-vite): keep TypeScript 6 when using ESLint (#23931)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-f206096",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "f20609630faa93026924275115d1426fdc08629e",
+    "request": "fix(optimizer): fall back to yarn.lock for lockfile hash (#23667)\n\nCo-authored-by: sapphi-red <green@sapphi.red>",
+    "summary": "Fixed later by 8e890e1: fix(optimizer): skip patches dir check for yarn.lock fallback (#23725)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/optimizer/index.ts",
+        "line": 1310
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-8e890e1",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "8e890e1ce438bfbc07ea4931ce332e40589940fa",
+    "request": "fix(optimizer): skip patches dir check for yarn.lock fallback (#23725)",
+    "summary": "fix(optimizer): skip patches dir check for yarn.lock fallback (#23725)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-9df8bbc",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "9df8bbcbc5307158a3562039fb82ad29e2b232f7",
+    "request": "feat(create-vite): use typescript v7 where possible (#23794)\n\nCo-authored-by: Knightwalker <37214263+Knightwalker@users.noreply.github.com>",
+    "summary": "Fixed later by 15c85dd: fix(create-vite): use typescript v6 for now (#23841)",
+    "defectLines": [
+      {
+        "file": "packages/create-vite/src/index.ts",
+        "line": 960
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-15c85dd",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "15c85ddae2bbbc3808d96a223a5a18a800883252",
+    "request": "fix(create-vite): use typescript v6 for now (#23841)",
+    "summary": "fix(create-vite): use typescript v6 for now (#23841)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-f155b62",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "f155b62ceabbaaf71abbf59933968787e3961c56",
+    "request": "fix(create-vite): add router only options for tanstack router/start (#23543)",
+    "summary": "Fixed later by 467f7ac: fix(create-vite): use Vite for TanStack projects (#23838)",
+    "defectLines": [
+      {
+        "file": "packages/create-vite/src/index.ts",
+        "line": 180
+      },
+      {
+        "file": "packages/create-vite/src/index.ts",
+        "line": 188
+      },
+      {
+        "file": "packages/create-vite/src/index.ts",
+        "line": 290
+      },
+      {
+        "file": "packages/create-vite/src/index.ts",
+        "line": 298
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-467f7ac",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "467f7ac3b8c7cca0b33290e7fd86f3fc79ce92cb",
+    "request": "fix(create-vite): use Vite for TanStack projects (#23838)",
+    "summary": "fix(create-vite): use Vite for TanStack projects (#23838)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-65d3604",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "65d3604f6fdbfcf6e86244d7fe3c1ca86acae701",
+    "request": "feat(optimizer): support nub lockfile (#22891)",
+    "summary": "Fixed later by a7d5696: fix(optimizer): skip patches dir hash for nub lockfile (#23761)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/optimizer/index.ts",
+        "line": 1263
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-a7d5696",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "a7d56967ef0050a09c0507e63a18164bc7a0d486",
+    "request": "fix(optimizer): skip patches dir hash for nub lockfile (#23761)",
+    "summary": "fix(optimizer): skip patches dir hash for nub lockfile (#23761)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-e72036e",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "e72036eed2e28936ed824971b18aeaa3900857f6",
+    "request": "refactor(bundled-dev): remove rolldown lazy stub module workaround (#23129)",
+    "summary": "Fixed later by df4e02c: fix(bundled-dev): normalize served output files (#23684)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/server/bundledDev.ts",
+        "line": 12
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-df4e02c",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "df4e02cc8317a62f21edefc79a9690571ffed1f3",
+    "request": "fix(bundled-dev): normalize served output files (#23684)",
+    "summary": "fix(bundled-dev): normalize served output files (#23684)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-15f0307",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "15f03073c915d6ffb9a1fda447ef66b02bf5cde8",
+    "request": "fix(build): make client chunkImportMap work with `sharedPlugins: true` (#23184)",
+    "summary": "Fixed later by 2a8c0f0: fix(build): correct preloads when chunkImportMap is enabled with non-root base (#23698)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1703
+      },
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1704
+      },
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1705
+      },
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1706
+      },
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1707
+      },
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1708
+      },
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 1709
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-2a8c0f0",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "2a8c0f05c76e35c43ab3560984a5103c8db8dbcd",
+    "request": "fix(build): correct preloads when chunkImportMap is enabled with non-root base (#23698)",
+    "summary": "fix(build): correct preloads when chunkImportMap is enabled with non-root base (#23698)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-ab5dafa",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "ab5dafa8e66296ef201f615489fb57954bb740ce",
+    "request": "feat(legacy): prefer oxc as minifier (fix #21973) (#22468)\n\nCo-authored-by: sapphi-red <49056869+sapphi-red@users.noreply.github.com>",
+    "summary": "Fixed later by 24bd331: fix(worker): align worker urls in client and server when using terser (#23614)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/plugins/terser.ts",
+        "line": 90
+      },
+      {
+        "file": "packages/vite/src/node/plugins/terser.ts",
+        "line": 91
+      },
+      {
+        "file": "packages/vite/src/node/plugins/terser.ts",
+        "line": 96
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-24bd331",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "24bd3316f3b2503d04a49361e365532bdb335e19",
+    "request": "fix(worker): align worker urls in client and server when using terser (#23614)\n\nCo-authored-by: sapphi-red <green@sapphi.red>",
+    "summary": "fix(worker): align worker urls in client and server when using terser (#23614)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-12e709c",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "12e709ca4df1059747db1cb7c5d1cd71aba79a24",
+    "request": "fix(html): don't inline preload link targets (fix #13355) (#23387)\n\nCo-authored-by: kakiuwang-ui <kakiuwang@outlook.com>",
+    "summary": "Fixed later by 53f1ce7: fix(html): resolve percent-encoded srcset urls (#23609)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/plugins/html.ts",
+        "line": 656
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-53f1ce7",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "53f1ce7bfe38426861f6da572ef0e3359f6a80cd",
+    "request": "fix(html): resolve percent-encoded srcset urls (#23609)\n\nCo-authored-by: sapphi-red <green@sapphi.red>",
+    "summary": "fix(html): resolve percent-encoded srcset urls (#23609)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vite-55bba7b",
+    "kind": "bug",
+    "repository": "vitejs/vite",
+    "commit": "55bba7bbd9de40d031360e4408fe91bff5b29ec9",
+    "request": "fix: resolve root to real path (#22832)",
+    "summary": "Fixed later by 8413052: fix: respect `resolve.preserveSymlinks` when resolving root (fix #23197) (#23198)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/node/config.ts",
+        "line": 1600
+      },
+      {
+        "file": "packages/vite/src/node/config.ts",
+        "line": 1601
+      },
+      {
+        "file": "packages/vite/src/node/config.ts",
+        "line": 1602
+      }
+    ]
+  },
+  {
+    "id": "real-clean-vite-8413052",
+    "kind": "clean",
+    "repository": "vitejs/vite",
+    "commit": "8413052731836d4aaf3eb94a0f25788dd35d2888",
+    "request": "fix: respect `resolve.preserveSymlinks` when resolving root (fix #23197) (#23198)\n\nCo-authored-by: sapphi-red <green@sapphi.red>",
+    "summary": "fix: respect `resolve.preserveSymlinks` when resolving root (fix #23197) (#23198)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-zod-cafbee4",
+    "kind": "bug",
+    "repository": "colinhacks/zod",
+    "commit": "cafbee4772ef481611fef6f5fb9ed9a1b9597069",
+    "request": "fix(v4): parse recursive schemas built by a factory (#6530)",
+    "summary": "Fixed later by cc96d77: fix(v4): skip a shape key that has no descriptor (#6684) (#6734)",
+    "defectLines": [
+      {
+        "file": "packages/zod/src/v4/core/memoizer.ts",
+        "line": 68
+      },
+      {
+        "file": "packages/zod/src/v4/core/util.ts",
+        "line": 433
+      },
+      {
+        "file": "packages/zod/src/v4/core/util.ts",
+        "line": 434
+      },
+      {
+        "file": "packages/zod/src/v4/core/util.ts",
+        "line": 447
+      },
+      {
+        "file": "packages/zod/src/v4/core/util.ts",
+        "line": 448
+      }
+    ]
+  },
+  {
+    "id": "real-clean-zod-cc96d77",
+    "kind": "clean",
+    "repository": "colinhacks/zod",
+    "commit": "cc96d77a0328b237b0a93941cc1334da896e6e83",
+    "request": "fix(v4): skip a shape key that has no descriptor (#6684) (#6734)\n\nA Proxy, or a patched Object.getOwnPropertyDescriptor, can list a key in\nReflect.ownKeys without a descriptor. The cycle walk and the shape\nbuilders read desc.enumerable on it and threw. The spread that resolves\na shape never copies such a key, so skip it everywhere.\n\nCo-authored-by: Amine Benzaazaa <61782040+AmineBenzaazaa@users.noreply.github.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "fix(v4): skip a shape key that has no descriptor (#6684) (#6734)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-zod-a0ebf97",
+    "kind": "bug",
+    "repository": "colinhacks/zod",
+    "commit": "a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
+    "request": "fix(v4): check array, set and map size bounds before parsing elements (#6652)\n\n.max(), .length() and .size() ran after every element was walked, so an\noversized input built one issue per bad element before the bound was\nreported. Leading size checks now reject the input first, both in the\ninterpreter and in the compiled path.\n\nFixes #6643",
+    "summary": "Fixed later by 7989d07: fix(v4): check a size bound placed after a refinement, and on encode (#6698)",
+    "defectLines": [
+      {
+        "file": "packages/zod/src/v4/core/schemas.ts",
+        "line": 1855
+      },
+      {
+        "file": "packages/zod/src/v4/core/util.ts",
+        "line": 944
+      }
+    ]
+  },
+  {
+    "id": "real-clean-zod-7989d07",
+    "kind": "clean",
+    "repository": "colinhacks/zod",
+    "commit": "7989d0743aa1c1966806adb497397a40dd6ba6ff",
+    "request": "fix(v4): check a size bound placed after a refinement, and on encode (#6698)\n\n#6652 rejected an oversized array, set or map before parsing its\nelements only when the bound came before every other check, and never\non encode. A `.refine()` or another check that only reads the value no\nlonger hides a later bound; `.overwrite()` and a check function, which\nmay replace the value, still end the early check. On encode the bound is\nnow checked in the first pass, which skips checks and used to walk every\nelement before the bound ran.",
+    "summary": "fix(v4): check a size bound placed after a refinement, and on encode (#6698)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-zod-3b15499",
+    "kind": "bug",
+    "repository": "colinhacks/zod",
+    "commit": "3b1549922b56ec17c9c47a521963f820930068e1",
+    "request": "feat(lang): add Tajik (`tg`) locale",
+    "summary": "Fixed later by 574d480: fix(locales): clarify Tajik discriminator value message",
+    "defectLines": [
+      {
+        "file": "packages/zod/src/v4/locales/tg.ts",
+        "line": 117
+      }
+    ]
+  },
+  {
+    "id": "real-clean-zod-574d480",
+    "kind": "clean",
+    "repository": "colinhacks/zod",
+    "commit": "574d480fb443d3fd396efbcb8230f3dfee4a2cd2",
+    "request": "fix(locales): clarify Tajik discriminator value message",
+    "summary": "fix(locales): clarify Tajik discriminator value message",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-zod-f238fbd",
+    "kind": "bug",
+    "repository": "colinhacks/zod",
+    "commit": "f238fbd2d7ff2732b15813b35e650951a9c33b4c",
+    "request": "fix: remove exponential backtracking from the emoji regex (#6347)\n\n`\\p{Extended_Pictographic}` and `\\p{Emoji_Component}` overlap on U+1F9B0-U+1F9B3,\nso `^(A|B)+$` had to re-explore 2^n ways of attributing the consumed characters\nwhenever the overall match failed. A ~100 byte string of those code points\nfollowed by any non-emoji character stalled the event loop for seconds; each\nadditional character roughly doubled it.\n\nCollapsing the alternation into a single character class matches exactly the same\nset of strings — verified over every code point — and recheck reports it linear.\nSame shape as the email regex fix in #2824.\n\nThe `redos checker` test only covered the date/time patterns, and it passed an\nempty flags string, which makes recheck read `\\p{...}` as a literal and report an\nexponential pattern as safe. It moves to redos.test.ts, sweeps every pattern\ncore/regexes.ts exports, and passes the real flags.\n\nNote that this changes the `pattern` emitted by `z.toJSONSchema(z.emoji())`.",
+    "summary": "Fixed later by f83ab51: fix(v4): reject component-only strings from z.emoji() (#6532)",
+    "defectLines": [
+      {
+        "file": "packages/zod/src/v4/core/regexes.ts",
+        "line": 62
+      }
+    ]
+  },
+  {
+    "id": "real-clean-zod-f83ab51",
+    "kind": "clean",
+    "repository": "colinhacks/zod",
+    "commit": "f83ab51129038a2f868ee11dda906ed78ae2e478",
+    "request": "fix(v4): reject component-only strings from z.emoji() (#6532)\n\nCo-authored-by: Oleg Kondratiuk <20015034+oleg6k@users.noreply.github.com>",
+    "summary": "fix(v4): reject component-only strings from z.emoji() (#6532)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-zod-942bf8c",
+    "kind": "bug",
+    "repository": "colinhacks/zod",
+    "commit": "942bf8cb9a4085e66f785c04b5a9a3ed6877709c",
+    "request": "feat(v4): parse input containing reference cycles (#6387)\n\nToday a cyclic input is a RangeError, safeParse included, so it isn't\neven catchable through the result.\n\nCore gains a $ZodMemoizer seam: a container asks the injected memoizer\nfor the object it is about to build into. Classic injects one per\ncontainer instance; zod/mini injects nothing and links none of this.\nCore's whole share is one interface, one `_zod` field, one changed\nallocation line per container, and one line in runChecks -- the memoizer\nis read once at construction, so a schema without one runs exactly the\ncode it runs today, and the JIT emits byte-identical output for it.\n\nEverything else lives in core/memoizer.ts, which nothing references\nunless a layer asks for it. It registers the real output object before\nany child is parsed, so a reference back to the same input resolves to\nit with nothing to copy. The lookup is keyed on (schema, input), which\nis what makes mutual recursion sound: a node validated against two\ns",
+    "summary": "Fixed later by b63db24: fix(v4): keep a memoized node's cached issues private to the cache (#6443)",
+    "defectLines": [
+      {
+        "file": "packages/zod/src/v4/core/memoizer.ts",
+        "line": 154
+      },
+      {
+        "file": "packages/zod/src/v4/core/memoizer.ts",
+        "line": 175
+      },
+      {
+        "file": "packages/zod/src/v4/core/memoizer.ts",
+        "line": 179
+      }
+    ]
+  },
+  {
+    "id": "real-clean-zod-b63db24",
+    "kind": "clean",
+    "repository": "colinhacks/zod",
+    "commit": "b63db248abfcfeb7e444687815834618cf26a04a",
+    "request": "fix(v4): keep a memoized node's cached issues private to the cache (#6443)\n\nAn issue belongs to the payload it was raised into, and every receiver prefixes\na path onto it in place. The memoizer handed the same issue objects to every\nvisitor of a shared node, so the second visitor prefixed onto the first one's\npath: a DAG-shaped input reaching one invalid node twice reported\n[\"right\",\"left\",\"name\"] twice instead of [\"left\",\"name\"] and [\"right\",\"name\"].\n\nOnly the jitless object path is affected today, because the object JIT copies\neach issue before prefixing it and util.prefixIssues does not.",
+    "summary": "fix(v4): keep a memoized node's cached issues private to the cache (#6443)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-zod-97edd70",
+    "kind": "bug",
+    "repository": "colinhacks/zod",
+    "commit": "97edd70a8f0d34ec6f50e8255713d3d49a106e2c",
+    "request": "fix(toJSONSchema): constrain closed tuple length (#6194)\n\n`tupleProcessor` never emitted length bounds for a closed tuple, so the generated schema accepted arrays `.parse()` rejects. `$ZodTuple` bounds a rest-less tuple by `getTupleOptStart(items, \"optin\" | \"optout\")` below and `items.length` above; the generator emitted neither for the draft targets.\n\nEach target now gets the tail keyword it actually defines — `additionalItems: false` for draft-04/draft-07, `items: false` for draft-2020-12 (which removed `additionalItems`), and nothing for openapi-3.0, whose Schema Object has no equivalent and whose `items` must be a single schema. `minItems`/`maxItems` are supported by all four and emitted in all four, with `minItems` derived from the same optin/optout walk the parser uses, so it tracks `ctx.io`.\n\nThat also repairs two openapi-3.0 defects the report did not cover, both of which made the emitted schema stricter than `.parse()`:\n\n- `minItems` was `prefixItems.length`, ignoring an optio",
+    "summary": "Fixed later by eb4682c: fix(json-schema): resolve tuple minItems past transform and catch in input mode (#6418)",
+    "defectLines": [
+      {
+        "file": "packages/zod/src/v4/core/json-schema-processors.ts",
+        "line": 377
+      },
+      {
+        "file": "packages/zod/src/v4/core/json-schema-processors.ts",
+        "line": 379
+      }
+    ]
+  },
+  {
+    "id": "real-clean-zod-eb4682c",
+    "kind": "clean",
+    "repository": "colinhacks/zod",
+    "commit": "eb4682c930b9f3a9f4e721c99bfbad615bf1c766",
+    "request": "fix(json-schema): resolve tuple minItems past transform and catch in input mode (#6418)\n\n* fix(json-schema): resolve tuple minItems past transform and catch in input mode\n\n#6133 routed objectProcessor's `required` list through `inputOptin` so an input\nJSON Schema describes the declared input type rather than the runtime `optin`\nflag. tupleProcessor's `minItems` tail scan was left reading the runtime flag,\nso the same divergence stayed live for tuples:\n\n  z.toJSONSchema(z.tuple([z.string(), z.preprocess(v => v, z.string())]), { io: \"input\" })\n  // minItems: 1, but z.input<> is [string, string] and .safeParse([\"a\"]) rejects\n\nThat output matched neither the declared type nor the parser. The object\nequivalent already emitted required: [\"a\", \"b\"].\n\nRoute the input-mode scan through the same helper. Output mode still reads\n`optout` directly — the divergence is input-side only. A trailing `.default()`\nor `.optional()` still shortens `minItems`, since those declare optional input\nstatically; r",
+    "summary": "fix(json-schema): resolve tuple minItems past transform and catch in input mode (#6418)",
+    "defectLines": []
+  }
+]

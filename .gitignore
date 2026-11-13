@@ -14,3 +14,4 @@ Thumbs.db
 
 # Benchmark reports (bench/results), kept local
 bench/results/
+bench/.repos/

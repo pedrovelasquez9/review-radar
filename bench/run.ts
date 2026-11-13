@@ -1,13 +1,15 @@
 // Runs the benchmark and writes its report to bench/results/.
 //
 //   bun bench/run.ts [--model opus] [--runs 2] [--arms radar,baseline]
-//                    [--cases bug-,clean-readme] [--parallel 3] [--dry-run]
+//                    [--cases bug-,clean-readme] [--parallel 3] [--dry-run] [--real]
+//
+// --real runs the cases mined from real repositories (mine.ts) instead of ours.
 //
 // --dry-run asks no model: a scripted answer flags exactly each planted defect,
 // which checks the cases, the repositories, review-radar's rules and the
 // scoring end to end (it must score every bug and no false alarm).
 
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -19,7 +21,9 @@ import { CASES } from './cases'
 import type { CompleteWithModel } from './claude-cli'
 import { claudeCli } from './claude-cli'
 import { DEFECT_KEYWORDS } from './keywords'
-import { createCaseRepo } from './repo'
+import type { RealCase } from './mine'
+import { REAL_CASES_FILE } from './mine'
+import { createCaseRepo, createRealCaseRepo } from './repo'
 import type { CaseRepo } from './repo'
 import { writeReport } from './report'
 import { scoreRun } from './score'
@@ -37,6 +41,7 @@ const { values } = parseArgs({
     cases: { type: 'string' },
     parallel: { type: 'string', default: '3' },
     'dry-run': { type: 'boolean', default: false },
+    real: { type: 'boolean', default: false },
   },
 })
 
@@ -47,7 +52,9 @@ const options: BenchOptions = {
   isDryRun: values['dry-run'],
 }
 const casePrefixes = values.cases?.split(',')
-const cases = CASES.filter(benchCase => !casePrefixes || casePrefixes.some(prefix => benchCase.id.startsWith(prefix)))
+const realCases: RealCase[] = values.real ? JSON.parse(readFileSync(REAL_CASES_FILE, 'utf8')) : []
+const allCases: BenchCase[] = values.real ? realCases : CASES
+const cases = allCases.filter(benchCase => !casePrefixes || casePrefixes.some(prefix => benchCase.id.startsWith(prefix)))
 
 const workRoot = mkdtempSync(join(tmpdir(), 'review-radar-bench-'))
 const realModel = claudeCli(join(workRoot, 'cli'))
@@ -71,7 +78,11 @@ if (!options.isDryRun) {
 
 // Each case's repository is built once and only read by its reviews.
 const repos = new Map<string, CaseRepo>()
-for (const benchCase of cases) repos.set(benchCase.id, createCaseRepo(benchCase, join(workRoot, benchCase.id)))
+for (const benchCase of cases) {
+  const realCase = realCases.find(real => real.id === benchCase.id)
+  const directory = join(workRoot, benchCase.id)
+  repos.set(benchCase.id, realCase ? createRealCaseRepo(realCase, directory) : createCaseRepo(benchCase, directory))
+}
 
 const tasks = cases.flatMap(benchCase =>
   Array.from({ length: options.runs }, (_, run) => options.arms.map(arm => ({ benchCase, arm, run: run + 1 }))).flat(),

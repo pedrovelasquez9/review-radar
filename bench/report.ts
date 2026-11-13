@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import type { Arm } from './arms'
 import type { BenchCase } from './cases'
 import type { BenchOptions, RunRecord } from './run'
+import { DEFECT_KEYWORDS } from './keywords'
 import { LINE_TOLERANCE } from './score'
 
 export function writeReport(directory: string, options: BenchOptions, cases: BenchCase[], records: RunRecord[]): string {
@@ -44,11 +45,13 @@ function summaryRows(arms: Arm[], records: RunRecord[]): string[] {
   const average = (values: number[]) => (values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length)
 
   const row = (label: string, cell: (arm: Arm) => string) => `| ${label} | ${arms.map(cell).join(' | ')} |`
+  // Mined cases have no keywords that name their defect: no strict row for them.
+  const hasKeywords = records.some(record => DEFECT_KEYWORDS[record.caseId])
   return [
     row('Bugs found', arm => percent(of(arm, 'bug').filter(record => record.score.isHit).length, of(arm, 'bug').length)),
-    row('Bugs found and named (strict)', arm =>
-      percent(of(arm, 'bug').filter(record => record.score.isStrictHit).length, of(arm, 'bug').length),
-    ),
+    ...(hasKeywords
+      ? [row('Bugs found and named (strict)', arm => percent(of(arm, 'bug').filter(record => record.score.isStrictHit).length, of(arm, 'bug').length))]
+      : []),
     row('Clean changes without alarms', arm =>
       percent(of(arm, 'clean').filter(record => record.score.alarms === 0).length, of(arm, 'clean').length),
     ),
