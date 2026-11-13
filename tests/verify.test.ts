@@ -27,10 +27,10 @@ function engineAnswering(text: string | Error, calls: string[] = []): Engine {
   } as unknown as Engine
 }
 
-test('defects the second look rejects go to the PR list, marked; decisions are not checked', async () => {
+test('defects the second look rejects go to the PR list, marked; a decision without a defect stays as it was', async () => {
   const calls: string[] = []
   const [rejected, kept, skipped, decision] = await verifyFindings(
-    engineAnswering('{"verdicts":[{"n":1,"keep":false,"handled_by":"if (items.length === 0) return"},{"n":2,"keep":true}]}', calls),
+    engineAnswering('{"verdicts":[{"n":1,"keep":false,"handled_by":"if (items.length === 0) return"},{"n":2,"keep":true},{"n":4,"keep":false}]}', calls),
     [
       finding({}),
       finding({ category: 'suspicious', title: 'Sign flipped' }),
@@ -46,9 +46,22 @@ test('defects the second look rejects go to the PR list, marked; decisions are n
   expect(kept?.severity).toBe('critical')
   // A finding the answer skips stays as the review said.
   expect(skipped?.severity).toBe('critical')
-  expect(decision?.severity).toBe('critical')
+  // Decisions are not right or wrong: no "keep" demotes one.
+  expect(decision).toEqual(finding({ category: 'architecture', title: 'New layer' }))
   expect(calls.length).toBe(1)
-  expect(calls[0]!.includes('New layer')).toBe(false)
+  expect(calls[0]!.includes('4. NOTE')).toBe(true)
+})
+
+test('a note that hides a defect becomes a critical bug', async () => {
+  const [note, plain] = await verifyFindings(
+    engineAnswering('{"verdicts":[{"n":1,"defect":"An empty `items` returns undefined."}]}'),
+    [finding({ severity: 'pr', category: 'routine', title: 'Last item helper changed' }), finding({ severity: 'pr', category: 'routine', title: 'Renamed' })],
+    CONTEXT,
+    MESSAGES,
+  )
+
+  expect(note).toEqual({ ...finding({ title: 'Last item helper changed' }), why: 'An empty `items` returns undefined.' })
+  expect(plain?.severity).toBe('pr')
 })
 
 test('a rejection stands only on code the diff shows', async () => {
@@ -68,7 +81,12 @@ test('no verdict, no change: a failed call keeps the review answer, and nothing 
   expect(await verifyFindings(engineAnswering(new Error('down')), findings, CONTEXT, MESSAGES)).toEqual(findings)
 
   const calls: string[] = []
-  await verifyFindings(engineAnswering('{}', calls), [finding({ severity: 'pr' })], CONTEXT, MESSAGES)
+  await verifyFindings(
+    engineAnswering('{}', calls),
+    [finding({ severity: 'pr', why: `${MESSAGES.preExistingNote} Old.` }), finding({ severity: 'pr', title: MESSAGES.notReviewedTitle })],
+    CONTEXT,
+    MESSAGES,
+  )
   expect(calls.length).toBe(0)
 })
 
