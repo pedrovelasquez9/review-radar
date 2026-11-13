@@ -7,7 +7,6 @@ import { join } from 'node:path'
 import type { Arm } from './arms'
 import type { BenchCase } from './cases'
 import type { BenchOptions, RunRecord } from './run'
-import { DEFECT_KEYWORDS } from './keywords'
 import { LINE_TOLERANCE } from './score'
 
 export function writeReport(directory: string, options: BenchOptions, cases: BenchCase[], records: RunRecord[]): string {
@@ -19,7 +18,10 @@ export function writeReport(directory: string, options: BenchOptions, cases: Ben
     `# review-radar bench · ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
     '',
     `Model **${options.model}**, ${options.runs} run(s) per case, ${cases.length} cases (${count(cases, 'bug')} with a planted bug, ${count(cases, 'clean')} clean).${options.isDryRun ? ' **Dry run: scripted answers, no model.**' : ''}`,
-    `A bug counts as found when a flagged finding is in its file, within ${LINE_TOLERANCE} lines when it gives one; as named (strict) when that finding also uses one of the words that name the defect (bench/keywords.ts).`,
+    `A bug counts as found when a flagged finding is in its file, within ${LINE_TOLERANCE} lines when it gives one; as named (strict) when ` +
+      (options.judgeModel
+        ? `a flagged finding, anywhere, describes the bug the later fix corrects, as ${options.judgeModel} judges it from that fix commit (bench/judge.ts).`
+        : 'that finding also uses one of the words that name the defect (bench/keywords.ts).'),
     '',
     '| | ' + options.arms.join(' | ') + ' |',
     '| --- | ' + options.arms.map(() => '---').join(' | ') + ' |',
@@ -45,12 +47,16 @@ function summaryRows(arms: Arm[], records: RunRecord[]): string[] {
   const average = (values: number[]) => (values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length)
 
   const row = (label: string, cell: (arm: Arm) => string) => `| ${label} | ${arms.map(cell).join(' | ')} |`
-  // Mined cases have no keywords that name their defect: no strict row for them.
-  const hasKeywords = records.some(record => DEFECT_KEYWORDS[record.caseId])
+  // Mined cases name their defect only once judged: no strict row before.
+  const isStrictScored = records.some(record => record.score.isStrictHit !== undefined)
+  const isJudged = records.some(record => record.score.namedInPrList !== undefined)
   return [
     row('Bugs found', arm => percent(of(arm, 'bug').filter(record => record.score.isHit).length, of(arm, 'bug').length)),
-    ...(hasKeywords
+    ...(isStrictScored
       ? [row('Bugs found and named (strict)', arm => percent(of(arm, 'bug').filter(record => record.score.isStrictHit).length, of(arm, 'bug').length))]
+      : []),
+    ...(isJudged
+      ? [row('Named, but only in the PR list', arm => (arm === 'radar' ? percent(of(arm, 'bug').filter(record => !record.score.isStrictHit && record.score.namedInPrList).length, of(arm, 'bug').length) : '–'))]
       : []),
     row('Clean changes without alarms', arm =>
       percent(of(arm, 'clean').filter(record => record.score.alarms === 0).length, of(arm, 'clean').length),

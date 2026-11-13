@@ -15,7 +15,8 @@
         "file": "src/jsx/base.ts",
         "line": 178
       }
-    ]
+    ],
+    "fixCommit": "eb754bd5ef22c63f1634a4c374a86be086f85710"
   },
   {
     "id": "real-clean-hono-eb754bd",
@@ -38,7 +39,8 @@
         "file": "src/helper/accepts/accepts.ts",
         "line": 56
       }
-    ]
+    ],
+    "fixCommit": "98b35afc0e8d70dc07bf59c3b796c9cbfdd4c7a7"
   },
   {
     "id": "real-clean-hono-98b35af",
@@ -61,7 +63,8 @@
         "file": "src/utils/url.ts",
         "line": 223
       }
-    ]
+    ],
+    "fixCommit": "846e95259bd452fd07286898658897d0fef436dd"
   },
   {
     "id": "real-clean-hono-846e952",
@@ -84,7 +87,8 @@
         "file": "src/jsx/base.ts",
         "line": 31
       }
-    ]
+    ],
+    "fixCommit": "f23b146afcec63606144cde50b5fbd360dd60238"
   },
   {
     "id": "real-clean-hono-f23b146",
@@ -107,7 +111,8 @@
         "file": "src/client/client.ts",
         "line": 202
       }
-    ]
+    ],
+    "fixCommit": "499c35ebda35777fd35a7dd1906dd4f2687da61e"
   },
   {
     "id": "real-clean-hono-499c35e",
@@ -134,7 +139,8 @@
         "file": "src/request.ts",
         "line": 491
       }
-    ]
+    ],
+    "fixCommit": "c409d855d91d1f0904d19439692216fcf789e6cb"
   },
   {
     "id": "real-clean-hono-c409d85",
@@ -157,7 +163,8 @@
         "file": "src/middleware/etag/digest.ts",
         "line": 54
       }
-    ]
+    ],
+    "fixCommit": "7195c2486037a2caa51355a33f2ff31f6d1279c9"
   },
   {
     "id": "real-clean-hono-7195c24",
@@ -188,7 +195,8 @@
         "file": "src/middleware/etag/index.ts",
         "line": 110
       }
-    ]
+    ],
+    "fixCommit": "f6aa913c3f8915d0695b77ca3f78f6b8ecb248a0"
   },
   {
     "id": "real-clean-hono-f6aa913",
@@ -211,7 +219,8 @@
         "file": "src/response.ts",
         "line": 197
       }
-    ]
+    ],
+    "fixCommit": "ccd127b48e21a8be1439406932372aaa20a0b0fd"
   },
   {
     "id": "real-clean-h3-ccd127b",
@@ -238,7 +247,8 @@
         "file": "src/utils/query.ts",
         "line": 74
       }
-    ]
+    ],
+    "fixCommit": "e379a329df994022f2a9924ae55bb8a8c485f91f"
   },
   {
     "id": "real-clean-h3-e379a32",
@@ -261,7 +271,8 @@
         "file": "src/response.ts",
         "line": 159
       }
-    ]
+    ],
+    "fixCommit": "4ab19f7d033028a1d24a534c3a23011223f454b3"
   },
   {
     "id": "real-clean-h3-4ab19f7",
@@ -284,7 +295,8 @@
         "file": "src/utils/body.ts",
         "line": 50
       }
-    ]
+    ],
+    "fixCommit": "e51dded932e744db7e3e4cc4ce0ec285e74f4187"
   },
   {
     "id": "real-clean-h3-e51dded",
@@ -307,7 +319,8 @@
         "file": "src/response.ts",
         "line": 140
       }
-    ]
+    ],
+    "fixCommit": "2d6a10ac7f79870f89e2afb57135e23d829a694b"
   },
   {
     "id": "real-clean-h3-2d6a10a",
@@ -330,7 +343,8 @@
         "file": "src/utils/proxy.ts",
         "line": 573
       }
-    ]
+    ],
+    "fixCommit": "ffd96209f9a511d7614640c567e31c85ae5a7096"
   },
   {
     "id": "real-clean-h3-ffd9620",
@@ -369,7 +383,8 @@
         "file": "src/utils/response.ts",
         "line": 310
       }
-    ]
+    ],
+    "fixCommit": "17e0cbd0db229fc086a036e020aac2b90dedc819"
   },
   {
     "id": "real-clean-h3-17e0cbd",
@@ -392,7 +407,8 @@
         "file": "source/utils/merge.ts",
         "line": 288
       }
-    ]
+    ],
+    "fixCommit": "8cf26e0e78d7a734f5e2846bdd65b66a936c13b3"
   },
   {
     "id": "real-clean-ky-8cf26e0",
@@ -419,7 +435,8 @@
         "file": "source/utils/merge.ts",
         "line": 273
       }
-    ]
+    ],
+    "fixCommit": "ee3dec1ac01db18a6ea245109d2f616433b25660"
   },
   {
     "id": "real-clean-ky-ee3dec1",
@@ -442,7 +459,8 @@
         "file": "source/core/Ky.ts",
         "line": 431
       }
-    ]
+    ],
+    "fixCommit": "224034d10df5cd47db23adb3aa78efe26274fc1f"
   },
   {
     "id": "real-clean-ky-224034d",
@@ -465,7 +483,8 @@
         "file": "source/core/Ky.ts",
         "line": 486
       }
-    ]
+    ],
+    "fixCommit": "4e0bf0bdbe373f0158b51ebb5113cf5279c54b8a"
   },
   {
     "id": "real-clean-ky-4e0bf0b",
@@ -488,7 +507,8 @@
         "file": "packages/query-core/src/retryer.ts",
         "line": 247
       }
-    ]
+    ],
+    "fixCommit": "3f4de1b40cce4314f7572b515ad8fd26dd85fe04"
   },
   {
     "id": "real-clean-query-3f4de1b",
@@ -511,7 +531,8 @@
         "file": "packages/query-core/src/queryObserver.ts",
         "line": 343
       }
-    ]
+    ],
+    "fixCommit": "f608f933a36da30670082e90d0a56b2569290563"
   },
   {
     "id": "real-clean-query-f608f93",
@@ -538,7 +559,8 @@
         "file": "packages/preact-query/src/errorBoundaryUtils.ts",
         "line": 32
       }
-    ]
+    ],
+    "fixCommit": "0addcd2a9ae7371dbb7a860277b08ad4c2444975"
   },
   {
     "id": "real-clean-query-0addcd2",
@@ -561,7 +583,8 @@
         "file": "packages/preact-query/src/usePrefetchQuery.tsx",
         "line": 26
       }
-    ]
+    ],
+    "fixCommit": "714c2856e09bbaf7448ccc02364887e36c18b37c"
   },
   {
     "id": "real-clean-query-714c285",
@@ -584,7 +607,8 @@
         "file": "packages/create-vite/src/index.ts",
         "line": 960
       }
-    ]
+    ],
+    "fixCommit": "28e1710790ac5ef65ed5e84cbb20438bc3218f01"
   },
   {
     "id": "real-clean-vite-28e1710",
@@ -607,7 +631,8 @@
         "file": "packages/vite/src/node/optimizer/index.ts",
         "line": 1310
       }
-    ]
+    ],
+    "fixCommit": "8e890e1ce438bfbc07ea4931ce332e40589940fa"
   },
   {
     "id": "real-clean-vite-8e890e1",
@@ -630,7 +655,8 @@
         "file": "packages/create-vite/src/index.ts",
         "line": 960
       }
-    ]
+    ],
+    "fixCommit": "15c85ddae2bbbc3808d96a223a5a18a800883252"
   },
   {
     "id": "real-clean-vite-15c85dd",
@@ -665,7 +691,8 @@
         "file": "packages/create-vite/src/index.ts",
         "line": 298
       }
-    ]
+    ],
+    "fixCommit": "467f7ac3b8c7cca0b33290e7fd86f3fc79ce92cb"
   },
   {
     "id": "real-clean-vite-467f7ac",
@@ -688,7 +715,8 @@
         "file": "packages/vite/src/node/optimizer/index.ts",
         "line": 1263
       }
-    ]
+    ],
+    "fixCommit": "a7d56967ef0050a09c0507e63a18164bc7a0d486"
   },
   {
     "id": "real-clean-vite-a7d5696",
@@ -711,7 +739,8 @@
         "file": "packages/vite/src/node/server/bundledDev.ts",
         "line": 12
       }
-    ]
+    ],
+    "fixCommit": "df4e02cc8317a62f21edefc79a9690571ffed1f3"
   },
   {
     "id": "real-clean-vite-df4e02c",
@@ -758,7 +787,8 @@
         "file": "packages/vite/src/node/plugins/html.ts",
         "line": 1709
       }
-    ]
+    ],
+    "fixCommit": "2a8c0f05c76e35c43ab3560984a5103c8db8dbcd"
   },
   {
     "id": "real-clean-vite-2a8c0f0",
@@ -789,7 +819,8 @@
         "file": "packages/vite/src/node/plugins/terser.ts",
         "line": 96
       }
-    ]
+    ],
+    "fixCommit": "24bd3316f3b2503d04a49361e365532bdb335e19"
   },
   {
     "id": "real-clean-vite-24bd331",
@@ -812,7 +843,8 @@
         "file": "packages/vite/src/node/plugins/html.ts",
         "line": 656
       }
-    ]
+    ],
+    "fixCommit": "53f1ce7bfe38426861f6da572ef0e3359f6a80cd"
   },
   {
     "id": "real-clean-vite-53f1ce7",
@@ -843,7 +875,8 @@
         "file": "packages/vite/src/node/config.ts",
         "line": 1602
       }
-    ]
+    ],
+    "fixCommit": "8413052731836d4aaf3eb94a0f25788dd35d2888"
   },
   {
     "id": "real-clean-vite-8413052",
@@ -882,7 +915,8 @@
         "file": "packages/zod/src/v4/core/util.ts",
         "line": 448
       }
-    ]
+    ],
+    "fixCommit": "cc96d77a0328b237b0a93941cc1334da896e6e83"
   },
   {
     "id": "real-clean-zod-cc96d77",
@@ -909,7 +943,8 @@
         "file": "packages/zod/src/v4/core/util.ts",
         "line": 944
       }
-    ]
+    ],
+    "fixCommit": "7989d0743aa1c1966806adb497397a40dd6ba6ff"
   },
   {
     "id": "real-clean-zod-7989d07",
@@ -932,7 +967,8 @@
         "file": "packages/zod/src/v4/locales/tg.ts",
         "line": 117
       }
-    ]
+    ],
+    "fixCommit": "574d480fb443d3fd396efbcb8230f3dfee4a2cd2"
   },
   {
     "id": "real-clean-zod-574d480",
@@ -955,7 +991,8 @@
         "file": "packages/zod/src/v4/core/regexes.ts",
         "line": 62
       }
-    ]
+    ],
+    "fixCommit": "f83ab51129038a2f868ee11dda906ed78ae2e478"
   },
   {
     "id": "real-clean-zod-f83ab51",
@@ -986,7 +1023,8 @@
         "file": "packages/zod/src/v4/core/memoizer.ts",
         "line": 179
       }
-    ]
+    ],
+    "fixCommit": "b63db248abfcfeb7e444687815834618cf26a04a"
   },
   {
     "id": "real-clean-zod-b63db24",
@@ -1013,7 +1051,8 @@
         "file": "packages/zod/src/v4/core/json-schema-processors.ts",
         "line": 379
       }
-    ]
+    ],
+    "fixCommit": "eb4682c930b9f3a9f4e721c99bfbad615bf1c766"
   },
   {
     "id": "real-clean-zod-eb4682c",

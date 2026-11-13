@@ -14,7 +14,9 @@ import type { CaseRepo } from './repo'
 // Models point at the condition above or the call below the defective line.
 export const LINE_TOLERANCE = 3
 
-export type RunScore = { isHit?: boolean; isStrictHit?: boolean; alarms: number }
+// isStrictHit: undefined for mined cases until the judge (judge.ts) sets it,
+// with namedInPrList (review-radar named the bug but listed it for the PR).
+export type RunScore = { isHit?: boolean; isStrictHit?: boolean; namedInPrList?: boolean; alarms: number }
 
 export function scoreRun(benchCase: BenchCase, repo: CaseRepo, flagged: FlaggedFinding[]): RunScore {
   if (benchCase.kind === 'clean') return { alarms: flagged.length }
@@ -28,5 +30,5 @@ export function scoreRun(benchCase: BenchCase, repo: CaseRepo, flagged: FlaggedF
   const namesDefect = (finding: FlaggedFinding) => keywords.some(keyword => finding.title.toLowerCase().includes(keyword))
 
   const hits = flagged.filter(isAtDefect)
-  return { isHit: hits.length > 0, isStrictHit: hits.some(namesDefect), alarms: flagged.length - hits.length }
+  return { isHit: hits.length > 0, isStrictHit: keywords.length > 0 ? hits.some(namesDefect) : undefined, alarms: flagged.length - hits.length }
 }

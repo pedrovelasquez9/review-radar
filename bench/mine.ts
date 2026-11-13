@@ -25,6 +25,8 @@ export type RealCase = {
   summary: string
   // Bug cases: the blamed lines, as file and line in the commit's version.
   defectLines: { file: string; line: number }[]
+  // Bug cases: the commit that fixed it later, which the judge (judge.ts) reads.
+  fixCommit?: string
 }
 
 export const REPOS_DIRECTORY = join(import.meta.dir, '.repos')
@@ -96,6 +98,7 @@ function mineRepository(repository: string, since: string, maxPairs: number): Re
         request: message(directory, introducer),
         summary: `Fixed later by ${fix.slice(0, 7)}: ${subject}`,
         defectLines: blamed.filter(line => line.commit === introducer).map(({ file, line }) => ({ file, line })),
+        fixCommit: fix,
       },
       { id: `real-clean-${name}-${fix.slice(0, 7)}`, kind: 'clean', repository, commit: fix, request: message(directory, fix), summary: subject, defectLines: [] },
     )

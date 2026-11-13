@@ -20,6 +20,7 @@ import type { BenchCase } from './cases'
 import { CASES } from './cases'
 import type { CompleteWithModel } from './claude-cli'
 import { claudeCli } from './claude-cli'
+import { judgeRecords } from './judge'
 import { DEFECT_KEYWORDS } from './keywords'
 import type { RealCase } from './mine'
 import { REAL_CASES_FILE } from './mine'
@@ -31,7 +32,7 @@ import type { RunScore } from './score'
 
 export type RunRecord = { caseId: string; kind: BenchCase['kind']; arm: Arm; run: number; result: ArmResult; score: RunScore }
 
-export type BenchOptions = { model: string; runs: number; arms: Arm[]; isDryRun: boolean }
+export type BenchOptions = { model: string; runs: number; arms: Arm[]; isDryRun: boolean; judgeModel?: string }
 
 const { values } = parseArgs({
   options: {
@@ -101,6 +102,12 @@ await runInPool(tasks, Number(values.parallel), async ({ benchCase, arm, run }) 
   const outcome = result.error ? `error: ${result.error.slice(0, 80)}` : benchCase.kind === 'bug' ? (score.isHit ? 'hit' : 'MISS') : `${score.alarms} alarm(s)`
   console.log(`[${done}/${tasks.length}] ${benchCase.id} · ${arm} #${run}: ${outcome}`)
 })
+
+if (values.real && !options.isDryRun) {
+  options.judgeModel = 'sonnet'
+  console.log('Judging which findings name the real bug…')
+  await judgeRecords(records, realCases, realModel, options.judgeModel)
+}
 
 const resultsDirectory = join(import.meta.dir, 'results')
 mkdirSync(resultsDirectory, { recursive: true })
