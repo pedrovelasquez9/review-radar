@@ -49,6 +49,24 @@ test('a critical finding away from every change is pre-existing, listed for the 
   expect(otherFile?.severity).toBe('pr')
 })
 
+test('a finding with a wrong line that quotes added code moves to that line and stays critical', async () => {
+  const diffByFile = new Map([['src/cart.ts', CART_DIFF]])
+
+  const [quotesChange, quotesOldCode] = applyFindingRules(
+    [
+      critical({ line: 80, title: 'Limit is now `const limit = 100`' }),
+      critical({ line: 80, category: 'suspicious', title: 'Variable `const a = 1` is never read' }),
+    ],
+    diffByFile,
+    MESSAGES,
+  )
+
+  expect(quotesChange?.severity).toBe('critical')
+  expect(quotesChange?.line).toBe(20)
+  // Unchanged context lines are not the branch's.
+  expect(quotesOldCode?.severity).toBe('pr')
+})
+
 test('a literal secret stays critical wherever it is', async () => {
   const [secret] = applyFindingRules([critical({ category: 'secrets', line: 80 })], new Map([['src/cart.ts', CART_DIFF]]), MESSAGES)
 

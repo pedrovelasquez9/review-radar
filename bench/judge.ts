@@ -3,7 +3,7 @@
 // describe that bug, not just something near it. It sees the findings without
 // knowing which arm wrote them.
 //
-//   bun bench/judge.ts bench/results/<run>.json [--model sonnet]
+//   bun bench/judge.ts bench/results/<run>.json [--model sonnet] [--real-file cases.json]
 //
 // writes a new report of that run with the judged scores; run.ts calls it too.
 
@@ -78,10 +78,10 @@ async function judge(complete: CompleteWithModel, model: string, fixCommit: stri
 }
 
 if (import.meta.main) {
-  const { values, positionals } = parseArgs({ allowPositionals: true, options: { model: { type: 'string', default: 'sonnet' } } })
+  const { values, positionals } = parseArgs({ allowPositionals: true, options: { model: { type: 'string', default: 'sonnet' }, 'real-file': { type: 'string', default: REAL_CASES_FILE } } })
   const resultsFile = positionals[0]!
   const { options, records } = JSON.parse(readFileSync(resultsFile, 'utf8')) as { options: BenchOptions; records: RunRecord[] }
-  const realCases: RealCase[] = JSON.parse(readFileSync(REAL_CASES_FILE, 'utf8'))
+  const realCases: RealCase[] = JSON.parse(readFileSync(values['real-file'], 'utf8'))
   await judgeRecords(records, realCases, claudeCli(join(mkdtempSync(join(tmpdir(), 'review-radar-judge-')), 'cli')), values.model)
   const caseIds = new Set(records.map(record => record.caseId))
   const reportPath = writeReport(dirname(resultsFile), { ...options, judgeModel: values.model }, realCases.filter(real => caseIds.has(real.id)), records)

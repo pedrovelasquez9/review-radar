@@ -1,6 +1,6 @@
 // Mines real cases from public repositories' history, all on this machine:
 //
-//   bun bench/mine.ts [--since 2026-07-01] [--max-per-repo 8] owner/name ...
+//   bun bench/mine.ts [--since 2026-07-01] [--max-per-repo 8] [--out file.json] owner/name ...
 //
 // A "fix" commit (its subject says fix or bug) that changes few lines of source
 // points, through `git blame` on the lines it removed, at the commit that wrote
@@ -42,7 +42,11 @@ const MAX_CHANGE_FILES = 12
 if (import.meta.main) {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
-    options: { since: { type: 'string', default: '2026-07-01' }, 'max-per-repo': { type: 'string', default: '8' } },
+    options: {
+      since: { type: 'string', default: '2026-07-01' },
+      'max-per-repo': { type: 'string', default: '8' },
+      out: { type: 'string', default: REAL_CASES_FILE },
+    },
   })
   const cases: RealCase[] = []
   for (const repository of positionals) {
@@ -50,8 +54,8 @@ if (import.meta.main) {
     console.log(`${repository}: ${found.length / 2} bug + fix pairs`)
     cases.push(...found)
   }
-  writeFileSync(REAL_CASES_FILE, `${JSON.stringify(cases, null, 2)}\n`)
-  console.log(`${cases.length} cases → ${REAL_CASES_FILE}`)
+  writeFileSync(values.out, `${JSON.stringify(cases, null, 2)}\n`)
+  console.log(`${cases.length} cases → ${values.out}`)
 }
 
 export function cloneDirectory(repository: string): string {

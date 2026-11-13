@@ -3,7 +3,8 @@
 //   bun bench/run.ts [--model opus] [--runs 2] [--arms radar,baseline]
 //                    [--cases bug-,clean-readme] [--parallel 3] [--dry-run] [--real]
 //
-// --real runs the cases mined from real repositories (mine.ts) instead of ours.
+// --real runs the cases mined from real repositories (mine.ts) instead of ours,
+// from bench/real-cases.json or the file --real-file names.
 //
 // --dry-run asks no model: a scripted answer flags exactly each planted defect,
 // which checks the cases, the repositories, review-radar's rules and the
@@ -43,6 +44,7 @@ const { values } = parseArgs({
     parallel: { type: 'string', default: '3' },
     'dry-run': { type: 'boolean', default: false },
     real: { type: 'boolean', default: false },
+    'real-file': { type: 'string', default: REAL_CASES_FILE },
   },
 })
 
@@ -53,7 +55,7 @@ const options: BenchOptions = {
   isDryRun: values['dry-run'],
 }
 const casePrefixes = values.cases?.split(',')
-const realCases: RealCase[] = values.real ? JSON.parse(readFileSync(REAL_CASES_FILE, 'utf8')) : []
+const realCases: RealCase[] = values.real ? JSON.parse(readFileSync(values['real-file'], 'utf8')) : []
 const allCases: BenchCase[] = values.real ? realCases : CASES
 const cases = allCases.filter(benchCase => !casePrefixes || casePrefixes.some(prefix => benchCase.id.startsWith(prefix)))
 

@@ -60,6 +60,18 @@ export function changedLinePositions(fileDiffText: string): number[] {
   return positions
 }
 
+// The lines the diff adds, with their line numbers in the new file.
+export function addedLines(fileDiffText: string): { text: string; line: number }[] {
+  const added: { text: string; line: number }[] = []
+  for (const hunk of splitIntoHunks(fileDiffText)) {
+    const [header = '', ...bodyLines] = hunk.replace(/\n$/, '').split('\n')
+    for (const { text, newLineNumber } of numberHunkLines(header, bodyLines)) {
+      if (text.startsWith('+')) added.push({ text: text.slice(1), line: newLineNumber })
+    }
+  }
+  return added
+}
+
 // An excerpt without the line numbers of its @@ headers: the same code keeps the
 // same identity when edits elsewhere in the file move it up or down.
 export function excerptIdentity(excerpt: string): string {

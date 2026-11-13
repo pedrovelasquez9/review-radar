@@ -4,10 +4,13 @@
 // - one defect reported twice (within a part, or across parts) is shown once;
 // - a finding is critical only when the branch caused it: its file is in the
 //   diff, and its line, when given, sits at a change. A problem in code the
-//   branch did not touch is listed for the PR, marked as pre-existing.
+//   branch did not touch is listed for the PR, marked as pre-existing;
+// - models get line numbers wrong: a finding that quotes code the branch
+//   added (in `backticks`) is about that change, so it moves to that line
+//   instead of being taken for pre-existing.
 
 import type { Finding } from '../types'
-import { changedLinePositions } from './diff'
+import { addedLines, changedLinePositions } from './diff'
 import type { Messages } from './messages'
 import type { LineRange } from './related-code'
 
@@ -20,6 +23,8 @@ const DUPLICATE_LINE_DISTANCE = 10
 const DUPLICATE_TITLE_OVERLAP = 0.5
 // Words shorter than this carry no meaning of their own (articles, "of", "en").
 const MIN_TITLE_WORD_LENGTH = 4
+// Shorter quotes (a name, `true`) match too many lines to say which one is meant.
+const MIN_QUOTE_LENGTH = 8
 
 // `affectedRanges`: code outside the diff that uses a name the diff changed (see
 // related-code.ts). A finding there is one the branch causes, not an old one.
@@ -75,7 +80,25 @@ function markPreExisting(
 ): Finding {
   if (finding.severity !== 'critical' || finding.category === 'secrets') return finding
   if (isCausedByBranch(finding, diffByFile) || isInAffectedCode(finding, affectedRanges)) return finding
+  const quotedLine = lineOfQuotedChange(finding, diffByFile)
+  if (quotedLine !== undefined) return { ...finding, line: quotedLine }
   return { ...finding, severity: 'pr', why: `${messages.preExistingNote} ${finding.why}`.trim() }
+}
+
+// The added line that holds code the finding quotes, the nearest to the line it
+// gave when several do; undefined when it quotes none.
+function lineOfQuotedChange(finding: Finding, diffByFile: Map<string, string>): number | undefined {
+  const fileDiffText = diffByFile.get(finding.file)
+  if (fileDiffText === undefined) return undefined
+  const squash = (text: string) => text.replace(/\s+/g, '')
+  const quotes = [...`${finding.title} ${finding.why}`.matchAll(/`([^`\n]+)`/g)]
+    .map(match => squash(match[1]!))
+    .filter(quote => quote.length >= MIN_QUOTE_LENGTH)
+  const lines = addedLines(fileDiffText)
+    .filter(added => quotes.some(quote => squash(added.text).includes(quote)))
+    .map(added => added.line)
+  const given = finding.line ?? 0
+  return lines.sort((a, b) => Math.abs(a - given) - Math.abs(b - given))[0]
 }
 
 function isInAffectedCode(finding: Finding, affectedRanges: readonly LineRange[]): boolean {

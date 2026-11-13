@@ -1,0 +1,1258 @@
+[
+  {
+    "id": "real-bug-svelte-c85120f",
+    "kind": "bug",
+    "repository": "sveltejs/svelte",
+    "commit": "c85120fb9fb4ff500bef189368f31b680421c4ba",
+    "request": "fix: track missing proxy keys in unowned deriveds (#18944)\n\nCo-authored-by: svelte-triage-bot <team@svelte.com>",
+    "summary": "Fixed later by 707c281: fix: keep creating state sources for property checks during component init (#18949)",
+    "defectLines": [
+      {
+        "file": "packages/svelte/src/internal/client/proxy.js",
+        "line": 243
+      }
+    ],
+    "fixCommit": "707c28146b0f0a6d5404a1bd4769874c3c24851a"
+  },
+  {
+    "id": "real-clean-svelte-707c281",
+    "kind": "clean",
+    "repository": "sveltejs/svelte",
+    "commit": "707c28146b0f0a6d5404a1bd4769874c3c24851a",
+    "request": "fix: keep creating state sources for property checks during component init (#18949)",
+    "summary": "fix: keep creating state sources for property checks during component init (#18949)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-svelte-f2ad10e",
+    "kind": "bug",
+    "repository": "sveltejs/svelte",
+    "commit": "f2ad10ecd2bbb090ce32af54796490ab8332b991",
+    "request": "fix: preserve global CSS without scopable elements (#18793)\n\n## Summary\n\n- mark fully global selectors as used without requiring a scopable\ncomponent element\n- preserve exact ICSS `:export` rules under the same conditions\n- keep elements inside `<svelte:head>` excluded from CSS hash injection\n- add a regression test covering both reported selector forms\n\nFixes #18792",
+    "summary": "Fixed later by 8030ff2: fix: remove incorrect special handling of :export pseudo-selectors (#18839)",
+    "defectLines": [
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 149
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 150
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 151
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 152
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 153
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 154
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 155
+      },
+      {
+        "file": "packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js",
+        "line": 158
+      }
+    ],
+    "fixCommit": "8030ff2a2c8b84231f1d8f3bbc7d9974f12669b9"
+  },
+  {
+    "id": "real-clean-svelte-8030ff2",
+    "kind": "clean",
+    "repository": "sveltejs/svelte",
+    "commit": "8030ff2a2c8b84231f1d8f3bbc7d9974f12669b9",
+    "request": "fix: remove incorrect special handling of :export pseudo-selectors (#18839)\n\n#18793 added special handling for `:export` selectors, but this is\nincorrect. `:export` is (apparently) part of [Interoperable\nCSS](https://github.com/css-modules/icss) but Svelte doesn't (and\nshouldn't) know what that is. No changeset because #18793 is unreleased,\nand the changeset in that PR didn't mention ICSS",
+    "summary": "fix: remove incorrect special handling of :export pseudo-selectors (#18839)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-fastify-eaff726",
+    "kind": "bug",
+    "repository": "fastify/fastify",
+    "commit": "eaff726a68c629c1aedc99f96b3c4b95dfdb38d1",
+    "request": "feat: add `Reply.prototype.mediaType` (#6932)\n\n* feat: add `Reply.prototype.mediaType`\n\nSigned-off-by: LiviaMedeiros <livia@cirno.name>\n\n* additional test\n\nSigned-off-by: Livia Medeiros <livia@cirno.name>\n\n---------\n\nSigned-off-by: LiviaMedeiros <livia@cirno.name>\nSigned-off-by: Livia Medeiros <livia@cirno.name>",
+    "summary": "Fixed later by 19d5be0: fix: resolve reply.mediaType from raw response headers (#7054)",
+    "defectLines": [
+      {
+        "file": "lib/reply.js",
+        "line": 98
+      }
+    ],
+    "fixCommit": "19d5be0daf1c0daace758efe3ea788f924ca1224"
+  },
+  {
+    "id": "real-clean-fastify-19d5be0",
+    "kind": "clean",
+    "repository": "fastify/fastify",
+    "commit": "19d5be0daf1c0daace758efe3ea788f924ca1224",
+    "request": "fix: resolve reply.mediaType from raw response headers (#7054)\n\n#### Description\n\nWhen inspecting `reply.mediaType`, the getter in `lib/reply.js` directly\naccessed `this[kReplyHeaders]['content-type']`.\n\nHowever, `reply.getHeader()`, `reply.hasHeader()`, `reply.getHeaders()`,\nand `reply.send()` (line 177:\n`ContentType.from(this.getHeader('content-type'))`) all resolve headers\nfrom both Fastify's internal reply headers (`this[kReplyHeaders]`) and\nfallback to Node's raw response headers (`this.raw.getHeader(key)`).\n\nIf a plugin, hook, or middleware sets the content type on `reply.raw`\n(e.g. `reply.raw.setHeader('content-type', 'application/json')`):\n- `reply.getHeader('content-type')` returns `'application/json'`.\n- `reply.send()` parses\n`ContentType.from(this.getHeader('content-type'))`.\n- But `reply.mediaType` returned `undefined`.\n\nThis updates the `mediaType` getter in `lib/reply.js` to read\n`this.getHeader('content-type')`, aligning it with `reply.send()` and\nproperly supporting hea",
+    "summary": "fix: resolve reply.mediaType from raw response headers (#7054)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-react-router-b41a3ea",
+    "kind": "bug",
+    "repository": "remix-run/react-router",
+    "commit": "b41a3ea63ad64404ae5dba9ca184eb75d9756200",
+    "request": "fix(router): use non-capturing groups for optional static segments in compilePath (#15200)\n\n* fix(router): use non-capturing groups for optional static segments in compilePath\n\nWhen a route path contains optional static segments (e.g. `/school?/user/:id`),\ncompilePath was generating capturing groups `(\\/school)?` for those segments.\nThis shifted the capture group indices used to extract dynamic params, causing\nmatchPath to return wrong param values — e.g. `params.id` would be `\"/school\"`\ninstead of the correct value.\n\nAdditionally, consecutive optional static segments (e.g. `/one?/two?`) were only\npartially handled: only the first optional segment was wrapped in an optional\ngroup because the global regex consumed the `/` separator. Subsequent segments'\n`?` were left as unescaped regex quantifiers, making the last letter of the\nsegment optional in the regex rather than the whole segment.\n\nFix: change the optional static segment replacement in compilePath to use:\n- Non-capturing groups `",
+    "summary": "Fixed later by 17c8dcd: fix: match optional static segments containing non-word characters (#15425)",
+    "defectLines": [
+      {
+        "file": "packages/react-router/lib/router/utils.ts",
+        "line": 1709
+      }
+    ],
+    "fixCommit": "17c8dcd405bcb086abcaf3076da0a96845acd2f6"
+  },
+  {
+    "id": "real-clean-react-router-17c8dcd",
+    "kind": "clean",
+    "repository": "remix-run/react-router",
+    "commit": "17c8dcd405bcb086abcaf3076da0a96845acd2f6",
+    "request": "fix: match optional static segments containing non-word characters (#15425)\n\nCo-authored-by: Matt Brophy <matt@brophy.org>",
+    "summary": "fix: match optional static segments containing non-word characters (#15425)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-core-0326ed8",
+    "kind": "bug",
+    "repository": "vuejs/core",
+    "commit": "0326ed8df5b228f0b8f7c23782c26fcf4609d1ba",
+    "request": "fix(runtime-core): skip stopped error boundaries for async failures (#16061)",
+    "summary": "Fixed later by a14aa0b: fix(suspense): resolve the boundary when an async setup rejects without an error handler in dev (#16110)",
+    "defectLines": [
+      {
+        "file": "packages/runtime-core/src/components/Suspense.ts",
+        "line": 805
+      }
+    ],
+    "fixCommit": "a14aa0bdc5d7640f4941db785d7a51ec7b005f13"
+  },
+  {
+    "id": "real-clean-core-a14aa0b",
+    "kind": "clean",
+    "repository": "vuejs/core",
+    "commit": "a14aa0bdc5d7640f4941db785d7a51ec7b005f13",
+    "request": "fix(suspense): resolve the boundary when an async setup rejects without an error handler in dev (#16110)",
+    "summary": "fix(suspense): resolve the boundary when an async setup rejects without an error handler in dev (#16110)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-core-fb9b45c",
+    "kind": "bug",
+    "repository": "vuejs/core",
+    "commit": "fb9b45ce780f656a23fcb374eb8ea9f7abadc594",
+    "request": "fix(suspense): unmount the DOM an interrupted async component claimed (#15430)",
+    "summary": "Fixed later by 2b9a0bb: fix(runtime-core): remove the placeholder of an unmounted pending async component (#15982)",
+    "defectLines": [
+      {
+        "file": "packages/runtime-core/src/renderer.ts",
+        "line": 2368
+      }
+    ],
+    "fixCommit": "2b9a0bbbb17166d91a1d394d9aae551a87360d41"
+  },
+  {
+    "id": "real-clean-core-2b9a0bb",
+    "kind": "clean",
+    "repository": "vuejs/core",
+    "commit": "2b9a0bbbb17166d91a1d394d9aae551a87360d41",
+    "request": "fix(runtime-core): remove the placeholder of an unmounted pending async component (#15982)",
+    "summary": "fix(runtime-core): remove the placeholder of an unmounted pending async component (#15982)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-core-a084e44",
+    "kind": "bug",
+    "repository": "vuejs/core",
+    "commit": "a084e4486f1c4dc118518d43a1c7547031c53a5c",
+    "request": "fix(runtime-dom): treat playsinline as a boolean attribute (#15627)",
+    "summary": "Fixed later by ef81ddc: fix(runtime-dom): treat disablepictureinpicture and disableremoteplayback as boolean attributes (#15952)",
+    "defectLines": [
+      {
+        "file": "packages/shared/src/domAttrConfig.ts",
+        "line": 15
+      }
+    ],
+    "fixCommit": "ef81ddcfc94399c043b349a986a1b231b6bac7d6"
+  },
+  {
+    "id": "real-clean-core-ef81ddc",
+    "kind": "clean",
+    "repository": "vuejs/core",
+    "commit": "ef81ddcfc94399c043b349a986a1b231b6bac7d6",
+    "request": "fix(runtime-dom): treat disablepictureinpicture and disableremoteplayback as boolean attributes (#15952)",
+    "summary": "fix(runtime-dom): treat disablepictureinpicture and disableremoteplayback as boolean attributes (#15952)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-b05e5d6",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "b05e5d6343c83c55e512774eaecfebcd52434a99",
+    "request": "perf(coverage): speed up v8 report generation (bounded-memory merge + precompiled globs) (#10506)\n\nCo-authored-by: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nCo-authored-by: Ari Perkkiö <ari.perkkio@gmail.com>",
+    "summary": "Fixed later by 71ad4df: fix(coverage): v8 to handle sub process script coverages separately (#11890)",
+    "defectLines": [
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 63
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 69
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 70
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 72
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 73
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 75
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 77
+      },
+      {
+        "file": "packages/coverage-v8/src/provider.ts",
+        "line": 81
+      }
+    ],
+    "fixCommit": "71ad4dfa1d8fb0753faaa55afc55ade021d0b395"
+  },
+  {
+    "id": "real-clean-vitest-71ad4df",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "71ad4dfa1d8fb0753faaa55afc55ade021d0b395",
+    "request": "fix(coverage): v8 to handle sub process script coverages separately (#11890)",
+    "summary": "fix(coverage): v8 to handle sub process script coverages separately (#11890)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-ec367cf",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "ec367cf2a6c955da8304e8cea935d1f3dc034a98",
+    "request": "feat!: support nested projects (#10846)",
+    "summary": "Fixed later by bf96dad: fix: preserve rootDir in project paths (#11816)",
+    "defectLines": [
+      {
+        "file": "packages/vitest/src/node/projects/resolveProjects.ts",
+        "line": 978
+      }
+    ],
+    "fixCommit": "bf96dad6ab66fe01a1a2c008754f999399309c85"
+  },
+  {
+    "id": "real-clean-vitest-bf96dad",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "bf96dad6ab66fe01a1a2c008754f999399309c85",
+    "request": "fix: preserve rootDir in project paths (#11816)",
+    "summary": "fix: preserve rootDir in project paths (#11816)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-2abed8e",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "2abed8ee20fd311d2de0b5be684048f7d839a95e",
+    "request": "chore: accept PRs from anyone who contributed before (#11634)",
+    "summary": "Fixed later by 0c4c74e: chore: fix merged pr check in pr redirect (#11674)",
+    "defectLines": [
+      {
+        "file": ".github/scripts/pr-redirect.js",
+        "line": 51
+      },
+      {
+        "file": ".github/scripts/pr-redirect.js",
+        "line": 52
+      },
+      {
+        "file": ".github/scripts/pr-redirect.js",
+        "line": 56
+      }
+    ],
+    "fixCommit": "0c4c74e42bd3d6abe46700d59aa824504a9f8447"
+  },
+  {
+    "id": "real-clean-vitest-0c4c74e",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "0c4c74e42bd3d6abe46700d59aa824504a9f8447",
+    "request": "chore: fix merged pr check in pr redirect (#11674)",
+    "summary": "chore: fix merged pr check in pr redirect (#11674)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-c496c2e",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "c496c2e333f5b06f8ec74bff83697dc6eb851c7f",
+    "request": "fix(browser): fail instead of hanging when the browser stops responding (#10956)",
+    "summary": "Fixed later by 6498b66: fix(browser): wait 30s for the browser to close (#11601)",
+    "defectLines": [
+      {
+        "file": "packages/vitest/src/node/pools/browser.ts",
+        "line": 21
+      }
+    ],
+    "fixCommit": "6498b666a3ae8961f6f2a8abdc89015b6fd0b3aa"
+  },
+  {
+    "id": "real-clean-vitest-6498b66",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "6498b666a3ae8961f6f2a8abdc89015b6fd0b3aa",
+    "request": "fix(browser): wait 30s for the browser to close (#11601)",
+    "summary": "fix(browser): wait 30s for the browser to close (#11601)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-56b319a",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "56b319ac614f952dbc34b81aaf2fded0cdc80acc",
+    "request": "fix: resolve node builtins in client environments (#11417)",
+    "summary": "Fixed later by 008e184: fix: fix module graph builtin externals after #11421 (#11491)",
+    "defectLines": [
+      {
+        "file": "packages/vitest/src/utils/graph.ts",
+        "line": 126
+      },
+      {
+        "file": "packages/vitest/src/utils/graph.ts",
+        "line": 127
+      }
+    ],
+    "fixCommit": "008e184cb2de8ad1ff0a7d2defafa6d1b88d9748"
+  },
+  {
+    "id": "real-clean-vitest-008e184",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "008e184cb2de8ad1ff0a7d2defafa6d1b88d9748",
+    "request": "fix: fix module graph builtin externals after #11421 (#11491)\n\nCo-authored-by: Hiroshi Ogawa <4232207+hi-ogawa@users.noreply.github.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "fix: fix module graph builtin externals after #11421 (#11491)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-2451e34",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "2451e34c404aba1038f5e749c85bb268b2f4525e",
+    "request": "perf(spy): avoid scanning cleared mocks (#11092)\n\nCo-authored-by: OpenAI Codex <noreply@openai.com>",
+    "summary": "Fixed later by a0a9396: fix(spy): fix stack overflow when spying `Set.prototype.add` (#11299)",
+    "defectLines": [
+      {
+        "file": "packages/spy/src/index.ts",
+        "line": 503
+      },
+      {
+        "file": "packages/spy/src/index.ts",
+        "line": 505
+      }
+    ],
+    "fixCommit": "a0a939653bc8441848579bb6ac18706372242cd6"
+  },
+  {
+    "id": "real-clean-vitest-a0a9396",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "a0a939653bc8441848579bb6ac18706372242cd6",
+    "request": "fix(spy): fix stack overflow when spying `Set.prototype.add` (#11299)",
+    "summary": "fix(spy): fix stack overflow when spying `Set.prototype.add` (#11299)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-6093d76",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "6093d764a18c21ea171b311d13f004079af092f0",
+    "request": "fix(spy)!: preserve class mock prototype methods on instances (#10910)",
+    "summary": "Fixed later by 99fc525: fix: avoid recursive prototype in automocking (#11195)",
+    "defectLines": [
+      {
+        "file": "packages/spy/src/index.ts",
+        "line": 642
+      }
+    ],
+    "fixCommit": "99fc5259175cf09671a0ed75ec476f06507a2605"
+  },
+  {
+    "id": "real-clean-vitest-99fc525",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "99fc5259175cf09671a0ed75ec476f06507a2605",
+    "request": "fix: avoid recursive prototype in automocking (#11195)",
+    "summary": "fix: avoid recursive prototype in automocking (#11195)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-vitest-1216b5a",
+    "kind": "bug",
+    "repository": "vitest-dev/vitest",
+    "commit": "1216b5af96065b300df051227d1641f80b4106a6",
+    "request": "fix: don't lose worker output on teardown, deflake timing-sensitive tests (#10842)",
+    "summary": "Fixed later by 67ef7a1: fix(worker): bind stdio's early in case overriden (#11020)",
+    "defectLines": [
+      {
+        "file": "packages/vitest/src/runtime/workers/init.ts",
+        "line": 61
+      },
+      {
+        "file": "packages/vitest/src/runtime/workers/init.ts",
+        "line": 70
+      }
+    ],
+    "fixCommit": "67ef7a19bd039aa91ce49741b7966f4d508ce361"
+  },
+  {
+    "id": "real-clean-vitest-67ef7a1",
+    "kind": "clean",
+    "repository": "vitest-dev/vitest",
+    "commit": "67ef7a19bd039aa91ce49741b7966f4d508ce361",
+    "request": "fix(worker): bind stdio's early in case overriden (#11020)",
+    "summary": "fix(worker): bind stdio's early in case overriden (#11020)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-482f335",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "482f335744ed046a2682a6e4350ee77772c8e286",
+    "request": "fix(nuxt): convert inline route rules exactly or drop with a warning (#35455)\n\nCo-authored-by: Daniel Roe <daniel@roe.dev>",
+    "summary": "Fixed later by 6902dab: fix(nuxt): resolve inline route rule keys for nested pages w/ absolute paths (#36953)",
+    "defectLines": [
+      {
+        "file": "packages/nuxt/src/pages/route-rules.ts",
+        "line": 20
+      },
+      {
+        "file": "packages/nuxt/src/pages/route-rules.ts",
+        "line": 39
+      }
+    ],
+    "fixCommit": "6902dab7c8b61457c045454c9bf65f9e06bbf38d"
+  },
+  {
+    "id": "real-clean-nuxt-6902dab",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "6902dab7c8b61457c045454c9bf65f9e06bbf38d",
+    "request": "fix(nuxt): resolve inline route rule keys for nested pages w/ absolute paths (#36953)",
+    "summary": "fix(nuxt): resolve inline route rule keys for nested pages w/ absolute paths (#36953)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-34917cb",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "34917cb829c8005b334b89701563a08497d07893",
+    "request": "fix(schema): only widen workspace dir to a declared workspace root",
+    "summary": "Fixed later by d46f2de: fix(schema): detect git worktrees and submodules as workspace roots (#36854)",
+    "defectLines": [
+      {
+        "file": "packages/schema/src/utils/workspace-dir.ts",
+        "line": 52
+      },
+      {
+        "file": "packages/schema/src/utils/workspace-dir.ts",
+        "line": 53
+      }
+    ],
+    "fixCommit": "d46f2de566fdd8d1ccf6c85f60f0e721334cf614"
+  },
+  {
+    "id": "real-clean-nuxt-d46f2de",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "d46f2de566fdd8d1ccf6c85f60f0e721334cf614",
+    "request": "fix(schema): detect git worktrees and submodules as workspace roots (#36854)",
+    "summary": "fix(schema): detect git worktrees and submodules as workspace roots (#36854)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-d2639f8",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "d2639f8d810599baeadd6ed9f92948447812bf29",
+    "request": "perf(nuxt): drop `ofetch` from the client bundle when `$fetch` is unused (#35790)",
+    "summary": "Fixed later by d67ad2c: fix(nuxt): keep app manifest requests alive during page unload (#36842)",
+    "defectLines": [
+      {
+        "file": "packages/nuxt/src/app/composables/manifest.ts",
+        "line": 31
+      }
+    ],
+    "fixCommit": "d67ad2c1cb23b5279464a2887cab82d94c8f5a04"
+  },
+  {
+    "id": "real-clean-nuxt-d67ad2c",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "d67ad2c1cb23b5279464a2887cab82d94c8f5a04",
+    "request": "fix(nuxt): keep app manifest requests alive during page unload (#36842)\n\nCo-authored-by: Daniel Roe <daniel@roe.dev>",
+    "summary": "fix(nuxt): keep app manifest requests alive during page unload (#36842)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-4b8aee4",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "4b8aee4e39ef378c13e87a373d1db0e760152c05",
+    "request": "perf(vite): skip html entry probes in bare-import resolver (#35907)\n\nCo-authored-by: autofix-ci[bot] <114827586+autofix-ci[bot]@users.noreply.github.com>",
+    "summary": "Fixed later by 52815b7: fix(vite): resolve bare imports from component wrappers (#36785)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/plugins/resolve-deep-imports.ts",
+        "line": 11
+      }
+    ],
+    "fixCommit": "52815b74859a82256f7a30e89c12fcda4d450dd5"
+  },
+  {
+    "id": "real-clean-nuxt-52815b7",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "52815b74859a82256f7a30e89c12fcda4d450dd5",
+    "request": "fix(vite): resolve bare imports from component wrappers (#36785)",
+    "summary": "fix(vite): resolve bare imports from component wrappers (#36785)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-4b08ca0",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "4b08ca0951b1a623a5a2b93d60fffc1ea817dd30",
+    "request": "perf(vite): avoid quadratic nested dir check for `fs.allow` (#36702)\n\nCo-authored-by: Daniel Roe <daniel@roe.dev>",
+    "summary": "Fixed later by fd2ae67: fix(vite): allow ancestor `node_modules` in dev server (#36832)",
+    "defectLines": [
+      {
+        "file": "packages/vite/src/vite.ts",
+        "line": 20
+      }
+    ],
+    "fixCommit": "fd2ae67411575554afe524b0c218d2f05c6a247d"
+  },
+  {
+    "id": "real-clean-nuxt-fd2ae67",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "fd2ae67411575554afe524b0c218d2f05c6a247d",
+    "request": "fix(vite): allow ancestor `node_modules` in dev server (#36832)",
+    "summary": "fix(vite): allow ancestor `node_modules` in dev server (#36832)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-7d14c22",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "7d14c228ba9a78bd1819e39d885f915bad5cbe50",
+    "request": "fix(nuxt): parse payload url as origin-relative path (#36409)",
+    "summary": "Fixed later by 6e1e42b: fix(nuxt): strip trailing slashes in linear time",
+    "defectLines": [
+      {
+        "file": "packages/nuxt/src/runtime/server/renderer/url.ts",
+        "line": 27
+      },
+      {
+        "file": "packages/nuxt/src/runtime/server/renderer/url.ts",
+        "line": 32
+      },
+      {
+        "file": "packages/nuxt/src/runtime/server/renderer/url.ts",
+        "line": 33
+      }
+    ],
+    "fixCommit": "6e1e42bdef262bd6401c00347de48687a15a70be"
+  },
+  {
+    "id": "real-clean-nuxt-6e1e42b",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "6e1e42bdef262bd6401c00347de48687a15a70be",
+    "request": "fix(nuxt): strip trailing slashes in linear time",
+    "summary": "fix(nuxt): strip trailing slashes in linear time",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-63d9931",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "63d9931fd56c73fcbfc3d219e62cf46e6ec34014",
+    "request": "fix(rspack,webpack): reject unexpected Host headers in dev middleware",
+    "summary": "Fixed later by 660ddf0: fix(webpack): skip hot middleware for forbidden dev requests",
+    "defectLines": [
+      {
+        "file": "packages/webpack/src/webpack.ts",
+        "line": 282
+      },
+      {
+        "file": "packages/webpack/src/webpack.ts",
+        "line": 296
+      },
+      {
+        "file": "packages/webpack/src/webpack.ts",
+        "line": 299
+      }
+    ],
+    "fixCommit": "660ddf0f385d586b12f95d002fd2c65118bc73fa"
+  },
+  {
+    "id": "real-clean-nuxt-660ddf0",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "660ddf0f385d586b12f95d002fd2c65118bc73fa",
+    "request": "fix(webpack): skip hot middleware for forbidden dev requests",
+    "summary": "fix(webpack): skip hot middleware for forbidden dev requests",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nuxt-f6533f8",
+    "kind": "bug",
+    "repository": "nuxt/nuxt",
+    "commit": "f6533f8e7b4d71f04c1f2a1aca4366fef50a3d86",
+    "request": "fix(nitro): correct dev and build behaviour for `nitro/vite` (#35931)",
+    "summary": "Fixed later by 47b7f29: fix(nitro,vite): dedupe dev css by module node (#36420)",
+    "defectLines": [
+      {
+        "file": "packages/nitro-server/src/vite.ts",
+        "line": 3
+      }
+    ],
+    "fixCommit": "47b7f297af843ab313ebe917768b503be4358ffa"
+  },
+  {
+    "id": "real-clean-nuxt-47b7f29",
+    "kind": "clean",
+    "repository": "nuxt/nuxt",
+    "commit": "47b7f297af843ab313ebe917768b503be4358ffa",
+    "request": "fix(nitro,vite): dedupe dev css by module node (#36420)\n\nCo-authored-by: Pravardha Kammila <saini.kammila@finmkt.io>\nCo-authored-by: Daniel Roe <daniel@roe.dev>\nCo-authored-by: pardeep1916P <chaitanyacharan07@gmail.com>",
+    "summary": "fix(nitro,vite): dedupe dev css by module node (#36420)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-157c500",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "157c500c38faa7ecf1251adbaeefcd109470d75c",
+    "request": "fix(content): invalidate the data store directly on write (#17755)\n\nThe dev server relied on the file watcher observing the atomic rename\nthat commits a data store write to invalidate the content virtual\nmodules. On Windows the watcher can miss that event, leaving dev\nserving stale content until a restart (#17335). The store now notifies\nlisteners after real disk writes and the dev server invalidates\ndirectly, keeping the watcher path as a fallback for other processes\nwith echo suppression to avoid double reloads.",
+    "summary": "Fixed later by babd96d: fix(astro): skip data-store full-reload when no clients are connected (#18608)",
+    "defectLines": [
+      {
+        "file": "packages/astro/src/content/vite-plugin-content-virtual-mod.ts",
+        "line": 138
+      },
+      {
+        "file": "packages/astro/src/core/dev/dev.ts",
+        "line": 112
+      }
+    ],
+    "fixCommit": "babd96d1f16b8ea5a699693fb725a759d9fa03de"
+  },
+  {
+    "id": "real-clean-astro-babd96d",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "babd96d1f16b8ea5a699693fb725a759d9fa03de",
+    "request": "fix(astro): skip data-store full-reload when no clients are connected (#18608)\n\nCo-authored-by: Princesseuh <3019731+Princesseuh@users.noreply.github.com>",
+    "summary": "fix(astro): skip data-store full-reload when no clients are connected (#18608)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-31f13c3",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "31f13c3710f2c128d3e1684100e44022a598ffcf",
+    "request": "Fix glob() loader watcher ignoring patterns starting with an extglob like `!(dir)` (#18290)\n\nCo-authored-by: factory[bot] <factory[bot]@users.noreply.github.com>",
+    "summary": "Fixed later by 76cd239: fix(content): exclude files in negated directories from glob() loader dev reloads (#18605)",
+    "defectLines": [
+      {
+        "file": "packages/astro/src/content/loaders/glob.ts",
+        "line": 379
+      }
+    ],
+    "fixCommit": "76cd2398642bd77b61b9880dcfc7b78d513cb048"
+  },
+  {
+    "id": "real-clean-astro-76cd239",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "76cd2398642bd77b61b9880dcfc7b78d513cb048",
+    "request": "fix(content): exclude files in negated directories from glob() loader dev reloads (#18605)\n\nCo-authored-by: factory[bot] <factory[bot]@users.noreply.github.com>",
+    "summary": "fix(content): exclude files in negated directories from glob() loader dev reloads (#18605)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-1f04637",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "1f04637a6ca23b59e8982424248ead47d6a3ec31",
+    "request": "feat: use tinyps for process finding (#18368)\n\n* feat: use tinyps for process finding\n\n`tinyps` does the same job as find-proc but slightly better as it looks\nup the exact process rather than doing a loose match.\n\nSince it aims to be a process lookup toolkit rather than a single-use\npackage like find-proc and find-process, it should de-dupe better over\ntime too.\n\n* chore: add changeset",
+    "summary": "Fixed later by a4e201d: fix(dev): treat missing ps row as stale in lockfile process check (#18376)",
+    "defectLines": [
+      {
+        "file": "packages/astro/src/core/dev/lockfile.ts",
+        "line": 137
+      }
+    ],
+    "fixCommit": "a4e201d79f19caa6bf4222f42167aeb602c066e6"
+  },
+  {
+    "id": "real-clean-astro-a4e201d",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "a4e201d79f19caa6bf4222f42167aeb602c066e6",
+    "request": "fix(dev): treat missing ps row as stale in lockfile process check (#18376)\n\nCo-authored-by: Princesseuh <3019731+Princesseuh@users.noreply.github.com>",
+    "summary": "fix(dev): treat missing ps row as stale in lockfile process check (#18376)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-0037c1a",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "0037c1a958a33dbf9d07d72e69b97dce910f9452",
+    "request": "Stop aborted request bodies from logging duplicate unhandled rejections in @astrojs/node (#17971)",
+    "summary": "Fixed later by 7526077: fix(node): exit non-zero and log error when standalone port is taken (#18335)",
+    "defectLines": [
+      {
+        "file": "packages/integrations/node/src/serve-app.ts",
+        "line": 66
+      }
+    ],
+    "fixCommit": "7526077d4f2bb805ceeb41d3ff4e691b8abd0ad9"
+  },
+  {
+    "id": "real-clean-astro-7526077",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "7526077d4f2bb805ceeb41d3ff4e691b8abd0ad9",
+    "request": "fix(node): exit non-zero and log error when standalone port is taken (#18335)\n\n* fix(node): exit non-zero and log error when standalone port is taken\n\nWhen the standalone server encounters an error during bind (such as\nEADDRINUSE), handle the server completion promise in server.ts rather\nthan dropping it as an unhandled rejection, and ensure serve-app.ts\nlogs and sets a non-zero exitCode for unhandled rejections outside\na request context.\n\nFixes #18282\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\n\n* test(node): fix env type in standalone error test\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Repro <repro@example.com>\nCo-authored-by: Claude Code <noreply@anthropic.com>",
+    "summary": "fix(node): exit non-zero and log error when standalone port is taken (#18335)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-eaa1fb0",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "eaa1fb0067406a58490d55686f9f617e4c834905",
+    "request": "Fix glob() loader watcher ignoring negation patterns, causing unrelated files to be ingested (#17510)\n\n* fix(content): split negation patterns in glob loader watcher to match tinyglobby semantics (#17484)\n\nThe glob loader's `matchesGlob` function used `picomatch.isMatch(entry, pattern)` with the\nfull pattern array. When the array contained negation patterns like `!docs/drafts/**`,\npicomatch treated each pattern independently (union semantics), so the negation matched\nevery path outside `docs/drafts/` — causing unrelated files (e.g. `.astro/data-store.json`)\nto be ingested as collection entries.\n\nThis created a feedback loop where the data store re-ingested itself on every write,\ngrowing unboundedly.\n\nFix: split the pattern array into positive patterns and negations, passing negations\nvia picomatch's `ignore` option to match tinyglobby/fast-glob's set-subtraction semantics\nused in the initial scan.\n\n* Add changeset for glob() loader watcher negation fix\n\n---------\n\nCo-authored-by: Matth",
+    "summary": "Fixed later by 31f13c3: Fix glob() loader watcher ignoring patterns starting with an extglob like `!(dir)` (#18290)",
+    "defectLines": [
+      {
+        "file": "packages/astro/src/content/loaders/glob.ts",
+        "line": 352
+      },
+      {
+        "file": "packages/astro/src/content/loaders/glob.ts",
+        "line": 353
+      }
+    ],
+    "fixCommit": "31f13c3710f2c128d3e1684100e44022a598ffcf"
+  },
+  {
+    "id": "real-clean-astro-31f13c3",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "31f13c3710f2c128d3e1684100e44022a598ffcf",
+    "request": "Fix glob() loader watcher ignoring patterns starting with an extglob like `!(dir)` (#18290)\n\nCo-authored-by: factory[bot] <factory[bot]@users.noreply.github.com>",
+    "summary": "Fix glob() loader watcher ignoring patterns starting with an extglob like `!(dir)` (#18290)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-ee74c28",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "ee74c289bfe32fb6a7f59ed97c5c22db16394b72",
+    "request": "Match remotePatterns and domains metacharacters literally in Netlify Image CDN regex (#17368)\n\n* Match remotePatterns pathname metacharacters literally in Netlify Image CDN regex\n\n* Escape metacharacters in Netlify Image CDN hostname and domains patterns",
+    "summary": "Fixed later by 6fb83da: Fix Netlify Image CDN patterns for /** remote pathnames (#18180)",
+    "defectLines": [
+      {
+        "file": "packages/integrations/netlify/src/index.ts",
+        "line": 88
+      }
+    ],
+    "fixCommit": "6fb83dafb81c6751dcddaf7471d5aa8c6bcb6bb9"
+  },
+  {
+    "id": "real-clean-astro-6fb83da",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "6fb83dafb81c6751dcddaf7471d5aa8c6bcb6bb9",
+    "request": "Fix Netlify Image CDN patterns for /** remote pathnames (#18180)",
+    "summary": "Fix Netlify Image CDN patterns for /** remote pathnames (#18180)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-0874da8",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "0874da8c64dd4974bf15f22602c5eae0841f7691",
+    "request": "Fix glob loader dropping content files with colons in their names (#17776)\n\n* fix(content): handle colons in filenames in glob loader URL construction (#17762)\n\n* fix(test): generate colon-named fixture at runtime instead of committing it\n\nColons are reserved in Windows filenames, so committing the fixture broke\n`git checkout` on Windows CI before any build step could run. Write the file\nto a temp directory during the test and skip it on Windows.\n\nAlso reverts unrelated pnpm-lock.yaml churn that only added `supports-color`\npeer suffixes to resolved version strings.\n\n---------\n\nCo-authored-by: factory[bot] <factory[bot]@users.noreply.github.com>\nCo-authored-by: Matthew Phillips <matthew@matthewphillips.info>",
+    "summary": "Fixed later by c3b42ad: fix(content): handle `#` and `?` in glob() loader file paths (#18246)",
+    "defectLines": [
+      {
+        "file": "packages/astro/src/content/loaders/glob.ts",
+        "line": 54
+      },
+      {
+        "file": "packages/astro/src/content/loaders/glob.ts",
+        "line": 135
+      },
+      {
+        "file": "packages/astro/src/content/loaders/glob.ts",
+        "line": 317
+      }
+    ],
+    "fixCommit": "c3b42adb50612041b2e1c59f386065be934e5259"
+  },
+  {
+    "id": "real-clean-astro-c3b42ad",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "c3b42adb50612041b2e1c59f386065be934e5259",
+    "request": "fix(content): handle `#` and `?` in glob() loader file paths (#18246)\n\nCo-authored-by: factory[bot] <factory[bot]@users.noreply.github.com>",
+    "summary": "fix(content): handle `#` and `?` in glob() loader file paths (#18246)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-astro-9870f95",
+    "kind": "bug",
+    "repository": "withastro/astro",
+    "commit": "9870f95601690d9d98799b6fa78a0bc76165ee06",
+    "request": "[ci] format",
+    "summary": "Fixed later by b95c574: fix(cloudflare): exclude `exports` field from prerender worker config (#17957) (#17958)",
+    "defectLines": [
+      {
+        "file": "packages/integrations/cloudflare/src/index.ts",
+        "line": 217
+      },
+      {
+        "file": "packages/integrations/cloudflare/src/index.ts",
+        "line": 218
+      }
+    ],
+    "fixCommit": "b95c574b2ef5ab5541888a860aad5bf2d3a765ea"
+  },
+  {
+    "id": "real-clean-astro-b95c574",
+    "kind": "clean",
+    "repository": "withastro/astro",
+    "commit": "b95c574b2ef5ab5541888a860aad5bf2d3a765ea",
+    "request": "fix(cloudflare): exclude `exports` field from prerender worker config (#17957) (#17958)\n\nCo-authored-by: factory[bot] <factory[bot]@users.noreply.github.com>",
+    "summary": "fix(cloudflare): exclude `exports` field from prerender worker config (#17957) (#17958)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-eslint-1e641c9",
+    "kind": "bug",
+    "repository": "eslint/eslint",
+    "commit": "1e641c919fc1421493bf913feb607896982451a3",
+    "request": "fix: no-loss-of-precision false positive with trailing decimal point (#21251)",
+    "summary": "Fixed later by 686630e: fix: `no-loss-of-precision` false positive with `0.e5` (#21337)",
+    "defectLines": [
+      {
+        "file": "lib/rules/no-loss-of-precision.js",
+        "line": 181
+      }
+    ],
+    "fixCommit": "686630eb34ec1cddf399a4e6eaeebb080116a532"
+  },
+  {
+    "id": "real-clean-eslint-686630e",
+    "kind": "clean",
+    "repository": "eslint/eslint",
+    "commit": "686630eb34ec1cddf399a4e6eaeebb080116a532",
+    "request": "fix: `no-loss-of-precision` false positive with `0.e5` (#21337)",
+    "summary": "fix: `no-loss-of-precision` false positive with `0.e5` (#21337)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-prettier-4f51332",
+    "kind": "bug",
+    "repository": "prettier/prettier",
+    "commit": "4f51332f17fe4a8b615889bef3ae267e247f198b",
+    "request": "Fix missing parentheses around `TSInstantiationExpression` before `!` and in `export default` (#20177)\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "Fixed later by df39b5b: Fix missing parentheses around looser operands of `TSInstantiationExpression` (#20345)",
+    "defectLines": [
+      {
+        "file": "src/language-js/parentheses/needs-parentheses.js",
+        "line": 899
+      }
+    ],
+    "fixCommit": "df39b5b60a28976bb4c0fa9244c570e15065cd7c"
+  },
+  {
+    "id": "real-clean-prettier-df39b5b",
+    "kind": "clean",
+    "repository": "prettier/prettier",
+    "commit": "df39b5b60a28976bb4c0fa9244c570e15065cd7c",
+    "request": "Fix missing parentheses around looser operands of `TSInstantiationExpression` (#20345)\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>\nCo-authored-by: fisker <lionkay@gmail.com>",
+    "summary": "Fix missing parentheses around looser operands of `TSInstantiationExpression` (#20345)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-prettier-5927216",
+    "kind": "bug",
+    "repository": "prettier/prettier",
+    "commit": "5927216227411bc2cdaf30d50559e0a475ab4832",
+    "request": "fix(markdown): preserve newline around Chinese/Japanese characters not around Korean letters in all proseWrap settings (#20143)\n\nCo-authored-by: fisker Cheung <lionkay@gmail.com>",
+    "summary": "Fixed later by ccdf5e4: Fix runtime error caused by #20143 (#20257)",
+    "defectLines": [
+      {
+        "file": "src/language-markdown/print/whitespace.js",
+        "line": 301
+      },
+      {
+        "file": "src/language-markdown/print/whitespace.js",
+        "line": 302
+      },
+      {
+        "file": "src/language-markdown/print/whitespace.js",
+        "line": 306
+      },
+      {
+        "file": "src/language-markdown/print/whitespace.js",
+        "line": 307
+      },
+      {
+        "file": "src/language-markdown/print/whitespace.js",
+        "line": 308
+      }
+    ],
+    "fixCommit": "ccdf5e4558206091a7a86ece76aa14065998e6a9"
+  },
+  {
+    "id": "real-clean-prettier-ccdf5e4",
+    "kind": "clean",
+    "repository": "prettier/prettier",
+    "commit": "ccdf5e4558206091a7a86ece76aa14065998e6a9",
+    "request": "Fix runtime error caused by #20143 (#20257)\n\nCo-authored-by: fisker Cheung <lionkay@gmail.com>",
+    "summary": "Fix runtime error caused by #20143 (#20257)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-prettier-9ef216d",
+    "kind": "bug",
+    "repository": "prettier/prettier",
+    "commit": "9ef216d6f3150f17a7e7bea3e3a88950daba9383",
+    "request": "Fix Markdown task list indentation drift (#19647)\n# Conflicts:\n#\ttests/format/markdown/list/__snapshots__/format.test.js.snap",
+    "summary": "Fixed later by 297117a: Fix HTML block indentation drift in markdown list items (#19987)",
+    "defectLines": [
+      {
+        "file": "src/language-markdown/print/list.js",
+        "line": 102
+      }
+    ],
+    "fixCommit": "297117ab77d5d95dad620f2a8300161335efa128"
+  },
+  {
+    "id": "real-clean-prettier-297117a",
+    "kind": "clean",
+    "repository": "prettier/prettier",
+    "commit": "297117ab77d5d95dad620f2a8300161335efa128",
+    "request": "Fix HTML block indentation drift in markdown list items (#19987)\n\nCo-authored-by: fisker Cheung <lionkay@gmail.com>",
+    "summary": "Fix HTML block indentation drift in markdown list items (#19987)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-prettier-3cfbdbd",
+    "kind": "bug",
+    "repository": "prettier/prettier",
+    "commit": "3cfbdbddbc09e6e63b90de78dcbb4d73198244b0",
+    "request": "Extract `printCssDeclaration` (#19690)",
+    "summary": "Fixed later by 475893a: Fix whitespace-only custom property with `!important` (#20055)",
+    "defectLines": [
+      {
+        "file": "src/language-css/print/css-declaration.js",
+        "line": 85
+      }
+    ],
+    "fixCommit": "475893a105ac04967f702ce43561adde8d18f55b"
+  },
+  {
+    "id": "real-clean-prettier-475893a",
+    "kind": "clean",
+    "repository": "prettier/prettier",
+    "commit": "475893a105ac04967f702ce43561adde8d18f55b",
+    "request": "Fix whitespace-only custom property with `!important` (#20055)\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\nCo-authored-by: fisker <lionkay@gmail.com>",
+    "summary": "Fix whitespace-only custom property with `!important` (#20055)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-prettier-50afb31",
+    "kind": "bug",
+    "repository": "prettier/prettier",
+    "commit": "50afb31f2b9cced37acc142a02caade812af8258",
+    "request": "Fix Markdown task list indentation drift (#19647)",
+    "summary": "Fixed later by 5475627: Fix HTML block indentation drift in markdown list items (#19987)",
+    "defectLines": [
+      {
+        "file": "src/language-markdown/print/list.js",
+        "line": 102
+      }
+    ],
+    "fixCommit": "54756273d7423282150c96f4651626669118b11f"
+  },
+  {
+    "id": "real-clean-prettier-5475627",
+    "kind": "clean",
+    "repository": "prettier/prettier",
+    "commit": "54756273d7423282150c96f4651626669118b11f",
+    "request": "Fix HTML block indentation drift in markdown list items (#19987)\n\nCo-authored-by: fisker Cheung <lionkay@gmail.com>",
+    "summary": "Fix HTML block indentation drift in markdown list items (#19987)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-prettier-9f070f2",
+    "kind": "bug",
+    "repository": "prettier/prettier",
+    "commit": "9f070f2f7edf334d9071bc67ddb8606c9a43a196",
+    "request": "Replace `html-element-attributes` with `@prettier/html-attributes` (#19707)",
+    "summary": "Fixed later by bfb1eac: Fix HTML attribute name normalization (#19709)",
+    "defectLines": [
+      {
+        "file": "src/language-html/parse/postprocess.js",
+        "line": 244
+      },
+      {
+        "file": "src/language-html/parse/postprocess.js",
+        "line": 246
+      }
+    ],
+    "fixCommit": "bfb1eacd89ba5b3b6fd5f2faf7908da8bbd558a2"
+  },
+  {
+    "id": "real-clean-prettier-bfb1eac",
+    "kind": "clean",
+    "repository": "prettier/prettier",
+    "commit": "bfb1eacd89ba5b3b6fd5f2faf7908da8bbd558a2",
+    "request": "Fix HTML attribute name normalization (#19709)",
+    "summary": "Fix HTML attribute name normalization (#19709)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-db4e586",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "db4e586c5390416e61eebb7b962e79d60d20c83e",
+    "request": "fix(ws): stop reading from a client that does not read its replies\n\nWsAdapter sent every reply without looking at how much was already\nqueued for the client, and went on reading and handling its messages.\nA client that wrote many requests to a handler with a large reply and\nread nothing made the server queue all the replies, thousands of times\nwhat it sent, until the process ran out of memory.\n\nThe adapter now pauses a client while more than 1 MB of replies are\nqueued for it, or while its messages wait for a free slot, and resumes\nit once its replies are written out. A client with more than 128 MB\nqueued for it, e.g. from Observables a handler returned or from what\nexception filters sent, is disconnected. The new maxSendBufferSize\noption changes that limit, and 0 lifts it. A client that is slow to\nread now has its messages read more slowly as well.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-EXUZYA5M.",
+    "summary": "Fixed later by aae7cb0: fix(ws): keep a client paused while any gateway on it is backlogged",
+    "defectLines": [
+      {
+        "file": "packages/platform-ws/adapters/ws-adapter.ts",
+        "line": 214
+      },
+      {
+        "file": "packages/platform-ws/adapters/ws-adapter.ts",
+        "line": 216
+      }
+    ],
+    "fixCommit": "aae7cb067cec9649ca9934486d7af555c1b903e2"
+  },
+  {
+    "id": "real-clean-nest-aae7cb0",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "aae7cb067cec9649ca9934486d7af555c1b903e2",
+    "request": "fix(ws): keep a client paused while any gateway on it is backlogged\n\nGateways that share a server each bind their handlers to the same\nclient, and each kept its own record of whether it had paused the\nclient. ws has a single paused state per client, so when two gateways\npaused one client, the first to catch up resumed it while the other\nstill had messages waiting. That gateway never paused the client again,\nand the list of its messages waiting for a free slot grew for as long\nas the client kept sending.\n\nThe adapter now counts, per client, how many gateways hold it back, and\nresumes it only once none does. With several gateways on one server, a\nclient whose messages keep one gateway busy is no longer read from for\nthe others either, as already happens for the events of one gateway.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-36006GKO.",
+    "summary": "fix(ws): keep a client paused while any gateway on it is backlogged",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-77d28b6",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "77d28b6336b1836fe75d9785419b7a94008a2cac",
+    "request": "fix(core): drop an overlapped middleware route only when it is covered\n\nremoveOverlappedRoutes() dropped any route whose path matched a regex\nbuilt by hand from a sibling \":param\" route, so that the middleware ran\nonce for them. That regex matched more than the sibling's mount: it\nswallowed text after a parameter (\":id.json\"), read pattern routes\n(\"{*path}\", \"*path\") as literal paths, and ignored the version and the\nglobal prefix exclusions. The dropped route was then covered by no\nmount, and its handler ran without the middleware: \"/docs/admin\" next\nto \"/docs/:id.json\", \"/v2/accounts/me\" next to \"/v1/accounts/:id\", or\n\"/users/me\" excluded from the global prefix next to \"/users/:id\".\n\nA route is now dropped only when it has no parameters or wildcards and\nthe parameterized route, compiled with path-to-regexp as the adapters\nmount it, matches every path the route is mounted on, global prefix\nand version included. A request matched by two routes that are now\nboth kept, such as \"/files/a\" ",
+    "summary": "Fixed later by d74ba14: fix(core): keep a controller root route next to an optional-tail route",
+    "defectLines": [
+      {
+        "file": "packages/core/middleware/builder.ts",
+        "line": 143
+      },
+      {
+        "file": "packages/core/middleware/builder.ts",
+        "line": 154
+      }
+    ],
+    "fixCommit": "d74ba14f0b466560aa79016e22c9ad345f402375"
+  },
+  {
+    "id": "real-clean-nest-d74ba14",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "d74ba14f0b466560aa79016e22c9ad345f402375",
+    "request": "fix(core): keep a controller root route next to an optional-tail route\n\nremoveOverlappedRoutes() drops a static forRoutes() route when a\nparameterized route of the same call matches every path it is mounted\non. It tested the mount path as listed, and the root route of a\ncontroller is listed as \"/invoices/\" while the router serves it at\n\"/invoices\". A sibling that needs the slash after its parameter\n(\"/:tenant/{*page}\", \"/:tenant/*\", \"/a/{:id}\") matches the former only,\nso the root route was dropped and its handler ran without the\nmiddleware, e.g. \"@Get()\" next to \"@Get('{:id}')\" in one controller.\n\nBoth sides are now compared without the trailing slash, as the router\nserves them. \"/invoices/\" next to \"/:tenant/\" is still deduplicated.\n\nA request for \"/invoices/\" now matches both mounts, so the middleware\nruns twice for that spelling.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-AZLA1GUP.",
+    "summary": "fix(core): keep a controller root route next to an optional-tail route",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-8b420f7",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "8b420f788f05eb30ee8013529f4c359125e1391c",
+    "request": "fix(fastify): apply middleware to plugins registered before init\n\nNestFactory.create() registers @fastify/middie before main.ts runs, and\nmiddie gives each new encapsulated context a copy of the middleware of\nits parent as it is at that time. A plugin registered with an awaited\nregister() before app.init() therefore got a context without the\nmiddleware app.init() registers through MiddlewareConsumer, so its\nroutes ran without it, unlike with a register() that is not awaited or\nwith Test.createNestApplication().\n\nThe adapter now tracks the contexts created since middie was registered\nand also registers each such middleware in them, without its path, then\nmatches the path and strips it from req.url itself, as middie does.\nRoutes of plugins registered before app.init() now run the middleware\nbound to their paths. In those contexts it runs after the plugin's own\nmiddleware, and app.use() middleware added after the register() still\ndoes not reach them.\n\nDiscovered by Anthropic's OSS Scanner",
+    "summary": "Fixed later by b1ee538: fix(fastify): track plugin contexts when the app registers middie",
+    "defectLines": [
+      {
+        "file": "packages/platform-fastify/adapters/fastify-adapter.ts",
+        "line": 1189
+      }
+    ],
+    "fixCommit": "b1ee5387b0b2b2266e96c1097d718b33cf76086e"
+  },
+  {
+    "id": "real-clean-nest-b1ee538",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "b1ee5387b0b2b2266e96c1097d718b33cf76086e",
+    "request": "fix(fastify): track plugin contexts when the app registers middie\n\nWith skipMiddie the application registers @fastify/middie itself, so\nthe adapter never ran registerMiddie() and never tracked the\nencapsulated contexts created after it. A plugin registered with an\nawaited register() before app.init() then kept middie's copy of the\nroot middleware as it was at that time, and the middleware bound\nthrough MiddlewareConsumer at init did not run for its routes.\n\nWith skipMiddie, the adapter now tracks the contexts from its\ncreation, and registers each middleware in those that have a use() of\ntheir own. A context created before middie shares the middleware of\nthe root, which already runs it.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-KMEXG4QO.",
+    "summary": "fix(fastify): track plugin contexts when the app registers middie",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-0fd8642",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "0fd8642c2bbea1a541cb490ea6f890ab8ca29d95",
+    "request": "fix(core): roll back modules on failed lazy load (#18385)",
+    "summary": "Fixed later by 93ce700: fix(core): build a lazy module once when loads overlap",
+    "defectLines": [
+      {
+        "file": "packages/core/injector/lazy-module-loader/lazy-module-loader.ts",
+        "line": 39
+      }
+    ],
+    "fixCommit": "93ce700f3d7b191a5e78b784b554f5e67a76ca18"
+  },
+  {
+    "id": "real-clean-nest-93ce700",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "93ce700f3d7b191a5e78b784b554f5e67a76ca18",
+    "request": "fix(core): build a lazy module once when loads overlap\n\nLazyModuleLoader#load() builds every module its scan returns that no\nconcurrent load() is building. The scan is asynchronous, and it skips\nonly the modules that were already instantiated when it reached them,\nwhile a module leaves the in-flight map as soon as its build finishes.\nA module that a concurrent load() built completely during the scan\n(e.g., a shared import of two lazy modules loaded at once) was\ntherefore built again, so its singletons got a second instance. When\nsuch a scan then failed, its rollback also removed that module from the\ncontainer.\n\nModules that are already instantiated are no longer built again, and a\nfailed scan no longer removes modules that another load() is building\nor has built.\n\nDiscovered by Anthropic's OSS Scanner, as bug ANT-2026-3U5QLZFY.",
+    "summary": "fix(core): build a lazy module once when loads overlap",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-a251be7",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "a251be75ec58b64b43b78c72c298b596318edf5e",
+    "request": "fix(core): leave early sse errors to the exception filters\n\nSince 958ff952c, sse() lets the pipe from the SseStream end the\nresponse, so that the response ends once the stream is flushed. When\nthe producer failed before any header was committed, for example a pipe\nrejecting a query param while an interceptor is bound, the error path\nended the stream and the pipe then ended the response with an empty\n200. An exception filter that awaited anything before writing found the\nresponse already sent; on Express, one that did not check headersSent\nthen threw from a promise nothing handles, which ended the process.\n\nThe stream is now unpiped before it is ended on those paths, so the\nfilters answer as they did before 958ff952c: the client gets their\nresponse instead of an empty 200. A completed stream still ends the\nresponse through the pipe.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-LLPYYF05.",
+    "summary": "Fixed later by 5dee8a4: fix(core): catch what the teardown of an sse producer throws",
+    "defectLines": [
+      {
+        "file": "packages/core/router/router-response-controller.ts",
+        "line": 165
+      }
+    ],
+    "fixCommit": "5dee8a4ccee1dd10088d7060ee3255addda43dd8"
+  },
+  {
+    "id": "real-clean-nest-5dee8a4",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "5dee8a4ccee1dd10088d7060ee3255addda43dd8",
+    "request": "fix(core): catch what the teardown of an sse producer throws\n\nsse() unsubscribes from the route's Observable when the client\ndisconnects, once a HEAD response is complete, and when the producer\nfails before the headers are sent. Unsubscribing runs the producer's\nteardown (and the finalize() of an interceptor), and rxjs rethrows what\nthat throws as an UnsubscriptionError. As this ran from a socket 'close'\nlistener or a timer, outside of the handler's promise chain, nothing\ncaught it and the process exited.\n\nThe error is now caught and logged at each of these places, so the\nresponse still ends and the request settles. A teardown that throws\nwhen the producer completes or fails by itself is still thrown by rxjs\non the producer's own stack, as on any other route.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-YKMVCNFO.",
+    "summary": "fix(core): catch what the teardown of an sse producer throws",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-197371c",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "197371c1f3902254bcec09e2fa46bd35b889b1be",
+    "request": "fix(common): reject arrays and primitives for validated classes\n\nWhen plainToInstance() returned no instance of the class, ValidationPipe\nvalidated a stand-in: the array itself, or an empty object for a\nprimitive. A stand-in has none of the class's properties set, so with\nonly optional rules (as in any PartialType DTO) or with\nskipMissingProperties, an array-wrapped body or a primitive reached the\nhandler unchecked. ParseArrayPipe validates class items the same way,\nso nested arrays and primitive items got through.\n\nSuch a value is now rejected through the exception factory, with the\nmessage \"Validation failed (object is expected)\", when the class has\nvalidation rules. Behaviour change: an array or a primitive sent for an\nall-optional DTO now gets a 400. Errors found by the stand-in validation\nstill come first and are unchanged, and classes without rules, as well\nas objects that a custom transformerPackage turns into plain objects,\nare handled as before.\n\nDiscovered by Anthropic's OSS ",
+    "summary": "Fixed later by ecc95fb: fix(common): reject a buffer sent in place of a validated class",
+    "defectLines": [
+      {
+        "file": "packages/common/pipes/validation.pipe.ts",
+        "line": 179
+      }
+    ],
+    "fixCommit": "ecc95fb064c094ee8072c916897ff2a82c07ba0b"
+  },
+  {
+    "id": "real-clean-nest-ecc95fb",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "ecc95fb064c094ee8072c916897ff2a82c07ba0b",
+    "request": "fix(common): reject a buffer sent in place of a validated class\n\nclass-transformer copies a Buffer as it is instead of building the class\nfrom it, so ValidationPipe validated the Buffer itself, which has none\nof the properties of the class. Like the arrays and primitives that\n197371c1f3 rejects, a Buffer sent as the whole value (e.g. a socket.io\nbinary attachment or a raw body) then passed any class without a\nrequired property. The pipe also left the \"constructor\" key that it sets\non such a value (or on an array) for validation, so a handler that\ncopied the value into an entity made class-transformer apply the rules\nof the validated class instead of the entity's, including which fields\n@Exclude() hides.\n\nA binary value is now rejected with \"Validation failed (object is\nexpected)\" when the class has validation rules, and the \"constructor\"\nkey is removed once the value is validated. Behaviour change: a Buffer\nsent for a class with only optional rules now gets a 400.\n\nDiscovered by Anthro",
+    "summary": "fix(common): reject a buffer sent in place of a validated class",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-e088f6d",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "e088f6d8f948efe70fb25d5c8f3851a17d5588c0",
+    "request": "fix(microservices): only emit rmq replies that a request waits for\n\nClientRMQ used the correlation id of every message on its reply queue as\nan event name on its response emitter. Whoever publishes to that queue\nchooses the id, and an \"error\" event with no listener makes emit() throw\ninside amqplib's dispatch, which closes the channel and the connection.\nRequests in flight then never got their replies, and new ones failed\nuntil the client had reconnected.\n\nA message is now emitted only when a pending request listens for its\ncorrelation id. Messages with any other id, which no request received\nbefore either, are dropped before they reach the emitter.\n\nDiscovered by Anthropic's OSS Scanner, as vulnerability ANT-2026-WXERLIGO.",
+    "summary": "Fixed later by 2e4e9c7: fix(microservices): handle a cancelled rmq reply consumer in client (#18499)",
+    "defectLines": [
+      {
+        "file": "packages/microservices/client/client-rmq.ts",
+        "line": 345
+      }
+    ],
+    "fixCommit": "2e4e9c7aa22f17524447f6604d7c07d19f7d0539"
+  },
+  {
+    "id": "real-clean-nest-2e4e9c7",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "2e4e9c7aa22f17524447f6604d7c07d19f7d0539",
+    "request": "fix(microservices): handle a cancelled rmq reply consumer in client (#18499)",
+    "summary": "fix(microservices): handle a cancelled rmq reply consumer in client (#18499)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nest-34e4dc1",
+    "kind": "bug",
+    "repository": "nestjs/nest",
+    "commit": "34e4dc166652356772b414c7d263cfca9bef32cf",
+    "request": "fix(common): exclude pipe options from validator options",
+    "summary": "Fixed later by a3366f5: fix(common): keep the loaded packages while validation pipes are created (#18462)",
+    "defectLines": [
+      {
+        "file": "packages/common/pipes/validation.pipe.ts",
+        "line": 89
+      },
+      {
+        "file": "packages/common/pipes/validation.pipe.ts",
+        "line": 90
+      }
+    ],
+    "fixCommit": "a3366f5fd249d969c71d24a56046cadcda28f11a"
+  },
+  {
+    "id": "real-clean-nest-a3366f5",
+    "kind": "clean",
+    "repository": "nestjs/nest",
+    "commit": "a3366f5fd249d969c71d24a56046cadcda28f11a",
+    "request": "fix(common): keep the loaded packages while validation pipes are created (#18462)",
+    "summary": "fix(common): keep the loaded packages while validation pipes are created (#18462)",
+    "defectLines": []
+  }
+]
