@@ -2,6 +2,12 @@
 
 All notable changes to review-radar. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.14.1] - 2026-11-14
+
+### Changed
+
+- **The README measures what you read, not only what is caught.** *How well it works* now leads with the alarms you read per real bug named (8.6 against 18.1 for a plain review prompt on the final real-bug set), explains why the plain prompt names a few more real bugs (it flags almost everything, with nearly 2 false defect claims per clean change), and lists what a plain prompt does not do. The numbers are the 0.14.0 ones; the code is unchanged.
+
 ## [0.14.0] - 2026-11-14
 
 ### Added

@@ -2,9 +2,9 @@
 
 **English** · [Español](README.es.md)
 
-**Claude Code mod and OpenCode plugin · v0.14.0.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
+**Claude Code mod and OpenCode plugin · v0.14.1.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
 
-On real bugs from public repositories it names nearly as many as a plain review of the diff, with a third of the alarms and a twelfth of the false defect claims ([the numbers](#how-well-it-works)). See what changed in each version in the [changelog](CHANGELOG.md).
+On real bugs from public repositories you read half as many alarms per real bug caught as with a plain review prompt, and a twelfth of the false defect claims ([the numbers](#how-well-it-works)). See what changed in each version in the [changelog](CHANGELOG.md).
 
 The goal: confirm or request changes on what matters without opening files one by one, and leave the routine for the pull request.
 
@@ -44,23 +44,25 @@ AI assistants sometimes do more than asked: a version bump a project rule asked 
 
 ## How well it works
 
-Measured with the bench in `bench/`, on this machine through the Claude Code CLI, with **sonnet** as the review model and 2 runs per case. Each case is compared against a **plain prompt**: the same model asked to review the same diff.
+Measured with the bench in `bench/`, on this machine through the Claude Code CLI, with **sonnet** as the review model and 2 runs per case. Each case is compared against a **plain prompt**: the same model asked to review the same diff and list what it finds.
 
-**Real bugs from public repositories.** The final set holds 25 commits that a later fix blamed, plus 25 clean commits, from 5 repositories no change was tuned on (sveltejs/kit, playwright, nitro, material-ui, storybook):
+**What matters in daily use is how much you read to catch a real bug.** A review that flags everything catches a bit more, but it buries the real bug among false ones, and you learn to skip the list. On the final set (25 commits that a later fix blamed, plus 25 clean commits, from 5 repositories no change was tuned on: sveltejs/kit, playwright, nitro, material-ui, storybook):
 
 | | review-radar | plain prompt |
 | --- | --- | --- |
-| Real bugs named | 28% | 32% |
+| Alarms you read per real bug named | **8.6** | 18.1 |
+| Alarms per review | **1.2** | 2.9 |
 | Clean changes with no alarm | **39%** | 26% |
-| Alarms per clean change | **0.71** | 1.92 |
-| …of them, claiming a defect that is not there | **0.16** | 1.92 |
-| Extra alarms on a change with a bug | **1.02** | 2.34 |
+| Claims of a defect that is not there, per clean change | **0.16** | 1.92 |
+| Real bugs named | 28% | 32% |
 
-It names nearly as many real bugs as a plain review (25% against 30% on 46 held-out pairs, 22% against 30% on 27 more). It raises a third of the alarms, and makes a twelfth of the false defect claims. Most of its alarms are decisions to confirm (business logic, data, security, changes nobody asked for), which a plain review does not sort.
+The plain prompt names a few more real bugs because it flags almost everything: on a clean change it reports nearly 2 bugs that do not exist. review-radar drops a claimed defect only when the code shows it handled, and that filter costs a few hits: 28% against 32% here, 25% against 30% on 46 held-out pairs, and 22% against 30% on 27 more. In exchange, you read half as much per real bug, and a defect claim in *Needs your review* is nearly always worth reading. Most of its other alarms are decisions to confirm.
+
+**What a plain prompt does not do:** sort what needs a human (business logic, data, security, infra) from what can wait for the PR. It also does not flag changes nobody asked for, catch literal secrets deterministically, judge changes against your project's own docs, remember what you already reviewed, or send every open finding back to the agent in one request.
 
 **Planted bugs.** On the 41 written cases (28 planted bugs, 13 clean changes), the current version finds and names **56 of 56** planted bugs and raises **no alarm** on clean changes. Earlier runs got the same 56 of 56 with opus and haiku. The plain prompt raised alarms on 42–96% of the clean changes.
 
-Real bugs are hard to catch from a diff. Many need context the diff does not show: a fix that was incomplete, or behaviour that lives in the framework. A model also catches some on one run and misses them on the next, and each review names about 55–64% of the bugs that any review in the bench ever named. In the bench, which sends no cached prompt, a review costs 4–7 times a plain one.
+**Limits.** Real bugs are hard to catch from a diff: many need context the diff does not show (a fix that was incomplete, behaviour that lives in the framework). A model also catches some on one run and misses them on the next: each review names about 55–64% of the bugs that any review in the bench ever named. In the bench, which sends no cached prompt, a review costs 4–7 times a plain one.
 
 ## How it works
 
