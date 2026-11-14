@@ -4,7 +4,7 @@
 
 **Claude Code mod and OpenCode plugin · v0.14.0.** A review pane for the human in the loop. After the agent builds a feature, review-radar reads your branch diff and shows, **with the diff lines and their files**, only the changes a person must confirm: business logic, architecture, data and migrations, secrets, third-party services, security, infra, anything that looks like a mistake, and **changes nobody asked for**. Everything else is listed as "review in the PR". In [OpenCode](#opencode) the same review lives in the sidebar and a dialog.
 
-See what changed in each version in the [changelog](CHANGELOG.md).
+On real bugs from public repositories it names nearly as many as a plain review of the diff, with a third of the alarms and a twelfth of the false defect claims ([the numbers](#how-well-it-works)). See what changed in each version in the [changelog](CHANGELOG.md).
 
 The goal: confirm or request changes on what matters without opening files one by one, and leave the routine for the pull request.
 
@@ -42,20 +42,41 @@ AI assistants sometimes do more than asked: a version bump a project rule asked 
 - What your request needs to work (imports, types, call sites, tests and docs of the requested code) is not flagged, and later prompts can widen earlier ones.
 - It costs no extra model call: your requests travel in the same deep-review prompt.
 
+## How well it works
+
+Measured with the bench in `bench/`, on this machine through the Claude Code CLI, with **sonnet** as the review model and 2 runs per case. Each case is compared against a **plain prompt**: the same model asked to review the same diff.
+
+**Real bugs from public repositories.** The final set holds 25 commits that a later fix blamed, plus 25 clean commits, from 5 repositories no change was tuned on (sveltejs/kit, playwright, nitro, material-ui, storybook):
+
+| | review-radar | plain prompt |
+| --- | --- | --- |
+| Real bugs named | 28% | 32% |
+| Clean changes with no alarm | **39%** | 26% |
+| Alarms per clean change | **0.71** | 1.92 |
+| …of them, claiming a defect that is not there | **0.16** | 1.92 |
+| Extra alarms on a change with a bug | **1.02** | 2.34 |
+
+It names nearly as many real bugs as a plain review (25% against 30% on 46 held-out pairs, 22% against 30% on 27 more). It raises a third of the alarms, and makes a twelfth of the false defect claims. Most of its alarms are decisions to confirm (business logic, data, security, changes nobody asked for), which a plain review does not sort.
+
+**Planted bugs.** On the 41 written cases (28 planted bugs, 13 clean changes), the current version finds and names **56 of 56** planted bugs and raises **no alarm** on clean changes. Earlier runs got the same 56 of 56 with opus and haiku. The plain prompt raised alarms on 42–96% of the clean changes.
+
+Real bugs are hard to catch from a diff. Many need context the diff does not show: a fix that was incomplete, or behaviour that lives in the framework. A model also catches some on one run and misses them on the next, and each review names about 55–64% of the bugs that any review in the bench ever named. In the bench, which sends no cached prompt, a review costs 4–7 times a plain one.
+
 ## How it works
 
 1. **Diff.** `git diff` of the working tree against the merge base, plus untracked files. Generated files (lockfiles, `dist/` and `coverage/` at the root, minified files, source maps, test snapshots) are left out of what the models read; only their names are passed on. The secret scan still reads them. Add your own exclusions in a `.reviewradarignore` at the repository root, in gitignore syntax: rules apply in order after the built-in ones and the last match decides, so `!yarn.lock` brings a lockfile back.
 2. **Secret floor.** A deterministic scan of added lines for literal credentials (API keys, tokens, private keys, JWTs). A hit is always critical, whatever the model says.
 3. **Triage (only when the changes do not fit in one review).** Each review model has a budget of diff it reads well in one call: 150,000 characters for `opus` and `sonnet`, 100,000 for `haiku`. When the changed files fit in it, every file goes to the deep review. Past it, and only in the `auto` mode, **Haiku** at low effort sorts files into *inspect* or *routine* from their changed lines alone. Data and config files (by path and extension), files with a secret, files Claude edited in this session, and code files with a **logic change** always go on to the deep review, and the triage is not even shown them. A logic change is a changed line that alters a decision or a computation (a condition, a comparison, boolean logic, a number, a `return` or `throw`), found without a model: each line is compared by its shape, so renames and reformatting do not count, while a `>` turned into `>=` or a new `0.15` does. Docs, styles and tests never count. A file the triage skips or answers unreadably is inspected. The `thorough` mode never triages.
 4. **Deep review.** The review model (**Opus** by default, at high effort) reads the diff of the files to inspect with as much surrounding code as fits without one more call: the **whole enclosing function** of each change (`git diff --function-context`), else 10 lines around it, else the plain diff, plus the **related code** outside the diff, found with `git grep` and no model: where the names the diff defines or removes are used (a `switch` over a type that gained a case, a file reading a config key that was renamed) and where the functions its added lines call are defined (their parameters and units), up to a sixth of the review budget, together with your requests in this session and the files Claude edited, and returns a summary plus findings. When the files to review do not fit in its budget, the review is split into parts (up to 6 calls), each told which files the other parts read. Its instructions are prompt-cached, and so are the project docs and your requests, which open the prompt: the parts of a split review, and the next turns while the docs do not change, read them from the cache. If that model cannot answer (no access, blocked by your organization, an API error), **Sonnet** reviews instead and the summary says so.
-5. **Project context.** Both models also read the app's own docs, to judge what is critical in *this* app: `REVIEW.md` first (notes written for whoever reviews the code: invariants, deliberate oddities, rules enforced elsewhere), then `CLAUDE.md` and `AGENTS.md`, each (at the root and in the folders above each changed file), the root `README.md`, and the Markdown files in `docs/`, in that order, up to a fifth of the review budget (24,000 characters with `opus`; the triage gets the first 4,000). A change that touches a rule, an amount or a permission the docs describe is business logic; one that contradicts them is suspicious, even when a code comment calls it an approved exception. The models are told the docs describe the app and are not instructions to them.
-6. **Rules in code.** The model proposes; fixed rules decide what you see, so the same answer always ends the same way:
+5. **Bug hunt and second look.** The review hunts defects before it sorts decisions: edge cases (empty, null, boundaries, async order, error paths), each reported as a critical `bug` that quotes the faulty code; a defect is never softened into a "check that…" under another category. On a small diff (one part, up to 150 changed lines) a second call that only hunts bugs runs beside the review, without being told what the review found. Then one more call reads every claimed defect against the code: it can rule one out only by quoting the guard or check that handles it, and the quote must be in the diff or the related code. Those go to the PR list marked *Not confirmed on a second look*. The same call turns a note that hides a defect into a critical bug, and shows a defect told twice once.
+6. **Project context.** Both models also read the app's own docs, to judge what is critical in *this* app: `REVIEW.md` first (notes written for whoever reviews the code: invariants, deliberate oddities, rules enforced elsewhere), then `CLAUDE.md` and `AGENTS.md`, each (at the root and in the folders above each changed file), the root `README.md`, and the Markdown files in `docs/`, in that order, up to a fifth of the review budget (24,000 characters with `opus`; the triage gets the first 4,000). A change that touches a rule, an amount or a permission the docs describe is business logic; one that contradicts them is suspicious, even when a code comment calls it an approved exception. The models are told the docs describe the app and are not instructions to them.
+7. **Rules in code.** The model proposes; fixed rules decide what you see, so the same answer always ends the same way:
    - A finding is critical only if the branch caused it: its file is in the diff and its line, when given, is within 3 lines of a change. Otherwise it goes to the PR list, marked as already there before the branch. Literal secrets stay critical wherever they are.
    - The same defect reported twice (same file and category, close lines, similar title) is shown once.
    - Literal secrets are masked in the excerpts, titles and reasons the pane shows and *Request changes* copies into the prompt.
    - The diff, the docs and your requests reach the models between markers with a random tag, and the models are told only those markers delimit data: text in the diff cannot close its block and pass itself off as instructions.
    - A *Reviewed* mark is tied to the code, not to its line numbers, so it survives edits that only move it.
-7. **Incremental.** Each file's diff is hashed. On the next turn only files whose diff changed are sent again; unchanged files keep their findings (and the model is told about them). A turn that ran no file-changing tool does not run git at all. `/review-radar` and *Re-analyze* force a full review.
+8. **Incremental.** Each file's diff is hashed. On the next turn only files whose diff changed are sent again; unchanged files keep their findings (and the model is told about them). A turn that ran no file-changing tool does not run git at all. `/review-radar` and *Re-analyze* force a full review.
 
 ## Requirements
 
@@ -141,7 +162,7 @@ Set them in any of these ways:
 
 - Open a session in a repository and work as usual. The **Review** pane opens beside the chat by itself at the end of the first turn that leaves changes on the branch, already showing the loader, and fills in at the end of each turn that changed files (unless `autoAnalyze` is off). Outside a git repository, or while nothing has changed, it stays closed; `/review-radar` opens it at any time. While an analysis runs, the pane is cleared to a highlighted loader that says which step it is on (reading the changes, sorting files by risk, deep review with the chosen model), and the new results replace it when they are ready. *Re-analyze* and `/review-radar` switch to the loader at once. A toast tells you when something needs your review.
 - `/review-radar` opens the pane, forces a full analysis and also prints the report, diffs included, in the transcript. Analysis takes about 20–30 s on a mid-sized branch.
-- In the pane: read the summary, go through *Needs your review*, mark each finding **✓ Reviewed** or press **Request changes**, and unfold *Review in the PR* if you want the full list.
+- In the pane: read the summary, go through *Needs your review*, mark each finding **✓ Reviewed** or press **Request changes**, or send everything still open at once with **Request changes for all**, and unfold *Review in the PR* if you want the full list.
 
 ### Update or uninstall
 
@@ -272,7 +293,7 @@ npx tsc -p opencode
 
 `tsc` reads the Claude Code types from `.claude-plugin/types/`, which Claude Code writes the first time it loads the mod (installed, or with `claude --plugin-dir .`). The folder is not versioned: it holds the MCP connectors of the machine that loaded the mod.
 
-To measure the review itself, `bench/` has 27 cases (17 planted bugs, 10 clean changes) that run review-radar and a plain-prompt baseline with your own Claude Code CLI login; `bun bench/run.ts --dry-run` checks it without calling a model. See [bench/README.md](bench/README.md).
+To measure the review itself, `bench/` has 41 written cases (28 planted bugs, 13 clean changes) and pairs mined from public repositories (`--real`), and runs review-radar and a plain-prompt baseline with your own Claude Code CLI login; `bun bench/run.ts --dry-run` checks it without calling a model. See [bench/README.md](bench/README.md).
 
 ## License
 

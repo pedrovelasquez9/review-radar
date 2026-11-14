@@ -4,7 +4,7 @@ Measures whether review-radar puts real defects in *Needs your review* and keeps
 
 ## Cases
 
-27 branches over a small shop backend (`project.ts`, with its business rules in `docs/rules.md`), defined in `cases.ts`:
+41 branches over a small shop backend (`project.ts`, with its business rules in `docs/rules.md`): 27 basic ones in `cases.ts`, and 14 harder ones in `cases-hard.ts` (11 bugs, 3 clean). The basic ones:
 
 - **17 with a planted bug**: a boundary moved, a check inverted or removed, a unit mixed up, a value against the documented rules, a secret, a destructive migration, customer data sent to a third party, a change nobody asked for, an unhandled new status, unbounded retries, a weak token check.
 - **10 clean**: renames, tests, docs, comments, a helper extracted, a lookup table, readonly types. Any critical finding on them is a false alarm.
@@ -34,3 +34,12 @@ bun bench/run.ts --model sonnet --runs 3 --cases bug-,clean-readme --arms radar 
 Each review spends your Claude usage: a full run is 108 calls of the review model, plus a few small Haiku calls. The report goes to `bench/results/` (Markdown and the raw JSON), which git ignores.
 
 The CLI is called with `--tools ""`, `--setting-sources ""` and `--strict-mcp-config`, so your plugins, hooks and MCP servers stay out of it, and with the review's own system prompt.
+
+## Real cases
+
+`--real` runs pairs mined from public repositories instead (`bench/mine.ts`): a commit that a later fix blamed, and a clean commit of the same repository. A model judge (`bench/judge.ts`, sonnet) reads the fix and decides whether a finding names the real bug. The sets are `real-cases.json` (tuning), `real-cases-heldout.json`, `real-cases-fresh.json`, and `real-cases-final.json`, which no change was tuned on:
+
+```shell
+bun bench/run.ts --real --real-file bench/real-cases-final.json --model sonnet --runs 2
+bun bench/detectable.ts bench/results/<report>.json   # share of the bugs any review named
+```
