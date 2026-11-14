@@ -1,0 +1,690 @@
+[
+  {
+    "id": "real-bug-kit-0635425",
+    "kind": "bug",
+    "repository": "sveltejs/kit",
+    "commit": "06354251ef82dcc784e054308af66e247b28107f",
+    "request": "relax/simplify",
+    "summary": "Fixed later by f4dc5d6: fix: accept every Node.js version from 26 in adapter-vercel",
+    "defectLines": [
+      {
+        "file": "packages/adapter-vercel/utils.js",
+        "line": 100
+      },
+      {
+        "file": "packages/adapter-vercel/utils.js",
+        "line": 113
+      },
+      {
+        "file": "packages/adapter-vercel/utils.js",
+        "line": 127
+      }
+    ],
+    "fixCommit": "f4dc5d63f94fb2d3094f73dd972c9591d23dd6aa"
+  },
+  {
+    "id": "real-clean-kit-f4dc5d6",
+    "kind": "clean",
+    "repository": "sveltejs/kit",
+    "commit": "f4dc5d63f94fb2d3094f73dd972c9591d23dd6aa",
+    "request": "fix: accept every Node.js version from 26 in adapter-vercel\n\nVercel supports every Node.js major from 26 onwards, not only even ones,\nso Node 27 builds should resolve to `nodejs27.x` instead of throwing.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "fix: accept every Node.js version from 26 in adapter-vercel",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-kit-3a7d329",
+    "kind": "bug",
+    "repository": "sveltejs/kit",
+    "commit": "3a7d3290e28dffa730d0c71699906dbc6d2fd584",
+    "request": "fix: reject invalid binary form file metadata (#17149)\n\n## Summary\n\n- require binary-form file sizes, timestamps, and offset indices to be\nsafe integers\n- reject negative sizes and offset indices before constructing\n`LazyFile` values\n- cover negative, fractional, NaN, infinite, and unsafe metadata values\n\nFixes https://github.com/sveltejs/kit/issues/17147\n\n## Testing\n\n- `cd packages/kit && pnpm vitest run -c vitest.kit.config.js\nsrc/runtime/form-utils.spec.js`\n- `pnpm -F @sveltejs/kit test:unit`\n- `pnpm lint`\n- `pnpm check`\n- `pnpm -F @sveltejs/kit prepublishOnly`\n- `pnpm format`\n- `git diff --check`\n\n<!--\nsvelte-triage-bot:feedback-baseline:7d8cdb931ac95a08bb9059e8f725b37afdd797a1\n-->\n\nCo-authored-by: svelte-triage-bot <team@svelte.com>",
+    "summary": "Fixed later by 7aa45ab: fix: reject binary remote form with empty file-offset table as 400 Bad Request (#17576)",
+    "defectLines": [
+      {
+        "file": "packages/kit/src/runtime/form-utils.js",
+        "line": 296
+      }
+    ],
+    "fixCommit": "7aa45ab1ccd2a87f964cbe5e9e0f73bc2e2b6a0a"
+  },
+  {
+    "id": "real-clean-kit-7aa45ab",
+    "kind": "clean",
+    "repository": "sveltejs/kit",
+    "commit": "7aa45ab1ccd2a87f964cbe5e9e0f73bc2e2b6a0a",
+    "request": "fix: reject binary remote form with empty file-offset table as 400 Bad Request (#17576)\n\nWhen a malformed binary remote-form payload has file_offsets_length === 0 but its devalue data references a File, file_offsets remains undefined. Consequently, devalue's File reviver attempted to read file_offsets[index], throwing an unhandled TypeError (Cannot read properties of undefined (reading '0')) which resulted in an internal server error (HTTP 500) rather than an invalid request response.\n\nGuard file_offsets !== undefined during File metadata validation so malformed payloads referencing missing file offsets cleanly throw a deserialize_error and respond with HTTP 400 Bad Request.\n\nFixes #17576\n\nSigned-off-by: praveen-kumary <praveenkumar2000y@gmail.com>",
+    "summary": "fix: reject binary remote form with empty file-offset table as 400 Bad Request (#17576)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-kit-9a95ecd",
+    "kind": "bug",
+    "repository": "sveltejs/kit",
+    "commit": "9a95ecd107e235c6861772716c89ec6f1a864f40",
+    "request": "breaking: remove support for edge and node 20 runtimes (#16520)\n\nThe [edge runtime](https://vercel.com/docs/functions/runtimes/edge) has\nlong since been deprecated (it confers no benefit; people should just\nuse node on [fluid compute](https://vercel.com/docs/fluid-compute), and\nSvelteKit 3 does not support Node 20\n\n---\n\n### Please don't delete this checklist! Before submitting the PR, please\nmake sure you do the following:\n- [ ] It's really useful if your PR references an issue where it is\ndiscussed ahead of time. In many cases, features are absent for a\nreason. For large changes, please create an RFC:\nhttps://github.com/sveltejs/rfcs\n- [x] This message body should clearly illustrate what problems it\nsolves.\n- [ ] Ideally, include a test that fails without this PR but passes with\nit.\n\n### Tests\n- [x] Run the tests with `pnpm test` and lint the project with `pnpm\nlint` and `pnpm check`\n\n### Changesets\n- [x] If your PR makes a change that should be noted in one or more\npackages' changelo",
+    "summary": "Fixed later by f789e88: fix(adapter-vercel): support Node.js 26",
+    "defectLines": [
+      {
+        "file": "packages/adapter-vercel/utils.js",
+        "line": 121
+      },
+      {
+        "file": "packages/adapter-vercel/utils.js",
+        "line": 148
+      }
+    ],
+    "fixCommit": "f789e8879ebad9eb1cf0854d2027f3cee9eaff92"
+  },
+  {
+    "id": "real-clean-kit-f789e88",
+    "kind": "clean",
+    "repository": "sveltejs/kit",
+    "commit": "f789e8879ebad9eb1cf0854d2027f3cee9eaff92",
+    "request": "fix(adapter-vercel): support Node.js 26\n\nAdd `nodejs26.x` to the accepted runtimes and Node 26 to build-time auto-detection.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+    "summary": "fix(adapter-vercel): support Node.js 26",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-kit-30d06f5",
+    "kind": "bug",
+    "repository": "sveltejs/kit",
+    "commit": "30d06f5698528cf540899900366fc0cfeb3dc7f6",
+    "request": "fix: set the focus starting point without a fragment navigation (#16992)",
+    "summary": "Fixed later by c7e59b3: fix: leave focus in the parent page from an unfocused iframe (#17297)",
+    "defectLines": [
+      {
+        "file": "packages/kit/src/runtime/client/focus.js",
+        "line": 44
+      },
+      {
+        "file": "packages/kit/src/runtime/client/focus.js",
+        "line": 50
+      }
+    ],
+    "fixCommit": "c7e59b34d19380afe54fb6fbed90ea7367099170"
+  },
+  {
+    "id": "real-clean-kit-c7e59b3",
+    "kind": "clean",
+    "repository": "sveltejs/kit",
+    "commit": "c7e59b34d19380afe54fb6fbed90ea7367099170",
+    "request": "fix: leave focus in the parent page from an unfocused iframe (#17297)\n\nFixes #17283\n\nA native page load inside an iframe never takes focus from the parent\npage, in Chromium, Firefox or WebKit.\n\nCo-authored-by: Tee Ming Chew <chewteeming01@gmail.com>",
+    "summary": "fix: leave focus in the parent page from an unfocused iframe (#17297)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-kit-9f3342f",
+    "kind": "bug",
+    "repository": "sveltejs/kit",
+    "commit": "9f3342fb9305d1fd731a49497bec894469073fd0",
+    "request": "fix: ignore Vitest browser loader HTML transforms (#17092)\n\n## Summary\n\n- ignore Vitest Browser Mode's internal `vitest:browser:loader` in the\nunsupported `transformIndexHtml` diagnostic\n- preserve the diagnostic for plugins that transform SvelteKit\napplication HTML\n- add config-resolution regression coverage for both cases\n\nFixes #17091\n\n## Testing\n\n- `pnpm --dir packages/kit/test/apps/options vitest run --config\nvite.custom.config.js --reporter=verbose`\n- `pnpm -F @sveltejs/kit test:unit`\n- `pnpm lint`\n- `pnpm check`\n- `pnpm format`\n\n<!--\nsvelte-triage-bot:feedback-baseline:cd3ecba828b083429b2e0653bdbcf05d938eb361\n-->\n\nCo-authored-by: svelte-triage-bot <team@svelte.com>",
+    "summary": "Fixed later by 3bc9234: fix: don't warn about Storybook's Vite plugins that use `transformIndexHtml` (#17373)",
+    "defectLines": [
+      {
+        "file": "packages/kit/src/exports/vite/index.js",
+        "line": 573
+      },
+      {
+        "file": "packages/kit/src/exports/vite/index.js",
+        "line": 575
+      },
+      {
+        "file": "packages/kit/src/exports/vite/index.js",
+        "line": 576
+      }
+    ],
+    "fixCommit": "3bc9234a3a556c85eb0ccd4947a4340046d29e15"
+  },
+  {
+    "id": "real-clean-kit-3bc9234",
+    "kind": "clean",
+    "repository": "sveltejs/kit",
+    "commit": "3bc9234a3a556c85eb0ccd4947a4340046d29e15",
+    "request": "fix: don't warn about Storybook's Vite plugins that use `transformIndexHtml` (#17373)\n\nStorybook's support for SvelteKit 3 requires the use of\n`transformIndexHtml` in a Vite plugin, however that triggers a warning\nfrom SvelteKit when it starts. Storybook serves its own HTML file, so\nthe plugin works fine and the warning is a false-positive. SvelteKit\nalready filtered out a Vitest plugin for a similar reason, this PR just\nadds Storybook to that filter and refactors it a bit.\n\nAs discussed privately with @teemingc in\nhttps://discord.com/channels/457912077277855764/1541803072815108156/1557005357799448720\n\n---\n\n### Please don't delete this checklist! Before submitting the PR, please\nmake sure you do the following:\n\n- [ ] It's really useful if your PR references an issue where it is\ndiscussed ahead of time. In many cases, features are absent for a\nreason. For large changes, please create an RFC:\nhttps://github.com/sveltejs/rfcs\n- [x] This message body should clearly illustrate what problems",
+    "summary": "fix: don't warn about Storybook's Vite plugins that use `transformIndexHtml` (#17373)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-kit-178eac0",
+    "kind": "bug",
+    "repository": "sveltejs/kit",
+    "commit": "178eac007e648f3235bc45d926cfc029ddf8de07",
+    "request": "breaking: don't abort navigation when calling `invalidate(All)` during navigation (#16188)\n\nWhen a navigation starts, `invalidate(All)` will no longer abort that\nnavigation - previously it indirectly did that because both invalidation\nand navigation shared the same navigation token; then navigation thought\n\"oh I'm outdated I abort\".\n\nNow there's a separate invalidation token so we can handle each case\nsensibly:\n- when invalidation finishes after goto finishes, it will not apply its\nstale data. It _will_ apply redirects though since technically it's the\nlast navigation that happened and so it should take precedence\n- when invalidation finishes before goto finishes, it will apply, but it\nwill not abort the navigation\n\nCloses #9354\n\n---------\n\nCo-authored-by: vercel[bot] <35613825+vercel[bot]@users.noreply.github.com>\nCo-authored-by: Vercel <vercel[bot]@users.noreply.github.com>",
+    "summary": "Fixed later by 72832f9: fix: clear `navigating` when a shallow popstate aborts an in-flight navigation (#17118)",
+    "defectLines": [
+      {
+        "file": "packages/kit/src/runtime/client/client.js",
+        "line": 2930
+      }
+    ],
+    "fixCommit": "72832f9f85d94e569b4b4f27799dc6a01564fd01"
+  },
+  {
+    "id": "real-clean-kit-72832f9",
+    "kind": "clean",
+    "repository": "sveltejs/kit",
+    "commit": "72832f9f85d94e569b4b4f27799dc6a01564fd01",
+    "request": "fix: clear `navigating` when a shallow popstate aborts an in-flight navigation (#17118)\n\nCo-authored-by: Tee Ming <chewteeming01@gmail.com>",
+    "summary": "fix: clear `navigating` when a shallow popstate aborts an in-flight navigation (#17118)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-playwright-648a67c",
+    "kind": "bug",
+    "repository": "microsoft/playwright",
+    "commit": "648a67c7c1261eefe4113cba2d586417d5e3f2f2",
+    "request": "fix(mcp): create parent directories for explicitly named files (#42540)",
+    "summary": "Fixed later by 0ad21f1: fix(mcp): do not generate setFiles(undefined) when file chooser is cancelled (#44104)",
+    "defectLines": [
+      {
+        "file": "packages/playwright-core/src/tools/backend/files.ts",
+        "line": 44
+      }
+    ],
+    "fixCommit": "0ad21f1d34e40a51649a97e14da787172d68d073"
+  },
+  {
+    "id": "real-clean-playwright-0ad21f1",
+    "kind": "clean",
+    "repository": "microsoft/playwright",
+    "commit": "0ad21f1d34e40a51649a97e14da787172d68d073",
+    "request": "fix(mcp): do not generate setFiles(undefined) when file chooser is cancelled (#44104)",
+    "summary": "fix(mcp): do not generate setFiles(undefined) when file chooser is cancelled (#44104)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-playwright-1b64783",
+    "kind": "bug",
+    "repository": "microsoft/playwright",
+    "commit": "1b6478349d42ecbd66493e9bc2fdb4158a636bbd",
+    "request": "fix(screenshot): preserve scroll-driven animation progress (#44022)",
+    "summary": "Fixed later by 6ca1ba9: fix(screenshot): only keep scroll-driven timelines running when animations are disabled (#44061)",
+    "defectLines": [
+      {
+        "file": "packages/playwright-core/src/server/screenshotter.ts",
+        "line": 115
+      }
+    ],
+    "fixCommit": "6ca1ba9018acf8ab5b4454c1a42209fa12147304"
+  },
+  {
+    "id": "real-clean-playwright-6ca1ba9",
+    "kind": "clean",
+    "repository": "microsoft/playwright",
+    "commit": "6ca1ba9018acf8ab5b4454c1a42209fa12147304",
+    "request": "fix(screenshot): only keep scroll-driven timelines running when animations are disabled (#44061)",
+    "summary": "fix(screenshot): only keep scroll-driven timelines running when animations are disabled (#44061)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-playwright-8885923",
+    "kind": "bug",
+    "repository": "microsoft/playwright",
+    "commit": "8885923554e7d97799f5a83416e5539492e25060",
+    "request": "fix(fetch): report security details for resumed TLS sessions (#42331)",
+    "summary": "Fixed later by 452a71b: fix(fetch): retire idle API request connections (#44024)",
+    "defectLines": [
+      {
+        "file": "packages/playwright-core/src/server/fetch.ts",
+        "line": 176
+      }
+    ],
+    "fixCommit": "452a71b174f4f52fd3ba4c99b6eb6ee52d488c61"
+  },
+  {
+    "id": "real-clean-playwright-452a71b",
+    "kind": "clean",
+    "repository": "microsoft/playwright",
+    "commit": "452a71b174f4f52fd3ba4c99b6eb6ee52d488c61",
+    "request": "fix(fetch): retire idle API request connections (#44024)",
+    "summary": "fix(fetch): retire idle API request connections (#44024)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-playwright-5de1365",
+    "kind": "bug",
+    "repository": "microsoft/playwright",
+    "commit": "5de136532765e4e7c254fa47417de0de20d2f4d9",
+    "request": "feat(mcp): add --mobile emulation and plumb --device through the CLI (#41657)",
+    "summary": "Fixed later by bc5a72b: fix(mcp): validate device names and preserve device descriptors (#43971)",
+    "defectLines": [
+      {
+        "file": "packages/playwright-core/src/tools/mcp/config.ts",
+        "line": 310
+      }
+    ],
+    "fixCommit": "bc5a72bbe2c71f5668353da8ab6401c1c7762e31"
+  },
+  {
+    "id": "real-clean-playwright-bc5a72b",
+    "kind": "clean",
+    "repository": "microsoft/playwright",
+    "commit": "bc5a72bbe2c71f5668353da8ab6401c1c7762e31",
+    "request": "fix(mcp): validate device names and preserve device descriptors (#43971)\n\nCo-authored-by: microsoft-playwright-automation[bot] <203992400+microsoft-playwright-automation[bot]@users.noreply.github.com>",
+    "summary": "fix(mcp): validate device names and preserve device descriptors (#43971)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-playwright-eca9e03",
+    "kind": "bug",
+    "repository": "microsoft/playwright",
+    "commit": "eca9e03e049fc424853a5273f96671368e61caee",
+    "request": "fix(chromium): replay execution contexts when connecting to Android WebView (#42447)",
+    "summary": "Fixed later by a6fb02f: fix(chromium): preserve fonts when connecting with noDefaults (#43773)",
+    "defectLines": [
+      {
+        "file": "packages/playwright-core/src/server/chromium/crPage.ts",
+        "line": 566
+      }
+    ],
+    "fixCommit": "a6fb02f5aa494764a21a637f2db6ea1031461935"
+  },
+  {
+    "id": "real-clean-playwright-a6fb02f",
+    "kind": "clean",
+    "repository": "microsoft/playwright",
+    "commit": "a6fb02f5aa494764a21a637f2db6ea1031461935",
+    "request": "fix(chromium): preserve fonts when connecting with noDefaults (#43773)\n\nCo-authored-by: microsoft-playwright-automation[bot] <203992400+microsoft-playwright-automation[bot]@users.noreply.github.com>",
+    "summary": "fix(chromium): preserve fonts when connecting with noDefaults (#43773)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-playwright-7199ba4",
+    "kind": "bug",
+    "repository": "microsoft/playwright",
+    "commit": "7199ba40261e30c855499701c382b39ceaeebbbb",
+    "request": "fix(aria): honor reflected label references (#43577)",
+    "summary": "Fixed later by c781173: fix(aria): fall back to aria-labelledby attribute without element reflection (#43722)",
+    "defectLines": [
+      {
+        "file": "packages/injected/src/roleUtils.ts",
+        "line": 569
+      }
+    ],
+    "fixCommit": "c78117362861a84d5b2f0cf988a02f9963a2a958"
+  },
+  {
+    "id": "real-clean-playwright-c781173",
+    "kind": "clean",
+    "repository": "microsoft/playwright",
+    "commit": "c78117362861a84d5b2f0cf988a02f9963a2a958",
+    "request": "fix(aria): fall back to aria-labelledby attribute without element reflection (#43722)",
+    "summary": "fix(aria): fall back to aria-labelledby attribute without element reflection (#43722)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nitro-568b687",
+    "kind": "bug",
+    "repository": "unjs/nitro",
+    "commit": "568b687f3ed36793148100b02346112cc4625cf1",
+    "request": "perf(app): compose the middleware chain once instead of per request (#4559)",
+    "summary": "Fixed later by 27cc7e7: fix(runtime): key routed middleware chain cache on matched handlers (#5089)",
+    "defectLines": [
+      {
+        "file": "src/runtime/internal/app.ts",
+        "line": 141
+      },
+      {
+        "file": "src/runtime/internal/app.ts",
+        "line": 142
+      },
+      {
+        "file": "src/runtime/internal/app.ts",
+        "line": 145
+      }
+    ],
+    "fixCommit": "27cc7e7a163d28e9e4f0fc8895ab517657efda16"
+  },
+  {
+    "id": "real-clean-nitro-27cc7e7",
+    "kind": "clean",
+    "repository": "unjs/nitro",
+    "commit": "27cc7e7a163d28e9e4f0fc8895ab517657efda16",
+    "request": "fix(runtime): key routed middleware chain cache on matched handlers (#5089)",
+    "summary": "fix(runtime): key routed middleware chain cache on matched handlers (#5089)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nitro-d252fdb",
+    "kind": "bug",
+    "repository": "unjs/nitro",
+    "commit": "d252fdb874d4209ef56d76e7200f047dc6e82931",
+    "request": "fix(vite): externalize dependencies with the miniflare runner (#4941)",
+    "summary": "Fixed later by 4bdbd28: fix(vite): resolve dev externals without the `development` condition (#4996)",
+    "defectLines": [
+      {
+        "file": "src/build/vite/env.ts",
+        "line": 256
+      }
+    ],
+    "fixCommit": "4bdbd288dbee5fba353c75843331550d30ef104d"
+  },
+  {
+    "id": "real-clean-nitro-4bdbd28",
+    "kind": "clean",
+    "repository": "unjs/nitro",
+    "commit": "4bdbd288dbee5fba353c75843331550d30ef104d",
+    "request": "fix(vite): resolve dev externals without the `development` condition (#4996)",
+    "summary": "fix(vite): resolve dev externals without the `development` condition (#4996)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nitro-c423d80",
+    "kind": "bug",
+    "repository": "unjs/nitro",
+    "commit": "c423d8063e27d883c1b4ab7d5524fc5e0009830e",
+    "request": "feat(scan)!: reserve dotted suffixes in scanned file names (#4845)",
+    "summary": "Fixed later by f9ebdbf: fix(scan): don't treat names after a numeric order prefix as suffixes (#4995)",
+    "defectLines": [
+      {
+        "file": "src/utils/scan-suffix.ts",
+        "line": 57
+      }
+    ],
+    "fixCommit": "f9ebdbf8bf2e606c8106fe3f8da16946ec2ba482"
+  },
+  {
+    "id": "real-clean-nitro-f9ebdbf",
+    "kind": "clean",
+    "repository": "unjs/nitro",
+    "commit": "f9ebdbf8bf2e606c8106fe3f8da16946ec2ba482",
+    "request": "fix(scan): don't treat names after a numeric order prefix as suffixes (#4995)",
+    "summary": "fix(scan): don't treat names after a numeric order prefix as suffixes (#4995)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nitro-420873e",
+    "kind": "bug",
+    "repository": "unjs/nitro",
+    "commit": "420873e00c58de63eb953362f72a7d9564c3acb4",
+    "request": "fix(presets): use rou3 for netlify, cloudflare and edgeone route patterns (#4706)",
+    "summary": "Fixed later by 489c165: fix(netlify): move publish files to root when publicDir has a trailing (#4913)",
+    "defectLines": [
+      {
+        "file": "src/presets/netlify/utils.ts",
+        "line": 126
+      }
+    ],
+    "fixCommit": "489c1653c2a427d796169e2f9ebebfce30dfeca7"
+  },
+  {
+    "id": "real-clean-nitro-489c165",
+    "kind": "clean",
+    "repository": "unjs/nitro",
+    "commit": "489c1653c2a427d796169e2f9ebebfce30dfeca7",
+    "request": "fix(netlify): move publish files to root when publicDir has a trailing (#4913)",
+    "summary": "fix(netlify): move publish files to root when publicDir has a trailing (#4913)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nitro-23518cd",
+    "kind": "bug",
+    "repository": "unjs/nitro",
+    "commit": "23518cd94a50e6fd14bee404ae8e91e2a75b89fe",
+    "request": "fix(static): respond with 404 when a public asset is missing on disk (#4588)\n\n* fix(static): respond with 404 when a public asset is missing on disk\n\n* refactor(static): detect missing assets in the asset reader\n\nTranslate ENOENT inside the generated node reader instead of the runtime\nhandler, so all three readers share one contract: resolving with no value\nmeans the manifest entry has no data behind it.\n\nThis keeps Node errno checks out of `src/runtime`, restores the handler to\na synchronous fallthrough for non-asset requests, and covers the `inline`\nreader, which already returned no data for a missing payload and until now\nserved it as an empty 200.\n\n* refactor(static): drop the warning for a pruned public asset\n\nBoth reported cases (nuxt#29078, nuxt#33033) prune the public dir on\npurpose - uploading it to a CDN, or stripping sourcemaps after sending\nthem to Sentry - so the missing file is a standing configuration rather\nthan a one-off fault, and warning per read only spams the log.\n",
+    "summary": "Fixed later by b90c8fb: fix(runtime): don't cache missing static asset 404s (#4896)",
+    "defectLines": [
+      {
+        "file": "src/runtime/internal/static.ts",
+        "line": 2
+      },
+      {
+        "file": "src/runtime/internal/static.ts",
+        "line": 90
+      },
+      {
+        "file": "src/runtime/internal/static.ts",
+        "line": 91
+      },
+      {
+        "file": "src/runtime/internal/static.ts",
+        "line": 96
+      },
+      {
+        "file": "src/runtime/internal/static.ts",
+        "line": 98
+      },
+      {
+        "file": "src/runtime/internal/static.ts",
+        "line": 99
+      }
+    ],
+    "fixCommit": "b90c8fb7ccef63ebe8f3c8ba63726f350cd2a70d"
+  },
+  {
+    "id": "real-clean-nitro-b90c8fb",
+    "kind": "clean",
+    "repository": "unjs/nitro",
+    "commit": "b90c8fb7ccef63ebe8f3c8ba63726f350cd2a70d",
+    "request": "fix(runtime): don't cache missing static asset 404s (#4896)",
+    "summary": "fix(runtime): don't cache missing static asset 404s (#4896)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-nitro-176d85c",
+    "kind": "bug",
+    "repository": "unjs/nitro",
+    "commit": "176d85c1da272dc1ecd295ba25b9b719d8735f54",
+    "request": "fix: nitro self-resolution, package manager fallback and bun dev aliases (#4892)",
+    "summary": "Fixed later by 54a3b36: fix(unbundled): bun alias rewrite follow-ups (#4893)",
+    "defectLines": [
+      {
+        "file": "src/build/env.ts",
+        "line": 134
+      },
+      {
+        "file": "src/build/unbundled/plugins.ts",
+        "line": 315
+      },
+      {
+        "file": "src/build/unbundled/plugins.ts",
+        "line": 337
+      }
+    ],
+    "fixCommit": "54a3b36ee1eb1a7742c07a86b78058b8c330c798"
+  },
+  {
+    "id": "real-clean-nitro-54a3b36",
+    "kind": "clean",
+    "repository": "unjs/nitro",
+    "commit": "54a3b36ee1eb1a7742c07a86b78058b8c330c798",
+    "request": "fix(unbundled): bun alias rewrite follow-ups (#4893)",
+    "summary": "fix(unbundled): bun alias rewrite follow-ups (#4893)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-material-ui-2874589",
+    "kind": "bug",
+    "repository": "mui/material-ui",
+    "commit": "287458995909534d3dd42ad163bfe5efa95dd15f",
+    "request": "[codemod] Transform all style exports in `v5.0.0/path-imports` codemod (#48800)\n\nCo-authored-by: Kevin Brey <Kevin.Brey@breakthroughfuel.com>\nCo-authored-by: Zeeshan Tamboli <zeeshan.tamboli@gmail.com>",
+    "summary": "Fixed later by 81496bd: [codemod] Fix `v5.0.0/top-level-imports` and `v5.0.0/path-imports` outside the package (#49642)",
+    "defectLines": [
+      {
+        "file": "packages/mui-codemod/src/v5.0.0/path-imports.js",
+        "line": 1
+      },
+      {
+        "file": "packages/mui-codemod/src/v5.0.0/path-imports.js",
+        "line": 14
+      },
+      {
+        "file": "packages/mui-codemod/src/v5.0.0/path-imports.js",
+        "line": 15
+      },
+      {
+        "file": "packages/mui-codemod/src/v5.0.0/path-imports.js",
+        "line": 16
+      },
+      {
+        "file": "packages/mui-codemod/src/v5.0.0/path-imports.js",
+        "line": 17
+      },
+      {
+        "file": "packages/mui-codemod/src/v5.0.0/path-imports.js",
+        "line": 18
+      }
+    ],
+    "fixCommit": "81496bd589e3320643761ccf7c355e20da4b4d0c"
+  },
+  {
+    "id": "real-clean-material-ui-81496bd",
+    "kind": "clean",
+    "repository": "mui/material-ui",
+    "commit": "81496bd589e3320643761ccf7c355e20da4b4d0c",
+    "request": "[codemod] Fix `v5.0.0/top-level-imports` and `v5.0.0/path-imports` outside the package (#49642)\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>\nCo-authored-by: Zeeshan Tamboli <zeeshan.tamboli@gmail.com>",
+    "summary": "[codemod] Fix `v5.0.0/top-level-imports` and `v5.0.0/path-imports` outside the package (#49642)",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-storybook-7f1bea4",
+    "kind": "bug",
+    "repository": "storybookjs/storybook",
+    "commit": "7f1bea45618ebe8dd29099818fee8920d6255efe",
+    "request": "Core: Don't fail the build when a ref's JSON check fetch rejects\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>",
+    "summary": "Fixed later by bf908a9: fix(core): keep refs unknown when the response body times out",
+    "defectLines": [
+      {
+        "file": "code/core/src/common/utils/get-storybook-refs.ts",
+        "line": 62
+      }
+    ],
+    "fixCommit": "bf908a9dabf84d0e945ab2e4cea598d2e8ef111d"
+  },
+  {
+    "id": "real-clean-storybook-bf908a9",
+    "kind": "clean",
+    "repository": "storybookjs/storybook",
+    "commit": "bf908a9dabf84d0e945ab2e4cea598d2e8ef111d",
+    "request": "fix(core): keep refs unknown when the response body times out",
+    "summary": "fix(core): keep refs unknown when the response body times out",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-storybook-d6990ce",
+    "kind": "bug",
+    "repository": "storybookjs/storybook",
+    "commit": "d6990ce0893abdc6f2fa9cb325bb81e342c31cb5",
+    "request": "feat(ecosystem-qa): bring back the three extended checks whose specs do not cover a project's own config\n\ncore.hmr.new-file, core.module-mocking and core.static-dirs were dropped because a sandbox spec exists for each. Those specs check a change badge on six templates, mock the monorepo's own fixtures, and skip every sandbox that is not Vite. Whether a project's stories globs, aliases and staticDirs work is the project's own config, which is the reason the other extended checks stayed. Their checklist rows name the part a person still checks.",
+    "summary": "Fixed later by 769adbd: fix(ecosystem-qa): keep the new-file probe from copying fixed story ids",
+    "defectLines": [
+      {
+        "file": "ecosystem-qa/checks.ts",
+        "line": 154
+      }
+    ],
+    "fixCommit": "769adbd60565240018b83ba6feeefa64710da661"
+  },
+  {
+    "id": "real-clean-storybook-769adbd",
+    "kind": "clean",
+    "repository": "storybookjs/storybook",
+    "commit": "769adbd60565240018b83ba6feeefa64710da661",
+    "request": "fix(ecosystem-qa): keep the new-file probe from copying fixed story ids\n\nA meta id or a parameters.__id wins over the title, so a copied stories file that sets one collides with the original and the index reports a duplicate on a valid project.",
+    "summary": "fix(ecosystem-qa): keep the new-file probe from copying fixed story ids",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-storybook-b766b51",
+    "kind": "bug",
+    "repository": "storybookjs/storybook",
+    "commit": "b766b5129253b6cb3a0d28764a16980939333bde",
+    "request": "fix(ecosystem-qa): publish the upgraded state under refs/qa, not as a branch\n\nA branch push starts the catalog repo's own workflows, which ran the agent's commits on\nmealdrop with that repo's secrets before anyone read the diff. A ref outside refs/heads and\nrefs/tags triggers nothing, keeps the commits reachable, and the issue body now carries the\nfetch command and the one push that turns it into a branch once a person has looked at it.",
+    "summary": "Fixed later by 6748c99: fix(ecosystem-qa): push the upgraded commit, not a ref the fetch never creates",
+    "defectLines": [
+      {
+        "file": "ecosystem-qa/lib/proposals.ts",
+        "line": 116
+      }
+    ],
+    "fixCommit": "6748c99f1e58d82c5d5cc12205e1977f54243fe3"
+  },
+  {
+    "id": "real-clean-storybook-6748c99",
+    "kind": "clean",
+    "repository": "storybookjs/storybook",
+    "commit": "6748c99f1e58d82c5d5cc12205e1977f54243fe3",
+    "request": "fix(ecosystem-qa): push the upgraded commit, not a ref the fetch never creates\n\nAn issue body told the reader to fetch refs/qa/... and then push that ref as a branch. The fetch only sets FETCH_HEAD, so the push failed with 'src refspec does not match any'. The command now names the commit.",
+    "summary": "fix(ecosystem-qa): push the upgraded commit, not a ref the fetch never creates",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-storybook-0e1c4e5",
+    "kind": "bug",
+    "repository": "storybookjs/storybook",
+    "commit": "0e1c4e513dd4d45c3b306fab77a538766f972f52",
+    "request": "docs(ecosystem-qa): say which checks the seatbelt sandbox can run, and lend it the Playwright browsers\n\nThe macOS profile denies Chromium its Mach port and leaves launchd's 256 open-file limit in\nplace, so screenshots, HMR and the Vitest browser run only work in Docker. The host's Playwright\ncache is mounted read-only so the Vitest half at least finds its browser.",
+    "summary": "Fixed later by 5e19c9c: fix(ecosystem-qa): drop the Playwright cache mount that the native sandboxes never read",
+    "defectLines": [
+      {
+        "file": "ecosystem-qa/run.ts",
+        "line": 221
+      },
+      {
+        "file": "ecosystem-qa/run.ts",
+        "line": 222
+      }
+    ],
+    "fixCommit": "5e19c9c57a550a1fe0f522e26a66859a881d96ac"
+  },
+  {
+    "id": "real-clean-storybook-5e19c9c",
+    "kind": "clean",
+    "repository": "storybookjs/storybook",
+    "commit": "5e19c9c57a550a1fe0f522e26a66859a881d96ac",
+    "request": "fix(ecosystem-qa): drop the Playwright cache mount that the native sandboxes never read\n\nbwrap and seatbelt give the agent a private home and mount a path only at its host path, and Playwright looks for browsers under the home it is given, so the mounted cache was never found. Pointing `PLAYWRIGHT_BROWSERS_PATH` at it instead would make every `playwright install` in the sandbox wait on a lock it cannot create in a read-only directory, so the agent keeps installing a missing browser into its own home, as the prompt tells it to.",
+    "summary": "fix(ecosystem-qa): drop the Playwright cache mount that the native sandboxes never read",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-storybook-47dc667",
+    "kind": "bug",
+    "repository": "storybookjs/storybook",
+    "commit": "47dc66771577a5540bbe2cee3f42d8ce0ed80fac",
+    "request": "feat(ecosystem-qa): land the checklist's planned rows as the extended tier of the check registry\n\nTwenty-one checks move from planned to runnable: the typescript, skills, index and removed-command\nprobes of the upgrade phase, the smoke test, frame-ancestors, four more HMR cases, argtypes,\nmodule mocking, the MCP page, the components manifest and staticDirs in dev, docs and test\nbuilds, and coverage, setup-annotations, test-libraries and test-runner in the test phase.\nA test keeps the registry and the checklist's Agent column in sync both ways.",
+    "summary": "Fixed later by 6d6b972: fix(ecosystem-qa): accept the valid no-install states of the skills check and any package manager's runner",
+    "defectLines": [
+      {
+        "file": "ecosystem-qa/checks.ts",
+        "line": 142
+      }
+    ],
+    "fixCommit": "6d6b9726364cbc2e1d1cb56fb9b1d148f6efee7a"
+  },
+  {
+    "id": "real-clean-storybook-6d6b972",
+    "kind": "clean",
+    "repository": "storybookjs/storybook",
+    "commit": "6d6b9726364cbc2e1d1cb56fb9b1d148f6efee7a",
+    "request": "fix(ecosystem-qa): accept the valid no-install states of the skills check and any package manager's runner\n\nThe probe required an `npx skills@latest add` line and skipped only for CI. The automigration is also not offered for an upgrade within 11 or for a framework it does not support, and the upgrade prints the command with the runner of the project's package manager, so those projects and every pnpm, Yarn Berry or Bun project failed.",
+    "summary": "fix(ecosystem-qa): accept the valid no-install states of the skills check and any package manager's runner",
+    "defectLines": []
+  },
+  {
+    "id": "real-bug-storybook-fdb7031",
+    "kind": "bug",
+    "repository": "storybookjs/storybook",
+    "commit": "fdb7031accec6dbcce6b73a36c790e17220ba8fd",
+    "request": "fix(ecosystem-qa): make the native sandboxes usable for a local run\n\nThe yarn 1 shim reads the real home's .yarnrc and every rc file above the worktree, so those\nfiles are mounted read-only one by one; a read-only mount of the clone would deny writes in the\nworktree. The clone moves out of the monorepo tree so no monorepo rc file sits above it.\nClaude Code writes to /tmp/claude-<uid> whatever TMPDIR says, so it gets CLAUDE_CODE_TMPDIR on\na mounted directory. The install wrapper keeps the install output as install.log in the evidence,\nbecause the setup hook only reported the exit code.",
+    "summary": "Fixed later by 0479a3b: fix(ecosystem-qa): clone under the real path of the temp directory",
+    "defectLines": [
+      {
+        "file": "ecosystem-qa/run.ts",
+        "line": 167
+      },
+      {
+        "file": "ecosystem-qa/run.ts",
+        "line": 220
+      }
+    ],
+    "fixCommit": "0479a3b3267bf71e8fabbb90bb0b0ef8b1278127"
+  },
+  {
+    "id": "real-clean-storybook-0479a3b",
+    "kind": "clean",
+    "repository": "storybookjs/storybook",
+    "commit": "0479a3b3267bf71e8fabbb90bb0b0ef8b1278127",
+    "request": "fix(ecosystem-qa): clone under the real path of the temp directory\n\ngit writes real paths into a worktree's gitdir pointer and the sandboxes bind-mount the path\nthey are given, so on macOS, where tmpdir() is a symlink under /private, Docker saw a gitdir it\ncould not reach.",
+    "summary": "fix(ecosystem-qa): clone under the real path of the temp directory",
+    "defectLines": []
+  }
+]
