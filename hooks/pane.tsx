@@ -7,7 +7,7 @@
 import type { EngineInterface } from 'claude-code'
 
 import type { Finding, Report } from '../types'
-import { buildChangeRequest } from '../core/change-request'
+import { buildChangeRequest, buildChangeRequestForAll } from '../core/change-request'
 import type { Messages } from '../core/messages'
 import { progressDescription, reportHeadline, reviewKeyOf } from '../core/report-view'
 import { findingLocation } from '../core/text-report'
@@ -41,6 +41,7 @@ export function drawReviewPane(input: PaneInput) {
   const criticalFindings = report.findings.filter(finding => finding.severity === 'critical')
   const prFindings = report.findings.filter(finding => finding.severity === 'pr')
   const hasNothingCritical = criticalFindings.length === 0 && report.status === 'ready'
+  const toReview = criticalFindings.filter(finding => !reviewedKeys.has(reviewKeyOf(finding)))
 
   // While an analysis runs the pane holds only the loader: earlier results are
   // cleared, so the loader is what you see wherever the pane was scrolled.
@@ -58,6 +59,13 @@ export function drawReviewPane(input: PaneInput) {
           {messages.needsReviewHeading(criticalFindings.length)}
         </Text>
         {hasNothingCritical && <Text dimColor>{messages.nothingCritical}</Text>}
+        {toReview.length > 1 && (
+          <Button
+            key="request-all-changes"
+            label={messages.requestAllChangesButton(toReview.length)}
+            onPress={() => actions.insertInPrompt(buildChangeRequestForAll(toReview, messages))}
+          />
+        )}
         {criticalFindings.map(finding =>
           reviewedKeys.has(reviewKeyOf(finding))
             ? drawReviewedFinding(input, finding)

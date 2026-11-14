@@ -37,6 +37,9 @@ export type Messages = {
   requestChangesButton: string
   // The prompt "Request changes" writes, so the session fixes the finding.
   changeRequest: (parts: ChangeRequestParts) => string
+  // One prompt for every finding still to review, so the session fixes them in one pass.
+  requestAllChangesButton: (count: number) => string
+  changeRequestForAll: (parts: ChangeRequestParts[]) => string
   reanalyzeButton: string
 
   noChangesSummary: string
@@ -74,6 +77,24 @@ export type Messages = {
   commandFailed: string
 }
 
+function englishFindingLines({ category, title, location, problem, fencedExcerpt }: ChangeRequestParts): string[] {
+  return [
+    `Finding: [${category}] ${title}`,
+    `Where: ${location}`,
+    `Problem: ${problem}`,
+    ...(fencedExcerpt ? ['', 'Code under review:', fencedExcerpt] : []),
+  ]
+}
+
+function spanishFindingLines({ category, title, location, problem, fencedExcerpt }: ChangeRequestParts): string[] {
+  return [
+    `Hallazgo: [${category}] ${title}`,
+    `Dónde: ${location}`,
+    `Problema: ${problem}`,
+    ...(fencedExcerpt ? ['', 'Código en revisión:', fencedExcerpt] : []),
+  ]
+}
+
 const ENGLISH: Messages = {
   languageNameForModel: 'English',
 
@@ -95,16 +116,22 @@ const ENGLISH: Messages = {
   reviewInPrHeading: count => `Review in the PR (${count})`,
   markReviewedButton: '✓ Reviewed',
   requestChangesButton: 'Request changes',
-  changeRequest: ({ category, title, location, problem, fencedExcerpt }) =>
+  changeRequest: parts =>
     [
       'review-radar flagged this change for review. Please fix it.',
       '',
-      `Finding: [${category}] ${title}`,
-      `Where: ${location}`,
-      `Problem: ${problem}`,
-      ...(fencedExcerpt ? ['', 'Code under review:', fencedExcerpt] : []),
+      ...englishFindingLines(parts),
       '',
       'Correct the problem described above, or revert the change if it should not be there. Keep everything else as it is, and tell me what you changed.',
+      '',
+    ].join('\n'),
+  requestAllChangesButton: count => `Request changes for all (${count})`,
+  changeRequestForAll: allParts =>
+    [
+      `review-radar flagged these ${allParts.length} changes for review. Please fix them all in one pass.`,
+      '',
+      ...allParts.flatMap((parts, index) => [`## ${index + 1} of ${allParts.length}`, ...englishFindingLines(parts), '']),
+      'Correct each problem described above, or revert the change if it should not be there. Keep everything else as it is, and tell me what you changed for each one.',
       '',
     ].join('\n'),
   reanalyzeButton: '↻ Re-analyze',
@@ -162,16 +189,22 @@ const SPANISH: Messages = {
   reviewInPrHeading: count => `Revisar en la PR (${count})`,
   markReviewedButton: '✓ Revisado',
   requestChangesButton: 'Pedir cambios',
-  changeRequest: ({ category, title, location, problem, fencedExcerpt }) =>
+  changeRequest: parts =>
     [
       'review-radar ha marcado este cambio para revisión. Corrígelo, por favor.',
       '',
-      `Hallazgo: [${category}] ${title}`,
-      `Dónde: ${location}`,
-      `Problema: ${problem}`,
-      ...(fencedExcerpt ? ['', 'Código en revisión:', fencedExcerpt] : []),
+      ...spanishFindingLines(parts),
       '',
       'Corrige el problema descrito arriba, o revierte el cambio si no debería estar. Deja todo lo demás como está y dime qué has cambiado.',
+      '',
+    ].join('\n'),
+  requestAllChangesButton: count => `Pedir cambios de todos (${count})`,
+  changeRequestForAll: allParts =>
+    [
+      `review-radar ha marcado estos ${allParts.length} cambios para revisión. Corrígelos todos en una sola pasada, por favor.`,
+      '',
+      ...allParts.flatMap((parts, index) => [`## ${index + 1} de ${allParts.length}`, ...spanishFindingLines(parts), '']),
+      'Corrige cada problema descrito arriba, o revierte el cambio si no debería estar. Deja todo lo demás como está y dime qué has cambiado en cada uno.',
       '',
     ].join('\n'),
   reanalyzeButton: '↻ Re-analizar',

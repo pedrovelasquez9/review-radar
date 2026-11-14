@@ -6,7 +6,7 @@
 import type { TuiDialogSelectOption, TuiPluginApi } from '@opencode-ai/plugin/tui'
 import { useKeyboard } from '@opentui/solid'
 
-import { buildChangeRequest } from '../../core/change-request'
+import { buildChangeRequest, buildChangeRequestForAll } from '../../core/change-request'
 import type { Messages } from '../../core/messages'
 import { progressDescription, reportHeadline, reviewKeyOf } from '../../core/report-view'
 import { findingLocation } from '../../core/text-report'
@@ -26,7 +26,7 @@ type ReviewDialogInput = {
   reanalyze: () => void
 }
 
-type ListChoice = { kind: 'finding'; finding: Finding } | { kind: 'reanalyze' } | { kind: 'none' }
+type ListChoice = { kind: 'finding'; finding: Finding } | { kind: 'requestAll' } | { kind: 'reanalyze' } | { kind: 'none' }
 
 export function openReviewList(input: ReviewDialogInput): void {
   const { api, messages, store } = input
@@ -54,6 +54,9 @@ export function openReviewList(input: ReviewDialogInput): void {
 
   const options: TuiDialogSelectOption<ListChoice>[] = [
     ...statusOption,
+    ...(toReview.length > 1
+      ? [{ title: messages.requestAllChangesButton(toReview.length), category: messages.needsReviewHeading(toReview.length), value: { kind: 'requestAll' } as const }]
+      : []),
     ...toReview.map(finding => findingOption(finding, messages.needsReviewHeading(toReview.length))),
     ...reviewed.map(finding => findingOption(finding, messages.reviewedHeading(reviewed.length), '✓ ')),
     ...forThePr.map(finding => ({
@@ -72,6 +75,10 @@ export function openReviewList(input: ReviewDialogInput): void {
       options,
       onSelect: ({ value }) => {
         if (value.kind === 'finding') openFindingDetail(input, value.finding)
+        if (value.kind === 'requestAll') {
+          api.ui.dialog.clear()
+          void api.client.tui.appendPrompt({ text: buildChangeRequestForAll(toReview, messages) })
+        }
         if (value.kind === 'reanalyze') {
           api.ui.dialog.clear()
           input.reanalyze()

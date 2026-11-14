@@ -16,6 +16,7 @@ The goal: confirm or request changes on what matters without opening files one b
 - **Closes the loop.** Every finding has two buttons:
   - **✓ Reviewed** collapses it. The mark is tied to the code you saw: it holds across re-analyses while that hunk is unchanged.
   - **Request changes** writes a complete fix request into your prompt: the finding and its category, `file:line`, the problem it causes, the code under review as a diff, and the instruction to correct it (or revert it if it should not be there) and leave the rest as it is. Add anything of your own and send it: the session fixes it with no more context needed.
+  - **Request changes for all**, above the cards when two or more findings are still to review, writes one request with all of them, numbered, so the session fixes them in one pass. Findings you marked as reviewed are left out.
 - **Leaves the rest for the PR.** Routine changes (tests, docs, styling, renames, refactors with no behaviour change) are folded under *Review in the PR*.
 
 ### Critical categories
@@ -167,7 +168,7 @@ Then `/reload-plugins`. Use `/plugin` to disable or uninstall it.
 review-radar also runs in [OpenCode](https://opencode.ai) (1.17 or newer) as a TUI plugin, with the same analysis. OpenCode has no side panes, so the review lives in the terminal:
 
 - **Sidebar.** At the end of the first turn that leaves changes on the branch, the session's sidebar shows a *Review* section: where the analysis is while it runs, then how many changes need you and one line per finding (`[category] title` and `file:line`). Findings you mark as reviewed leave it. Click it to open the review.
-- **`/review-radar`** (also in the command list, *ctrl+p*) opens the review dialog: the summary, the findings to review, the reviewed ones, what can wait for the PR, and *Re-analyze*. Pick a finding to see its reason and its diff in the theme's diff colors, then:
+- **`/review-radar`** (also in the command list, *ctrl+p*) opens the review dialog: the summary, the findings to review, the reviewed ones, what can wait for the PR, and *Re-analyze*. With two or more findings still to review, *Request changes for all* writes one fix request with all of them into the prompt. Pick a finding to see its reason and its diff in the theme's diff colors, then:
   - `r` marks it reviewed (or not reviewed again),
   - `c` writes the complete fix request into the prompt (as *Request changes* does in Claude Code) and closes the dialog,
   - `←` goes back to the list, `esc` closes the dialog.
@@ -231,7 +232,7 @@ The analysis is shared; each agent gets a thin adapter.
 | `core/secrets.ts` | Deterministic secret scan and its merge with the model's findings |
 | `core/report-view.ts` | What every view shows the same way: review keys, the headline, the loader's step |
 | `core/text-report.ts` | The report as text, for `/review-radar` in Claude Code |
-| `core/change-request.ts` | The fix request *Request changes* writes into the prompt |
+| `core/change-request.ts` | The fix request *Request changes* (one finding or all those still to review) writes into the prompt |
 | `core/messages.ts` | Every text the person sees, in English and Spanish |
 | `core/settings.ts` | The settings every agent reads into |
 | `core/json.ts` | Extracting the JSON object from a model's answer |

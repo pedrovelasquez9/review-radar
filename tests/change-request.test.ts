@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { Finding } from '../types'
-import { buildChangeRequest } from '../core/change-request'
+import { buildChangeRequest, buildChangeRequestForAll } from '../core/change-request'
 import { messagesFor } from '../core/messages'
 
 const DISCOUNT_FINDING: Finding = {
@@ -45,4 +45,17 @@ test('a finding without an excerpt leaves the code section out', async () => {
   const request = buildChangeRequest({ ...DISCOUNT_FINDING, diffExcerpt: undefined }, messagesFor('en'))
 
   expect(request.includes('Code under review')).toBe(false)
+})
+
+test('one request for all the findings numbers each one and asks for one pass', async () => {
+  const second: Finding = { ...DISCOUNT_FINDING, file: 'src/cart.ts', line: 9, title: 'Empty cart', diffExcerpt: undefined }
+
+  const request = buildChangeRequestForAll([DISCOUNT_FINDING, second], messagesFor('en'))
+
+  expect(request.startsWith('review-radar flagged these 2 changes for review. Please fix them all in one pass.')).toBe(true)
+  expect(request.includes('## 1 of 2\nFinding: [business-logic] New discount')).toBe(true)
+  expect(request.includes('## 2 of 2\nFinding: [business-logic] Empty cart\nWhere: src/cart.ts:9')).toBe(true)
+  expect(request.includes('tell me what you changed for each one')).toBe(true)
+  // A single finding reads as its own request.
+  expect(buildChangeRequestForAll([DISCOUNT_FINDING], messagesFor('en'))).toBe(buildChangeRequest(DISCOUNT_FINDING, messagesFor('en')))
 })

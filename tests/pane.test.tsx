@@ -129,3 +129,47 @@ test('a new analysis clears the previous results: only the loader is left', asyn
   expect(await ui.find({ key: 'reanalyze' })).toBeFalsy()
   await ui.unmount()
 })
+
+test('Request changes for all writes every finding not yet reviewed into one prompt', async ($, on) => {
+  const [discount] = STORED_REPORT.findings
+  const report: Report = {
+    ...STORED_REPORT,
+    findings: [
+      discount!,
+      { ...discount!, file: 'src/cart.ts', line: 9, title: 'Empty cart', reviewKey: 'cart' },
+      { ...discount!, file: 'src/tax.ts', line: 2, title: 'Tax rounding', reviewKey: 'tax' },
+    ],
+  }
+  on('state.get', (_: unknown, event: { key: string }) =>
+    event.key === 'report'
+      ? { value: { value: { shape: 'report-5', value: report }, version: 1 } }
+      : event.key === 'reviewedKeys'
+        ? { value: { value: ['tax'], version: 1 } }
+        : { value: { value: undefined, version: 0 } },
+  )
+  const filled: string[] = []
+  on('prompt.fill', (_, event) => {
+    filled.push(event.text)
+    return { isFilled: true, text: event.text, cursor: event.text.length }
+  })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect((await ui.find({ key: 'request-all-changes' }))?.text).toBe('Request changes for all (2)')
+  await ui.press({ key: 'request-all-changes' })
+
+  expect(filled.length).toBe(1)
+  expect(filled[0]?.includes('New discount')).toBe(true)
+  expect(filled[0]?.includes('Empty cart')).toBe(true)
+  expect(filled[0]?.includes('Tax rounding')).toBe(false)
+  // Each finding keeps its own button.
+  expect(await ui.find({ key: 'request-changes-cart' })).toBeTruthy()
+  await ui.unmount()
+})
+
+test('one finding to review needs no button for all', async ($, on) => {
+  on('state.get', storedState(STORED_REPORT))
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ key: 'request-all-changes' })).toBeFalsy()
+  await ui.unmount()
+})

@@ -16,6 +16,7 @@ El objetivo: confirmar o pedir cambios sobre lo importante sin abrir los archivo
 - **Cierra el ciclo.** Cada hallazgo tiene dos botones (aquí con sus nombres en español; la interfaz sale en inglés salvo que configures `language: es`, ver [Configuración](#configuración)):
   - **✓ Revisado** lo pliega. La marca va ligada al código que viste: se mantiene en los siguientes análisis mientras ese hunk no cambie.
   - **Pedir cambios** escribe en tu prompt una petición de corrección completa: el hallazgo y su categoría, `archivo:línea`, el problema que supone, el código en revisión como diff y la instrucción de corregirlo (o revertirlo si no debería estar) dejando el resto como está. Añade lo que quieras y envíalo: la sesión lo corrige sin necesitar más contexto.
+  - **Pedir cambios de todos**, encima de las tarjetas cuando quedan dos o más hallazgos por revisar, escribe una sola petición con todos ellos, numerados, para que la sesión los corrija en una pasada. Los que marcaste como revisados quedan fuera.
 - **Deja el resto para la PR.** Los cambios rutinarios (tests, docs, estilos, renombrados, refactors sin cambio de comportamiento) quedan plegados en *Revisar en la PR*.
 
 ### Categorías críticas
@@ -167,7 +168,7 @@ Después, `/reload-plugins`. Usa `/plugin` para desactivarlo o desinstalarlo.
 review-radar también funciona en [OpenCode](https://opencode.ai) (1.17 o posterior) como plugin de la TUI, con el mismo análisis. OpenCode no tiene paneles laterales, así que la revisión vive en la terminal:
 
 - **Barra lateral.** Al terminar el primer turno que deja cambios en la rama, la barra lateral de la sesión muestra una sección *Revisión*: en qué paso va el análisis mientras se ejecuta y, después, cuántos cambios requieren tu revisión y una línea por hallazgo (`[categoría] título` y `archivo:línea`). Los que marcas como revisados desaparecen. Al pulsarla se abre la revisión.
-- **`/review-radar`** (también en la lista de comandos, *ctrl+p*) abre el diálogo de revisión: el resumen, los hallazgos por revisar, los revisados, lo que puede esperar a la PR y *Re-analizar*. Elige un hallazgo para ver por qué importa y su diff con los colores de diff del tema, y luego:
+- **`/review-radar`** (también en la lista de comandos, *ctrl+p*) abre el diálogo de revisión: el resumen, los hallazgos por revisar, los revisados, lo que puede esperar a la PR y *Re-analizar*. Con dos o más hallazgos por revisar, *Pedir cambios de todos* escribe en el prompt una sola petición de corrección con todos ellos. Elige un hallazgo para ver por qué importa y su diff con los colores de diff del tema, y luego:
   - `r` lo marca como revisado (o lo vuelve a dejar sin revisar),
   - `c` escribe en el prompt la petición de corrección completa (como *Pedir cambios* en Claude Code) y cierra el diálogo,
   - `←` vuelve a la lista y `esc` cierra el diálogo.
@@ -231,7 +232,7 @@ El análisis es común; cada agente tiene un adaptador fino.
 | `core/secrets.ts` | Detección determinista de secretos y su fusión con los hallazgos del modelo |
 | `core/report-view.ts` | Lo que todas las vistas muestran igual: claves de revisado, el titular, el paso del indicador de carga |
 | `core/text-report.ts` | El informe como texto, para `/review-radar` en Claude Code |
-| `core/change-request.ts` | La petición de corrección que escribe *Pedir cambios* en el prompt |
+| `core/change-request.ts` | La petición de corrección que escribe *Pedir cambios* (de un hallazgo o de todos los pendientes) en el prompt |
 | `core/messages.ts` | Todos los textos que ve la persona, en inglés y en español |
 | `core/settings.ts` | La configuración común a todos los agentes |
 | `core/json.ts` | Extraer el objeto JSON de la respuesta de un modelo |

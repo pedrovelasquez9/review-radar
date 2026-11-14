@@ -79,3 +79,30 @@ test('the dialog lists the findings, and a finding opens with its diff and keys'
   expect(api.appendedPrompts[0]).toContain('Dónde: src/pricing.ts:6')
   expect(api.dialogContent()).toBeUndefined()
 })
+
+test('the dialog offers one fix request for every finding still to review', () => {
+  const api = createFakeApi()
+  const store = createSampleStore(api)
+  const [discount] = store.report().findings
+  store.updateReport(report => ({
+    ...report,
+    findings: [
+      ...report.findings,
+      { ...discount!, file: 'src/cart.ts', line: 9, title: 'Carrito vacío', reviewKey: 'cart' },
+      { ...discount!, file: 'src/tax.ts', line: 2, title: 'Redondeo del IVA', reviewKey: 'tax' },
+    ],
+  }))
+  store.setReviewed('tax', true)
+  openReviewList({ api, messages, store, isAutoAnalysisOn: true, reanalyze: () => {} })
+
+  const list = api.dialogContent()?.() as { options: { title: string; value: unknown }[]; onSelect: (option: unknown) => void }
+  const all = list.options.find(option => option.title === 'Pedir cambios de todos (2)')
+  expect(all).toBeTruthy()
+
+  list.onSelect(all)
+  expect(api.appendedPrompts[0]).toContain('Corrígelos todos en una sola pasada')
+  expect(api.appendedPrompts[0]).toContain('Nuevo descuento del 10 %')
+  expect(api.appendedPrompts[0]).toContain('Carrito vacío')
+  expect(api.appendedPrompts[0]).not.toContain('Redondeo del IVA')
+  expect(api.dialogContent()).toBeUndefined()
+})
