@@ -289,9 +289,9 @@ test('a small diff gets a bug hunt, and its defects are verified once', async ()
 
   await analyzeBranch(engine, DEFAULT_SETTINGS, false)
 
-  // One review, the bug hunt, and one verification call for the merged defect.
+  // One review, two bug hunts, and one verification call for the merged defect.
   expect(engine.modelRequests.length).toBe(1)
-  expect(engine.extraRequests.length).toBe(2)
+  expect(engine.extraRequests.length).toBe(3)
   // The fake verifier answers without verdicts: the defect stays critical.
   expect(engine.currentReport().findings.filter(finding => finding.severity === 'critical').length).toBe(1)
 })

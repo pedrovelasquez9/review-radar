@@ -36,6 +36,7 @@ const MAX_REVIEW_PARTS = 6
 // review and blind to it, and the answers joined: cheap, and in the bench two
 // independent reviews named bugs neither named alone.
 const SMALL_DIFF_LINES = 150
+const HUNT_SAMPLES = 2
 
 // The report before any analysis has run.
 export const EMPTY_REPORT: Report = {
@@ -454,18 +455,20 @@ async function reviewInDepth(
 
     const isSmall = parts.length === 1 && countChangedLines(partFiles) <= SMALL_DIFF_LINES
     // Duplicates of the review's findings are merged by the finding rules; a failed hunt adds nothing.
+    // The hunt runs HUNT_SAMPLES times, blind to each other: a model names a bug
+    // on one sample and misses it on the next, so the union names more.
+    const hunt = () =>
+      engine
+        .askReviewModel(bugHuntSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt)
+        .then(answer => parseReviewAnswer(answer.text).findings.map((finding): Finding => ({ ...finding, severity: 'critical', category: 'bug' })))
+        .catch((): Finding[] => [])
     const [answer, huntedBugs] = await Promise.all([
       engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt),
-      isSmall
-        ? engine
-            .askReviewModel(bugHuntSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt)
-            .then(hunt => parseReviewAnswer(hunt.text).findings.map((finding): Finding => ({ ...finding, severity: 'critical', category: 'bug' })))
-            .catch((): Finding[] => [])
-        : [],
+      Promise.all(isSmall ? Array.from({ length: HUNT_SAMPLES }, hunt) : []),
     ])
     const parsed = parseReviewAnswer(answer.text)
     summaries.push(parsed.summary)
-    findings.push(...parsed.findings, ...huntedBugs)
+    findings.push(...parsed.findings, ...huntedBugs.flat())
     isTruncated ||= review.isTruncated
     if (answer.answeredBy !== settings.reviewModel) answeredBy = answer.answeredBy
   }
