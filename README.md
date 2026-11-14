@@ -46,23 +46,23 @@ AI assistants sometimes do more than asked: a version bump a project rule asked 
 
 Measured with the bench in `bench/`, on this machine through the Claude Code CLI, with **sonnet** as the review model and 2 runs per case. Each case is compared against a **plain prompt**: the same model asked to review the same diff and list what it finds.
 
-**What matters in daily use is how much you read to catch a real bug.** A review that flags everything catches a bit more, but it buries the real bug among false ones, and you learn to skip the list. On the final set (25 commits that a later fix blamed, plus 25 clean commits, from 5 repositories no change was tuned on: sveltejs/kit, playwright, nitro, material-ui, storybook):
+**What matters in daily use is how much you read to catch a real bug.** A review that flags everything catches a bit more, but it buries the real bug among false ones, and you learn to skip the list. The percentages count reviews: each of the 25 real bugs is reviewed twice. On the final set (25 commits that a later fix blamed, plus 25 clean commits, from 5 repositories no change was tuned on: sveltejs/kit, playwright, nitro, material-ui, storybook):
 
 | | review-radar | plain prompt |
 | --- | --- | --- |
-| Alarms you read per real bug named | **8.6** | 18.1 |
-| Alarms per review | **1.2** | 2.9 |
-| Clean changes with no alarm | **39%** | 26% |
-| Claims of a defect that is not there, per clean change | **0.16** | 1.92 |
-| Real bugs named | 28% | 32% |
+| Alarms you read per real bug named | **8.4** | 18.1 |
+| Alarms per review | **1.3** | 2.9 |
+| Clean changes with no alarm | **48%** | 26% |
+| Claims of a defect that is not there, per clean change | **0.08** | 1.92 |
+| Real bugs named (per review) | 30% | 32% |
 
-The plain prompt names a few more real bugs because it flags almost everything: on a clean change it reports nearly 2 bugs that do not exist. review-radar drops a claimed defect only when the code shows it handled, and that filter costs a few hits: 28% against 32% here, 25% against 30% on 46 held-out pairs, and 22% against 30% on 27 more. In exchange, you read half as much per real bug, and a defect claim in *Needs your review* is nearly always worth reading. Most of its other alarms are decisions to confirm.
+The plain prompt names a few more real bugs because it flags almost everything: on a clean change it reports nearly 2 bugs that do not exist. review-radar drops a claimed defect only when the code shows it handled, and that filter costs a few hits: 30% against 32% here (with 0.14, 25% against 30% on 46 held-out pairs and 22% against 30% on 27 more). In exchange, you read half as much per real bug, and a defect claim in *Needs your review* is nearly always worth reading. Most of its other alarms are decisions to confirm.
 
 **What a plain prompt does not do:** sort what needs a human (business logic, data, security, infra) from what can wait for the PR. It also does not flag changes nobody asked for, catch literal secrets deterministically, judge changes against your project's own docs, remember what you already reviewed, or send every open finding back to the agent in one request.
 
 **Planted bugs.** On the 41 written cases (28 planted bugs, 13 clean changes), the current version finds and names **56 of 56** planted bugs and raises **no alarm** on clean changes. Earlier runs got the same 56 of 56 with opus and haiku. The plain prompt raised alarms on 42–96% of the clean changes.
 
-**Limits.** Real bugs are hard to catch from a diff: many need context the diff does not show (a fix that was incomplete, behaviour that lives in the framework). A model also catches some on one run and misses them on the next: each review names about 55–64% of the bugs that any review in the bench ever named. In the bench, which sends no cached prompt, a review costs 4–7 times a plain one.
+**Limits.** Real bugs are hard to catch from a diff. These went through human review and CI and were found only later; of the 25 in the final set, review-radar named 8 at least once, and only 11 were ever named by any review in the bench, plain prompt included. The rest need context the diff does not show (a fix that was incomplete, behaviour that lives in the framework or in another package). A model also catches some on one run and misses them on the next: each review names about 55–64% of the bugs that any review in the bench ever named. In the bench, which sends no cached prompt, a review costs 4–7 times a plain one.
 
 ## How it works
 

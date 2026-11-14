@@ -46,23 +46,23 @@ Los asistentes de IA a veces hacen más de lo pedido: subir una versión porque 
 
 Medido con el bench de `bench/`, en local mediante el CLI de Claude Code, con **sonnet** como modelo de revisión y 2 pasadas por caso. Cada caso se compara con un **prompt simple**: el mismo modelo, al que se le pide revisar el mismo diff y listar lo que encuentre.
 
-**En el día a día, lo que importa es cuánto lees para dar con un bug real.** Una revisión que lo marca todo acierta algo más, pero entierra el bug real entre avisos falsos, y acabas por no leer la lista. En el conjunto final (25 commits que un arreglo posterior señaló como causantes de un bug, más 25 commits limpios, de 5 repositorios con los que no se ajustó nada: sveltejs/kit, playwright, nitro, material-ui, storybook):
+**En el día a día, lo que importa es cuánto lees para dar con un bug real.** Una revisión que lo marca todo acierta algo más, pero entierra el bug real entre avisos falsos, y acabas por no leer la lista. Los porcentajes cuentan revisiones: cada uno de los 25 bugs reales se revisa dos veces. En el conjunto final (25 commits que un arreglo posterior señaló como causantes de un bug, más 25 commits limpios, de 5 repositorios con los que no se ajustó nada: sveltejs/kit, playwright, nitro, material-ui, storybook):
 
 | | review-radar | prompt simple |
 | --- | --- | --- |
-| Avisos que lees por cada bug real nombrado | **8,6** | 18,1 |
-| Avisos por revisión | **1,2** | 2,9 |
-| Cambios limpios sin aviso | **39%** | 26% |
-| Defectos inexistentes afirmados por cambio limpio | **0,16** | 1,92 |
-| Bugs reales nombrados | 28% | 32% |
+| Avisos que lees por cada bug real nombrado | **8,4** | 18,1 |
+| Avisos por revisión | **1,3** | 2,9 |
+| Cambios limpios sin aviso | **48%** | 26% |
+| Defectos inexistentes afirmados por cambio limpio | **0,08** | 1,92 |
+| Bugs reales nombrados (por revisión) | 30% | 32% |
 
-El prompt simple nombra unos pocos bugs reales más porque lo marca casi todo: en un cambio limpio afirma casi 2 bugs que no existen. review-radar solo descarta un defecto cuando el código muestra que está cubierto, y ese filtro le cuesta algunos aciertos: 28% frente a 32% aquí, 25% frente a 30% en 46 pares reservados y 22% frente a 30% en otros 27. A cambio, lees la mitad por cada bug real, y un defecto en *Requiere tu revisión* casi siempre merece leerse. La mayoría de sus demás avisos son decisiones que confirmar.
+El prompt simple nombra unos pocos bugs reales más porque lo marca casi todo: en un cambio limpio afirma casi 2 bugs que no existen. review-radar solo descarta un defecto cuando el código muestra que está cubierto, y ese filtro le cuesta algunos aciertos: 30% frente a 32% aquí (con la 0.14, 25% frente a 30% en 46 pares reservados y 22% frente a 30% en otros 27). A cambio, lees la mitad por cada bug real, y un defecto en *Requiere tu revisión* casi siempre merece leerse. La mayoría de sus demás avisos son decisiones que confirmar.
 
 **Lo que un prompt simple no hace:** separar lo que necesita a una persona (lógica de negocio, datos, seguridad, infraestructura) de lo que puede esperar a la PR. Tampoco marca los cambios que nadie pidió, detecta secretos literales de forma determinista, juzga los cambios con la documentación de tu proyecto, recuerda lo que ya revisaste ni devuelve al agente todos los hallazgos abiertos en una sola petición.
 
 **Bugs plantados.** En los 41 casos escritos (28 bugs plantados y 13 cambios limpios), la versión actual encuentra y nombra **56 de 56** bugs plantados y **no lanza ningún aviso** en los cambios limpios. Pasadas anteriores con opus y haiku obtuvieron los mismos 56 de 56. El prompt simple lanzó avisos en el 42–96% de los cambios limpios.
 
-**Límites.** Los bugs reales son difíciles de ver desde un diff: muchos necesitan un contexto que el diff no muestra (un arreglo que se quedó corto, un comportamiento que vive en el framework). Además, el modelo detecta algunos en una pasada y no en la siguiente: cada revisión nombra cerca del 55–64% de los bugs que alguna revisión del bench llegó a nombrar. En el bench, que no usa la caché de prompts, una revisión cuesta entre 4 y 7 veces una simple.
+**Límites.** Los bugs reales son difíciles de ver desde un diff. Estos pasaron una revisión humana y la CI, y se descubrieron después; de los 25 del conjunto final, review-radar nombró 8 al menos una vez, y solo 11 los nombró alguna revisión del bench, prompt simple incluido. El resto necesitan un contexto que el diff no muestra (un arreglo que se quedó corto, un comportamiento que vive en el framework o en otro paquete). Además, el modelo detecta algunos en una pasada y no en la siguiente: cada revisión nombra cerca del 55–64% de los bugs que alguna revisión del bench llegó a nombrar. En el bench, que no usa la caché de prompts, una revisión cuesta entre 4 y 7 veces una simple.
 
 ## Cómo funciona
 

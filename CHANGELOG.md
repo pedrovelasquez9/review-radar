@@ -6,7 +6,8 @@ All notable changes to review-radar. Versions follow [Semantic Versioning](https
 
 ### Changed
 
-- **Two independent bug hunts on small diffs.** On a diff that fits in one review and has up to 150 changed lines, two bug-hunting calls now run beside the review instead of one, each without knowing what the others found. In the bench, on the small held-out diffs with a bug any review ever named, it named 34 of 54 runs against 28 of 54 with one hunt (two separate repeats, both up); on larger diffs, where nothing changed, the rate stayed flat (14 of 37 against 14 of 38). It costs one more model call on those diffs: about 16% more per review across the set, and 0.07 more alarms per clean change.
+- **Two independent bug hunts on small diffs.** On a diff that fits in one review and has up to 150 changed lines, two bug-hunting calls now run beside the review instead of one, each without knowing what the others found. In the bench, on the small held-out diffs with a bug any review ever named, it named 34 of 54 runs against 28 of 54 with one hunt (two separate repeats, both up); on larger diffs, where nothing changed, the rate stayed flat (14 of 37 against 14 of 38). It costs one more model call on those diffs: about 16% more per review across the set, and 0.07 more alarms per clean change. On the final set (25 real bugs and 25 clean commits from 5 repositories nothing was tuned on), it names 30% against 28% for 0.14, leaves 48% of clean changes with no alarm (39% before) and claims 0.08 nonexistent defects per clean change (0.16 before).
+- **The README says what the percentages count.** They count reviews (each real bug is reviewed twice), and *Limits* now says how many of the final set's bugs any review ever named: 11 of 25.
 
 ## [0.14.1] - 2026-11-14
 
