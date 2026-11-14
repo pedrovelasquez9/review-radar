@@ -32,6 +32,10 @@ const MAX_TRIAGE_PROMPT_CHARS = 80_000
 // A deep review longer than this many calls is cut: the files left over go to
 // the PR list as not reviewed, and the summary says the diff was truncated.
 const MAX_REVIEW_PARTS = 6
+// A diff this small also gets a bug hunt of its own (review.ts), run beside the
+// review and blind to it, and the answers joined: cheap, and in the bench two
+// independent reviews named bugs neither named alone.
+const SMALL_DIFF_LINES = 150
 
 // The report before any analysis has run.
 export const EMPTY_REPORT: Report = {
@@ -448,16 +452,16 @@ async function reviewInDepth(
       maxDiffChars: settings.reviewBudgetChars,
     })
 
-    // Each part also gets a bug hunt of its own (review.ts), run beside the review
-    // and blind to it: in the bench, two independent reviews named bugs neither
-    // named alone. Duplicates of the review's findings are merged by the finding
-    // rules; a failed hunt adds nothing.
+    const isSmall = parts.length === 1 && countChangedLines(partFiles) <= SMALL_DIFF_LINES
+    // Duplicates of the review's findings are merged by the finding rules; a failed hunt adds nothing.
     const [answer, huntedBugs] = await Promise.all([
       engine.askReviewModel(reviewSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt),
-      engine
-        .askReviewModel(bugHuntSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt)
-        .then(hunt => parseReviewAnswer(hunt.text).findings.map((finding): Finding => ({ ...finding, severity: 'critical', category: 'bug' })))
-        .catch((): Finding[] => []),
+      isSmall
+        ? engine
+            .askReviewModel(bugHuntSystemPrompt(messages.languageNameForModel), review.cachedBlocks, review.prompt)
+            .then(hunt => parseReviewAnswer(hunt.text).findings.map((finding): Finding => ({ ...finding, severity: 'critical', category: 'bug' })))
+            .catch((): Finding[] => [])
+        : [],
     ])
     const parsed = parseReviewAnswer(answer.text)
     summaries.push(parsed.summary)

@@ -2,8 +2,8 @@
 // that folder, models through `complete`, the report kept in memory, and the
 // session's intent taken from the case.
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { appendFileSync, readFileSync } from 'node:fs'
+import { basename, join } from 'node:path'
 
 import type { Report } from '../types'
 import { EMPTY_REPORT } from '../core/analysis'
@@ -59,6 +59,13 @@ export function createBenchEngine(input: BenchEngineInput): BenchEngine {
         prompt: [...cachedBlocks, prompt].join('\n\n'),
         timeoutMs: 300_000,
       })
+      // BENCH_LOG_DIR: keep each review call's answer, to see which call found what.
+      if (process.env.BENCH_LOG_DIR) {
+        appendFileSync(
+          join(process.env.BENCH_LOG_DIR, `${basename(input.directory)}.log`),
+          `\n=== ${system.slice(0, 60)}\n${reply.text}\n`,
+        )
+      }
       return { text: reply.text, answeredBy: input.reviewModel }
     },
     readReport: async () => report,
